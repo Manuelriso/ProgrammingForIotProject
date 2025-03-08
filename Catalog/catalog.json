@@ -1,0 +1,17 @@
+{
+    "devices": [],
+    "services": [
+        {
+            "ID": 2,
+            "serviceName": "DeviceMonitor",
+            "last_updated": "",
+            "last_update": 1736368056.462118
+        },
+        {
+            "ID": 3,
+            "serviceName": "ThingspeakAdaptor",
+            "last_updated": "",
+            "last_update": 1736368043.324487
+        }
+    ]
+}
