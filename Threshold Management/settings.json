@@ -1,0 +1,16 @@
+{
+    "catalogURL": "http://catalog",
+    "thingspeakURL" : "http://catalog",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "mqttTopics": [
+        "+/temperature",
+        "+/humidity",
+        "+/luminosity"
+    ],
+    "serviceInfo": {
+        "ID": 9,
+        "serviceName": "ThreholdManagement",
+        "last_updated": ""
+    }
+}

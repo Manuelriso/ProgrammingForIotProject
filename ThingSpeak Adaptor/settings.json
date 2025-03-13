@@ -7,12 +7,15 @@
     "ChannelReadAPIKeyHumidity": "K9ZPT55I3M1H9XYP",
     "ChannelWriteAPIkeyLuminosity": "YAVYK87MJ60079RU",
     "ChannelReadAPIKeyLuminosity": "ZAYN9SR670KPQMZD",
+    "TemperatureChannelID" : "2869473",
+    "HumidityChannelID" : "2869474",
+    "LuminosityChannelID" : "2869475",
     "brokerIP": "mqtt.eclipseprojects.io",
     "brokerPort": 1883,
     "mqttTopics": [
-        "Mysensors/temperature",
-        "Mysensors/humidity",
-        "mysensors/luminosity"
+        "+/temperature",
+        "+/humidity",
+        "+/luminosity"
     ],
     "serviceInfo": {
         "ID": 3,
