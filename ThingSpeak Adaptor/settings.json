@@ -1,0 +1,22 @@
+{
+    "catalogURL": "http://catalog",
+    "ThingspeakURL": "https://api.thingspeak.com/update?api_key=",
+    "ChannelWriteAPIkeyTemperature": "FATWQ0QWN57LCJSJ",
+    "ChannelReadAPIKeyTemperature": "SLWED1XFD89ID8IS",
+    "ChannelWriteAPIkeyHumidity": "TWQQQG9S8JOYVAQ4",
+    "ChannelReadAPIKeyHumidity": "K9ZPT55I3M1H9XYP",
+    "ChannelWriteAPIkeyLuminosity": "YAVYK87MJ60079RU",
+    "ChannelReadAPIKeyLuminosity": "ZAYN9SR670KPQMZD",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "mqttTopics": [
+        "Mysensors/temperature",
+        "Mysensors/humidity",
+        "mysensors/luminosity"
+    ],
+    "serviceInfo": {
+        "ID": 3,
+        "serviceName": "ThingspeakAdaptor",
+        "last_updated": ""
+    }
+}
