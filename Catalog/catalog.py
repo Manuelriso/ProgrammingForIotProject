@@ -11,11 +11,6 @@ class CatalogREST(object):
             data=json.load(file)
             
         
-        if(uri[0]=="mqtt"):
-            broker=data["messageBroker"]
-            output["ipAddress"]=broker["ipAddress"]
-            output["port"]=broker["port"]
-        
             
         if(uri[0]=="devices" and len(uri)==1):
             output=data["devices"]
@@ -23,6 +18,13 @@ class CatalogREST(object):
         
         if(uri[0]=="services" and len(uri)==1):
             output=data["services"]
+            
+        
+        if(uri[0]=="areas" and len(uri)==1):
+            output=data["areas"]
+            
+        if(uri[0]=="areas" and len(uri)==2):
+            requestedArea=int(uri[1])
         
         return json.dumps(output)
     

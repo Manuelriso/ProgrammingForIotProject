@@ -1,4 +1,13 @@
 {
+    "areas": [
+        {
+            "ID": 1,
+            "humidityThreshold" : 80,
+            "temperatureThreshold" : 21,
+            "luminosityThreshold" : 60,
+            "plants" : "tomatoes"
+        }
+    ],
     "devices": [],
     "services": [
         {
