@@ -22,3 +22,6 @@ area1/senso1/motion
 
 
 Every time that it detects a presence of something, it will set a light for 10 sec.
+
+-------------------------------------------------
+my man | sbrudulli | gino
