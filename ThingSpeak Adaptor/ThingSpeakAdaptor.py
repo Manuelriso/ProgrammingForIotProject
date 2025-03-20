@@ -110,9 +110,13 @@ class ThingspeakAdaptorRESTMQTT:
             channel=uri[0]
             urlToSend=f"https://api.thingspeak.com/channels/{self.luminosityChannelID}/fields/{channel}.json?api_key={self.channelReadAPIkeyLuminosity}&results=10"
             r=requests.get(urlToSend)
+            data=r.json()
             field_key = f"field{channel}"
-            field_values = [feed[field_key] for feed in r.text["feeds"] if feed[field_key] is not None]
+            field_values = [feed[field_key] for feed in data["feeds"] if feed[field_key] is not None]
             json_output = json.dumps({"values": field_values})
+        else:
+            raise cherrypy.HTTPError("Error in the parameters")
+         
             
         return json_output
     

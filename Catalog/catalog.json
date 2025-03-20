@@ -1,23 +1,27 @@
 {
+    "numberOfAreas":1,
     "areas": [
         {
             "ID": 1,
             "humidityThreshold" : 80,
             "temperatureThreshold" : 21,
             "luminosityThreshold" : 60,
-            "plants" : "tomatoes"
+            "plants" : "tomatoes",
+            "temperatureDataTopic":"",
+            "humidityDataTopic":"",
+            "luminosityDataTopic":""
         }
     ],
     "devices": [],
     "services": [
         {
-            "ID": 2,
+            "ID": 1,
             "serviceName": "DeviceMonitor",
             "last_updated": "",
             "last_update": 1736368056.462118
         },
         {
-            "ID": 3,
+            "ID": 2,
             "serviceName": "ThingspeakAdaptor",
             "last_updated": "",
             "last_update": 1736368043.324487

@@ -9,8 +9,7 @@ class CatalogREST(object):
         
         with open("catalog.json","r") as file:
             data=json.load(file)
-            
-        
+                
             
         if(uri[0]=="devices" and len(uri)==1):
             output=data["devices"]
@@ -22,9 +21,16 @@ class CatalogREST(object):
         
         if(uri[0]=="areas" and len(uri)==1):
             output=data["areas"]
+         
+         
             
         if(uri[0]=="areas" and len(uri)==2):
             requestedArea=int(uri[1])
+            areas=data["areas"]
+            for registeredArea in areas:
+                if(registeredArea["ID"]==requestedArea):
+                    output=registeredArea
+        
         
         return json.dumps(output)
     
@@ -56,7 +62,25 @@ class CatalogREST(object):
                 if(service["ID"]==registeredService["ID"]):
                     raise cherrypy.HTTPError(404,"Error in the id")
             services.append(service)
-            data["users"]=services
+            data["services"]=services
+            with open("catalog.json","w") as file:
+                json.dump(data,file,indent=4)
+            
+            return json.dumps(data)
+        
+        if(uri[0]=="area"):
+            area=json.loads(body)
+            with open("catalog.json","r") as file:
+                data=json.load(file)
+            areas=data["areas"]
+            numberOfAreas=data["numberOfAreas"]
+            for registeredArea in areas:
+                if(area["ID"]==registeredArea["ID"]):
+                    raise cherrypy.HTTPError(404,"Error in the id")
+            areas.append(area)
+            numberOfAreas+=1
+            data["areas"]=services
+            data["numberOfAreas"]=numberOfAreas
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
             
@@ -99,6 +123,24 @@ class CatalogREST(object):
                     updatedServices.append(registeredService)
             
             data["services"]=updatedServices
+            with open("catalog.json","w")as file:
+                json.dump(data,file,indent=4)
+        
+        
+        if(uri[0]=="area"):
+            area=json.loads(body)
+            
+            with open("catalog.json","r") as file:
+                    data=json.load(file)
+            
+            updatedAreas=[]
+            for registeredArea in data["areas"]:
+                if(registeredArea["ID"]==area["ID"]):
+                    updatedAreas.append(area)
+                else:
+                    updatedAreas.append(registeredArea)
+            
+            data["areas"]=updatedAreas
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
             
