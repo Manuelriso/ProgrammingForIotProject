@@ -9,7 +9,8 @@
             "plants" : "tomatoes",
             "temperatureDataTopic":"",
             "humidityDataTopic":"",
-            "luminosityDataTopic":""
+            "luminosityDataTopic":"",
+            "motionTopic":""
         }
     ],
     "devices": [],
