@@ -14,15 +14,7 @@ class ThresholdManagement:
         self.serviceInfo = settings['serviceInfo']
         self.thingSpeakURL = settings["thingspeakURL"]
         self.broker = settings["brokerIP"]
-        self.port = settings["brokerPort"]
-        self.topics = settings["mqttTopics"]  # Lista di topic
-        
-        self.mqttClient = MyMQTT(clientID=str(uuid.uuid1()), broker=self.broker, port=self.port, notifier=self)
-        self.mqttClient.start()
-        
-        for topic in self.topics:
-            self.mqttClient.mySubscribe(topic)
-        
+        self.port = settings["brokerPort"]       
         self.actualTime = time.time()
     
     def registerService(self):
@@ -33,81 +25,80 @@ class ThresholdManagement:
         self.serviceInfo['last_update'] = time.time()
         requests.put(f'{self.catalogURL}/services', data=json.dumps(self.serviceInfo))
     
-    def stop(self):
-        self.mqttClient.stop()
     
-    def notify(self, topic, payload):
-        #{'bn':f'SensorREST_MQTT_{self.deviceID}','e':[{'n':'humidity','v':'', 't':'','u':'%'}]}
-        message_decoded = json.loads(payload)
-        message_value = message_decoded["e"][0]['v']
-        decide_measurement = message_decoded["e"][0]["n"]
-        
-        error=False
-        if decide_measurement=="temperature":
-            print("\n \n Temperature Message")
-            field_number=1
-            #I'm extracting the "area" of our garden, in order to change the right database.
-            channel=topic.split("/")[0]
-        elif decide_measurement=="humidity":
-            print("\n \n Humidity Message")
-            field_number=2
-            channel=topic.split("/")[0]
-        elif decide_measurement=="luminosity":
-            print("\n \n Luminosity Message")
-            field_number=3
-            channel=topic.split("/")[0]
-        else: 
-            error=True
-        if error:
-            print("Error")
+    def updateThresholds(self):
+        #We obtain all areas from the catalog
+        response=requests.get(f'{self.catalogURL}/areas')
+        if response.status_code == 200:
+            data = response.json()  # Converte la risposta in dizionario Python
         else:
-            print(message_decoded)
-            self.uploadThingspeak(field_number=field_number,field_value=message_value,channel=channel)
-
-    
-    def uploadThingspeak(self, field_number, field_value,channel):
-        if(field_number==1):
-            urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyTemperature}&field{channel}={field_value}'
-            response = requests.get(urlToSend)
-        elif(field_number==2):
-            urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyHumidity}&field{channel}={field_value}'
-            response = requests.get(urlToSend)
-        elif(field_number==3):
-            urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyLuminosity}&field{channel}={field_value}'
-            response = requests.get(urlToSend)
-        else:
-            print("Error")
+            print("Errore nella richiesta:", response.status_code)        
         
-        print(response.text)
-    
-    def GET(self,*uri, **params): #.../1/temperature
-        if(uri[1]=="temperature"):
-            channel=uri[0]
-            urlToSend=f"https://api.thingspeak.com/channels/{self.temperatureChannelID}/fields/{channel}.json?api_key={self.channelReadAPIkeyTemperature}&results=10"
-            r=requests.get(urlToSend)
-            data=r.json()
-            field_key = f"field{channel}"
-            field_values = [feed[field_key] for feed in data["feeds"] if feed[field_key] is not None]
-            json_output = json.dumps({"values": field_values})
-        elif(uri[1]=="humidity"):
-            channel=uri[0]
-            urlToSend=f"https://api.thingspeak.com/channels/{self.humidityChannelID}/fields/{channel}.json?api_key={self.channelReadAPIkeyHumidity}&results=10"
-            r=requests.get(urlToSend)
-            data=r.json()
-            field_key = f"field{channel}"
-            field_values = [feed[field_key] for feed in data["feeds"] if feed[field_key] is not None]
-            json_output = json.dumps({"values": field_values})
-        elif(uri[1]=="luminosity"):
-            channel=uri[0]
-            urlToSend=f"https://api.thingspeak.com/channels/{self.luminosityChannelID}/fields/{channel}.json?api_key={self.channelReadAPIkeyLuminosity}&results=10"
-            r=requests.get(urlToSend)
-            field_key = f"field{channel}"
-            field_values = [feed[field_key] for feed in r.text["feeds"] if feed[field_key] is not None]
-            json_output = json.dumps({"values": field_values})
+        for area in data["areas"]:
+            areaID=area["ID"]
+            temperatureThreshold=area["temperatureThreshold"]
+            humidityThreshold=area["humidityThreshold"]
+            luminosityThreshold=area["luminosityThreshold"]
             
-        return json_output
+            
+            #I get all data about temperature,humidity and luminosity from the ThisgSpeak
+            responseTemperature=requests.get(f'{self.thingSpeakURL}/{areaID}/temperature')
+            responseHumidity=requests.get(f'{self.thingSpeakURL}/{areaID}/humidity')
+            responseLuminosity=requests.get(f'{self.thingSpeakURL}/{areaID}/luminosity')
+            temperatureData=responseTemperature.json()
+            humidityData=responseHumidity.json()
+            luminosityData=responseLuminosity.json()
+            
+            #I calculate the mean of every pattern of data
+            temperatureSum=0
+            humiditySum=0
+            luminositySum=0
+            for value in temperatureData["values"]:
+                temperatureSum+=value
+            
+            for value in humidityData["values"]:
+                humiditySum+=value
+                
+            for value in luminosityData["values"]:
+                luminositySum+=value
+                
+            
+            temperatureMean=temperatureSum/len(temperatureData["values"])
+            humidityMean=humiditySum/len(humidityData["values"])
+            luminosityMean=luminositySum/len(luminosityData["values"])
+            
+            #if the temperature mean is much bigger then the threshold, then we need to dicrease the threshold, because today is very hot
+            if(temperatureMean>temperatureThreshold+5):
+                temperatureThreshold-=1
+            #In the opposite way, if outside is really cold, we can also increase the threshold
+            if(temperatureMean<temperatureThreshold-5):
+                temperatureThreshold+=1
+                
+            
+            #We do the same things for humidity and luminosity
+            if(humidityMean>humidityThreshold+5):
+                humidityThreshold-=1
+            if(humidityMean<humidityThreshold-5):
+                humidityThreshold+=1 
+                
+            
+            if(luminosityMean>luminosityThreshold+5):
+                luminosityThreshold-=1
+            if(luminosityMean<luminosityThreshold-5):
+                luminosityThreshold+=1  
+                
+            area["temperatureThreshold"]=temperatureThreshold 
+            area["humidityThreshold"]=humidityThreshold 
+            area["luminosityThreshold"]=luminosityThreshold 
+            
+            requests.put(f'{self.catalogURL}/area', data=json.dumps(area))
+            
+            
     
-    def POST(self):
+    def GET(self,*uri, **params): 
+        return
+    
+    def POST(self,*uri, **params):
         return
 
 if __name__ == "__main__":
@@ -122,7 +113,7 @@ if __name__ == "__main__":
         }
     }
     
-    #Inidirizzo IP--> http://localhost:9090/
+    #Inidirizzo IP--> http://localhost:8081/
     cherrypy.config.update({'server.socket_host': '0.0.0.0', 'server.socket_port': 8081})
     cherrypy.tree.mount(ts_adaptor, '/', conf)
     
@@ -130,12 +121,12 @@ if __name__ == "__main__":
         cherrypy.engine.start()
         counter = 0
         while True:
-            time.sleep(2)
+            time.sleep(3)
             counter += 1
             if counter == 20:
                 ts_adaptor.updateService()
+                ts_adaptor.updateThresholds()
                 counter = 0
     except KeyboardInterrupt:
-        ts_adaptor.stop()
         cherrypy.engine.stop()
         print("Thingspeak Adaptor Stopped")

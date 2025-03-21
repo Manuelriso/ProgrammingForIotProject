@@ -3,11 +3,6 @@
     "thingspeakURL" : "http://localhost:9090/",
     "brokerIP": "mqtt.eclipseprojects.io",
     "brokerPort": 1883,
-    "mqttTopics": [
-        "+/temperature",
-        "+/humidity",
-        "+/luminosity"
-    ],
     "serviceInfo": {
         "ID": 9,
         "serviceName": "ThreholdManagement",
