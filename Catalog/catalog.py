@@ -13,6 +13,9 @@ class CatalogREST(object):
             
         if(uri[0]=="devices" and len(uri)==1):
             output=data["devices"]
+            
+        if(uri[0]=="numberOfArea" and len(uri)==1):
+            output=data["numberOfAreas"]
         
         
         if(uri[0]=="services" and len(uri)==1):
