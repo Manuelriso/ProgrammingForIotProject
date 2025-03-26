@@ -146,6 +146,26 @@ class CatalogREST(object):
             data["areas"]=updatedAreas
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
+         
+        
+        #Called by Security microservice every time there's an alert  
+        if(uri[0]=="motion"):
+            areaID=int(uri[1])
+            
+            with open("catalog.json","r") as file:
+                    data=json.load(file)
+            
+            updatedAreas=[]
+            for registeredArea in data["areas"]:
+                if(registeredArea["ID"]==areaID):
+                    registeredArea["motionDetected"]+=1
+                    updatedAreas.append(registeredArea)
+                else:
+                    updatedAreas.append(registeredArea)
+            
+            data["areas"]=updatedAreas
+            with open("catalog.json","w")as file:
+                json.dump(data,file,indent=4)
             
         return json.dumps(data)
 

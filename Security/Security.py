@@ -41,6 +41,9 @@ class SecurityRESTMQTT:
         #Creation of the topic to send the alert "area1/motion/alert"
         layers=topic.split("/")
         area=layers[0]
+        
+        #in areaID avremo soltanto l'ID dell'area
+        areaID=area.replace("area", "")
         value=layers[2]
         topic_to_publish=f"{area}/{value}/alert"
         
@@ -49,6 +52,7 @@ class SecurityRESTMQTT:
         
         if(message_value=="on"):
             self.mqttClient.myPublish(topic_to_publish,json.dumps(messageToSend))
+            requests.put(f'{self.catalogURL}/motion/{areaID}', data=json.dumps(self.serviceInfo))
             print(f"I published {messageToSend} to {topic_to_publish}")
         
         

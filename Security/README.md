@@ -15,3 +15,5 @@ to IoT devices. This microservice will send an alert every time that the motion 
 the presence of some external entities in the garden.--> area1/motion/alert
 
 What is sent to the alert topic is the json "alert":"on"
+
+Every time there's a motion alert, in the catalog we increase by 1 the motion detection of that specific area

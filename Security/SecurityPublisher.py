@@ -29,7 +29,7 @@ class Publisher:
 if __name__ == "__main__":
     broker = "mqtt.eclipseprojects.io"
     port = 1883
-    topic_publish_lM = "IoT/manuel/motion"
+    topic_publish_lM = "area1/sensor2/motion"
     light_manager = Publisher("manuel44", broker, port, topic_publish_lM)
     light_manager.startSim()
     time.sleep(2)

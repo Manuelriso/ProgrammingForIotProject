@@ -10,17 +10,12 @@
             "temperatureDataTopic": "",
             "humidityDataTopic": "",
             "luminosityDataTopic": "",
-            "motionTopic": ""
+            "motionTopic": "",
+            "motionDetected": 3
         }
     ],
     "devices": [],
     "services": [
-        {
-            "ID": 1,
-            "serviceName": "DeviceMonitor",
-            "last_updated": "",
-            "last_update": 1736368056.462118
-        },
         {
             "ID": 2,
             "serviceName": "ThingspeakAdaptor",
@@ -31,7 +26,7 @@
             "ID": 6,
             "serviceName": "Security",
             "last_updated": "",
-            "last_update": 1742983369.2185552
+            "last_update": 1742991427.9697125
         },
         {
             "ID": 9,
