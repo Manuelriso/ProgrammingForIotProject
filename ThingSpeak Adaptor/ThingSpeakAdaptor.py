@@ -56,15 +56,18 @@ class ThingspeakAdaptorRESTMQTT:
             print("\n \n Temperature Message")
             field_number=1
             #I'm extracting the "area" of our garden, in order to change the right database.
-            channel=topic.split("/")[0]
+            area=topic.split("/")[0]
+            channel=area.replace("area", "")
         elif decide_measurement=="humidity":
             print("\n \n Humidity Message")
             field_number=2
-            channel=topic.split("/")[0]
+            area=topic.split("/")[0]
+            channel=area.replace("area", "")
         elif decide_measurement=="luminosity":
             print("\n \n Luminosity Message")
             field_number=3
-            channel=topic.split("/")[0]
+            area=topic.split("/")[0]
+            channel=area.replace("area", "")
         else: 
             error=True
         if error:

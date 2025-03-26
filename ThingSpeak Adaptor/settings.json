@@ -13,9 +13,9 @@
     "brokerIP": "mqtt.eclipseprojects.io",
     "brokerPort": 1883,
     "mqttTopics": [
-        "+/temperature",
-        "+/humidity",
-        "+/luminosity"
+        "+/+/temperature",
+        "+/+/humidity",
+        "+/+/luminosity"
     ],
     "serviceInfo": {
         "ID": 3,
