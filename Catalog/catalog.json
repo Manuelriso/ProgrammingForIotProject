@@ -1,16 +1,16 @@
 {
-    "numberOfAreas":1,
+    "numberOfAreas": 1,
     "areas": [
         {
             "ID": 1,
-            "humidityThreshold" : 80,
-            "temperatureThreshold" : 21,
-            "luminosityThreshold" : 60,
-            "plants" : "tomatoes",
-            "temperatureDataTopic":"",
-            "humidityDataTopic":"",
-            "luminosityDataTopic":"",
-            "motionTopic":""
+            "humidityThreshold": 80,
+            "temperatureThreshold": 21,
+            "luminosityThreshold": 60,
+            "plants": "tomatoes",
+            "temperatureDataTopic": "",
+            "humidityDataTopic": "",
+            "luminosityDataTopic": "",
+            "motionTopic": ""
         }
     ],
     "devices": [],
@@ -26,6 +26,18 @@
             "serviceName": "ThingspeakAdaptor",
             "last_updated": "",
             "last_update": 1736368043.324487
+        },
+        {
+            "ID": 6,
+            "serviceName": "Security",
+            "last_updated": "",
+            "last_update": 1742983369.2185552
+        },
+        {
+            "ID": 9,
+            "serviceName": "ThreholdManagement",
+            "last_updated": "",
+            "last_update": 1742982714.7515252
         }
     ]
 }

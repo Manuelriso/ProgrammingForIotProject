@@ -151,7 +151,7 @@ class CatalogREST(object):
 
 
 if __name__=="__main__":
-    catalogClient = CatalogREST("catalog.json")
+    catalogClient = CatalogREST()
     conf = {
         '/': {
             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),

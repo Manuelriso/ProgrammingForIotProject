@@ -36,11 +36,11 @@ class ThingspeakAdaptorRESTMQTT:
     
     def registerService(self):
         self.serviceInfo['last_update'] = self.actualTime
-        requests.post(f'{self.catalogURL}/services', data=json.dumps(self.serviceInfo))
+        requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def updateService(self):
         self.serviceInfo['last_update'] = self.actualTime
-        requests.put(f'{self.catalogURL}/services', data=json.dumps(self.serviceInfo))
+        requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def stop(self):
         self.mqttClient.stop()

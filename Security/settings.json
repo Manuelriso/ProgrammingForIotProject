@@ -1,0 +1,11 @@
+{
+    "catalogURL": "http://localhost:80/",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "mqttTopics" : "+/+/motion",
+    "serviceInfo": {
+        "ID": 6,
+        "serviceName": "Security",
+        "last_updated": ""
+    }
+}
