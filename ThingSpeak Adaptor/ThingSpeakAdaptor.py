@@ -39,7 +39,7 @@ class ThingspeakAdaptorRESTMQTT:
         requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def updateService(self):
-        self.serviceInfo['last_update'] = self.actualTime
+        self.serviceInfo['last_update'] = time.time()
         requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def stop(self):
@@ -48,8 +48,20 @@ class ThingspeakAdaptorRESTMQTT:
     def notify(self, topic, payload):
         #{'bn':f'SensorREST_MQTT_{self.deviceID}','e':[{'n':'humidity','v':'', 't':'','u':'%'}]}
         message_decoded = json.loads(payload)
-        message_value = message_decoded["e"][0]['v']
-        decide_measurement = message_decoded["e"][0]["n"]
+        
+        #Control on the right structure of the payload
+        if not isinstance(message_decoded, dict) or 'e' not in message_decoded:
+            return  
+    
+        if not isinstance(message_decoded['e'], list) or len(message_decoded['e']) == 0:
+            return  
+    
+        if not isinstance(message_decoded['e'][0], dict) or 'v' not in message_decoded['e'][0]:
+            return  
+        
+        
+        message_value = message_decoded['e'][0]['v']
+        decide_measurement = message_decoded['e'][0]['n']
         
         error=False
         if decide_measurement=="temperature":

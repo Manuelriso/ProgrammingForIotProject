@@ -17,12 +17,6 @@
     "devices": [],
     "services": [
         {
-            "ID": 2,
-            "serviceName": "ThingspeakAdaptor",
-            "last_updated": "",
-            "last_update": 1736368043.324487
-        },
-        {
             "ID": 6,
             "serviceName": "Security",
             "last_updated": "",
@@ -33,6 +27,12 @@
             "serviceName": "ThreholdManagement",
             "last_updated": "",
             "last_update": 1742982714.7515252
+        },
+        {
+            "ID": 3,
+            "serviceName": "ThingspeakAdaptor",
+            "last_updated": "",
+            "last_update": 1743069296.8797407
         }
     ]
 }
