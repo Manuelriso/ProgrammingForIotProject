@@ -41,7 +41,7 @@ This method checks if the current temperature, humidity, or luminosity in a spec
 **3. `publish(self, area_id, command)`**  
 This method publishes the actuation command ("ON"/"OFF") for a specific area to the corresponding MQTT topic. The topic format follows `"area{area_id}/Temperature/actuation"`, where `area_id` is dynamically inserted based on the area being processed.
 
-**Assumption**: The publish topic follows this format: `"area{area_id}/Temperature/actuation"`.
+**Assumption**: The publish topic follows this format: `"area{area_id}/actuation/temperature"`.
 
 ---
 

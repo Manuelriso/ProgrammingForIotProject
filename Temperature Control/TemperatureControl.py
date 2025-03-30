@@ -130,7 +130,7 @@ if __name__ == "__main__":
     catalog_file = "catalog.json"  # Path to catalog.json file
 
     # Template for the actuation topic, this will be dynamically modified to include the area and sensor type
-    pub_topic_template = "{area}/{sensor_type}/actuation"
+    pub_topic_template = "{area}/actuation/{sensor_type}"
 
     temp_control = TempController(broker, port, clientID, pub_topic_template, catalog_file)
     temp_control.mystart()
