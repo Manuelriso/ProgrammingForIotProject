@@ -35,7 +35,7 @@ class SecurityController:
         self.client.unsubscribe()
         self.client.stop()
     
-    def publish_alert(self, area_id):
+    def publish_alert(self, area_id): # Publish alert message
         """ Publish an alert message for a specific area """
         alert_topic = self.alert_topic_template.replace("{area}", f"area{area_id}")
         message = {"alert": "Motion detected", "area": area_id}
@@ -48,7 +48,8 @@ class SecurityController:
         topic_parts = topic.split('/')
         area_id = int(topic_parts[0][4:])  # Extract area number from the topic (e.g., 'area1')
         
-        if parsed_payload.get("motion_detected", False):
+        if parsed_payload.get("motion_detected", False): # Check if motion is detected
+            # Handle motion detection
             print(f"Motion detected in Area {area_id}, sending alert...")
             self.publish_alert(area_id)
 
