@@ -12,27 +12,60 @@ class CatalogREST(object):
                 
             
         if(uri[0]=="devices" and len(uri)==1):
-            output=data["devices"]
+            output["devices"]=data["devices"]
+         
+         
+        #greenhouse1/numberOfAreas   
+        if(uri[1]=="numberOfAreas" and len(uri)==2):
+            greenhouse=int(uri[0].replace("greenhouse",""))
+            AllGreenhouse=data["greenhouses"]
             
-        if(uri[0]=="numberOfArea" and len(uri)==1):
-            output=data["numberOfAreas"]
+            for registeredGreenHouse in AllGreenhouse:
+                if(registeredGreenHouse["greenhouseID"]==greenhouse):
+                    output["numberOfAreas"]=registeredGreenHouse["numberOfAreas"]
         
         
         if(uri[0]=="services" and len(uri)==1):
-            output=data["services"]
+            output["services"]=data["services"]
             
         
-        if(uri[0]=="areas" and len(uri)==1):
-            output=data["areas"]
-         
-         
+        #greenhouse1/areas
+        if(uri[1]=="areas" and len(uri)==2):
+            greenhouse=int(uri[0].replace("greenhouse",""))
+            AllGrennhouse=data["greenhouses"]
             
-        if(uri[0]=="areas" and len(uri)==2):
-            requestedArea=int(uri[1])
-            areas=data["areas"]
+            for registeredGreenHouse in AllGrennhouse:
+                if(registeredGreenHouse["greenhouseID"]==greenhouse):
+                    output["areas"]=registeredGreenHouse["areas"]
+        
+        
+        #greenhouses     
+        if(uri[0]=="greenhouses" and len(uri)==1):
+            output["greenhouses"]=data["greenhouses"]
+         
+         
+        #greenhouse1/areas/1    
+        if(uri[1]=="areas" and len(uri)==3):
+            requestedArea=int(uri[2])
+            greenhouse=int(uri[0].replace("greenhouse",""))
+            AllGreenhouse=data["greenhouses"]
+            
+            for registeredGreenHouse in AllGreenhouse:
+                if(registeredGreenHouse["greenhouseID"]==greenhouse):
+                    areas=registeredGreenHouse["areas"]
+                    
             for registeredArea in areas:
                 if(registeredArea["ID"]==requestedArea):
                     output=registeredArea
+                    
+        
+        #greenhouses/1
+        if(uri[0]=="greenhouses" and len(uri)==2):
+            requestedGreenHouses=int(uri[1])
+            greenhouses=data["greenhouses"]
+            for registeredGreenHouse in greenhouses:
+                if(registeredGreenHouse["greenhouseID"]==requestedGreenHouses):
+                    output=registeredGreenHouse
         
         
         return json.dumps(output)
@@ -41,6 +74,7 @@ class CatalogREST(object):
     
     def POST(self,*uri,**params):
         body=cherrypy.request.body.read()
+        
         if(uri[0]=="device"):
             device=json.loads(body)
             with open("catalog.json","r") as file:
@@ -71,19 +105,55 @@ class CatalogREST(object):
             
             return json.dumps(data)
         
-        if(uri[0]=="area"):
+        
+        #/greenhouse1/area
+        if(uri[1]=="area"):
+            greenhouseRequested=int(uri[0].replace("greenhouse",""))
             area=json.loads(body)
+            
             with open("catalog.json","r") as file:
                 data=json.load(file)
-            areas=data["areas"]
-            numberOfAreas=data["numberOfAreas"]
+            
+            greenhouses=data["greenhouses"]
+            for registeredGreenHouse in greenhouses:
+                if(greenhouseRequested==registeredGreenHouse["greenhouseID"]):
+                    greenhouse=registeredGreenHouse
+            
+            areas=greenhouse["areas"]
+            numberOfAreas=greenhouse["numberOfAreas"]
             for registeredArea in areas:
                 if(area["ID"]==registeredArea["ID"]):
                     raise cherrypy.HTTPError(404,"Error in the id")
             areas.append(area)
             numberOfAreas+=1
-            data["areas"]=services
-            data["numberOfAreas"]=numberOfAreas
+            greenhouse["areas"]=areas
+            greenhouse["numberOfAreas"]=numberOfAreas
+            
+            updatedGreenhouses=[]
+            for registeredGreenhouses in data["greenhouses"]:
+                if(registeredGreenhouses["greenhouseID"]==greenhouse["greenhouseID"]):
+                    updatedGreenhouses.append(greenhouse)
+                else:
+                    updatedGreenhouses.append(registeredGreenhouses)
+            
+            
+            data["greenhouses"]=updatedGreenhouses
+            with open("catalog.json","w") as file:
+                json.dump(data,file,indent=4)
+            
+            return json.dumps(data)
+        
+        #/greenhouse
+        if(uri[0]=="greenhouse"):
+            greenhouse=json.loads(body)
+            with open("catalog.json","r") as file:
+                data=json.load(file)
+            greenhouses=data["greenhouses"]
+            for registeredGreenHouse in greenhouses:
+                if(greenhouse["greenhouseID"]==registeredGreenHouse["greenhouseID"]):
+                    raise cherrypy.HTTPError(404,"Error in the id")
+            greenhouses.append(greenhouse)
+            data["greenhouses"]=greenhouses
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
             
@@ -130,40 +200,97 @@ class CatalogREST(object):
                 json.dump(data,file,indent=4)
         
         
-        if(uri[0]=="area"):
+        if(uri[0]=="greenhouse"):
+            greenhouse=json.loads(body)
+            
+            with open("catalog.json","r") as file:
+                    data=json.load(file)
+            
+            updatedGreenhouses=[]
+            for registeredGreenhouse in data["greenhouses"]:
+                if(registeredGreenhouse["greenhouseID"]==greenhouse["greenhouseID"]):
+                    updatedGreenhouses.append(greenhouse)
+                else:
+                    updatedGreenhouses.append(registeredGreenhouse)
+            
+            data["greenhouses"]=updatedGreenhouses
+            with open("catalog.json","w")as file:
+                json.dump(data,file,indent=4)
+        
+        #/greenhouses1/area
+        if(uri[1]=="area" and len(uri)==2):
+            greenhouseRequested=int(uri[0].replace("greenhouse",""))
             area=json.loads(body)
             
             with open("catalog.json","r") as file:
                     data=json.load(file)
+                    
+            greenhouses=data["greenhouses"]
+            for registeredGreenHouse in greenhouses:
+                if(greenhouseRequested==registeredGreenHouse["greenhouseID"]):
+                    greenhouse=registeredGreenHouse
+            
+            areas=greenhouse["areas"]
             
             updatedAreas=[]
-            for registeredArea in data["areas"]:
+            for registeredArea in areas:
                 if(registeredArea["ID"]==area["ID"]):
                     updatedAreas.append(area)
                 else:
                     updatedAreas.append(registeredArea)
+                    
+            greenhouse["areas"]=updatedAreas
             
-            data["areas"]=updatedAreas
+            updatedGreenhouses=[]
+            for registeredGreenhouses in data["greenhouses"]:
+                if(registeredGreenhouses["greenhouseID"]==greenhouse["greenhouseID"]):
+                    updatedGreenhouses.append(greenhouse)
+                else:
+                    updatedGreenhouses.append(registeredGreenhouses)
+            
+            
+            data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
          
         
-        #Called by Security microservice every time there's an alert  
-        if(uri[0]=="motion"):
-            areaID=int(uri[1])
+        #Called by Security microservice every time there's an alert
+        #/greenhouse1/area1/motion  
+        if(uri[2]=="motion" and len(uri)==3):
+            greenhouseRequested=int(uri[0].replace("greenhouse",""))
+            areaID=int(uri[1].replace("area",""))
             
             with open("catalog.json","r") as file:
                     data=json.load(file)
+                    
+                    
+            greenhouses=data["greenhouses"]
+            for registeredGreenHouse in greenhouses:
+                if(greenhouseRequested==registeredGreenHouse["greenhouseID"]):
+                    greenhouse=registeredGreenHouse
+            
+            areas=greenhouse["areas"]
             
             updatedAreas=[]
-            for registeredArea in data["areas"]:
+            for registeredArea in areas:
                 if(registeredArea["ID"]==areaID):
                     registeredArea["motionDetected"]+=1
                     updatedAreas.append(registeredArea)
                 else:
                     updatedAreas.append(registeredArea)
             
-            data["areas"]=updatedAreas
+            
+            greenhouse["areas"]=updatedAreas
+            
+            updatedGreenhouses=[]
+            for registeredGreenhouses in data["greenhouses"]:
+                if(registeredGreenhouses["greenhouseID"]==greenhouse["greenhouseID"]):
+                    updatedGreenhouses.append(greenhouse)
+                else:
+                    updatedGreenhouses.append(registeredGreenhouses)
+            
+            
+            data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
             

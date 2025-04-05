@@ -1,19 +1,24 @@
 {
-    "numberOfAreas": 1,
-    "areas": [
+    "greenhouses": [
         {
-            "ID": 1,
-            "humidityThreshold": 80,
-            "temperatureThreshold": 21,
-            "luminosityThreshold": 60,
-            "plants": "tomatoes",
-            "temperatureDataTopic": "",
-            "humidityDataTopic": "",
-            "luminosityDataTopic": "",
-            "motionTopic": "",
-            "motionDetected": 3
+            "greenhouseID": 1,
+            "numberOfAreas": 1,
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "tomatoes",
+                    "temperatureDataTopic": "greenhouse1/area1/temperature",
+                    "humidityDataTopic": "greenhouse1/area1/humidity",
+                    "luminosityDataTopic": "greenhouse1/area1/luminosity",
+                    "motionTopic": "greenhouse1/area1/motion",
+                    "motionDetected": 3
+                }
+            ]
         }
-    ],
+    ],    
     "devices": [],
     "services": [
         {
