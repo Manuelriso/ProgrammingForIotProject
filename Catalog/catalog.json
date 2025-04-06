@@ -14,18 +14,18 @@
                     "humidityDataTopic": "greenhouse1/area1/humidity",
                     "luminosityDataTopic": "greenhouse1/area1/luminosity",
                     "motionTopic": "greenhouse1/area1/motion",
-                    "motionDetected": 3
+                    "motionDetected": 8
                 }
             ]
         }
-    ],    
+    ],
     "devices": [],
     "services": [
         {
             "ID": 6,
             "serviceName": "Security",
             "last_updated": "",
-            "last_update": 1742991427.9697125
+            "last_update": 1743956372.397828
         },
         {
             "ID": 9,

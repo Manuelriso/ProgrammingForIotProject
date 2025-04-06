@@ -27,7 +27,7 @@ class SecurityRESTMQTT:
         requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def updateService(self):
-        self.serviceInfo['last_update'] = self.actualTime
+        self.serviceInfo['last_update'] = time.time()
         requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def stop(self):
@@ -38,21 +38,23 @@ class SecurityRESTMQTT:
         message_decoded = json.loads(payload)
         message_value = message_decoded["motion"]
         
-        #Creation of the topic to send the alert "area1/motion/alert"
+        #Creation of the topic to send the alert "greenhouse1/area1/motion/alert"
         layers=topic.split("/")
-        area=layers[0]
+        greenhouse=layers[0]
+        area=layers[1]
         
-        #in areaID avremo soltanto l'ID dell'area
+        #in areaID only the ID of the area, same for the greenhouse
         areaID=area.replace("area", "")
+        greenhouseID=greenhouse.replace("area", "")
         value=layers[2]
-        topic_to_publish=f"{area}/{value}/alert"
+        topic_to_publish=f"{greenhouse}/{area}/{value}/alert"
         
         messageToSend={}
         messageToSend["alert"]="on"
         
         if(message_value=="on"):
             self.mqttClient.myPublish(topic_to_publish,json.dumps(messageToSend))
-            requests.put(f'{self.catalogURL}/motion/{areaID}', data=json.dumps(self.serviceInfo))
+            requests.put(f'{self.catalogURL}/{greenhouse}/{area}/motion', data=json.dumps(self.serviceInfo))
             print(f"I published {messageToSend} to {topic_to_publish}")
         
         
