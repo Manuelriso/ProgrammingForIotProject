@@ -45,6 +45,8 @@ class ThingspeakAdaptorRESTMQTT:
     def stop(self):
         self.mqttClient.stop()
     
+    
+    #Topic=greenhouse1/area1/temperature
     def notify(self, topic, payload):
         #{'bn':f'SensorREST_MQTT_{self.deviceID}','e':[{'n':'humidity','v':'', 't':'','u':'%'}]}
         message_decoded = json.loads(payload)
@@ -68,61 +70,96 @@ class ThingspeakAdaptorRESTMQTT:
             print("\n \n Temperature Message")
             field_number=1
             #I'm extracting the "area" of our garden, in order to change the right database.
-            area=topic.split("/")[0]
+            area=topic.split("/")[1]
             channel=area.replace("area", "")
+            #I extract the greenhouse
+            greenhouse=topic.split("/")[0]
+            greenhouseID=int(greenhouse.replace("greenhouse", ""))
+            
         elif decide_measurement=="humidity":
             print("\n \n Humidity Message")
             field_number=2
-            area=topic.split("/")[0]
+            area=topic.split("/")[1]
             channel=area.replace("area", "")
+            #I extract the greenhouse
+            greenhouse=topic.split("/")[0]
+            greenhouseID=int(greenhouse.replace("greenhouse", ""))
+            
         elif decide_measurement=="luminosity":
             print("\n \n Luminosity Message")
             field_number=3
-            area=topic.split("/")[0]
+            area=topic.split("/")[1]
             channel=area.replace("area", "")
+            #I extract the greenhouse
+            greenhouse=topic.split("/")[0]
+            greenhouseID=int(greenhouse.replace("greenhouse", ""))
         else: 
             error=True
         if error:
             print("Error")
         else:
             print(message_decoded)
-            self.uploadThingspeak(field_number=field_number,field_value=message_value,channel=channel)
+            self.uploadThingspeak(field_number=field_number,field_value=message_value,channel=channel,greenhouseID=greenhouseID)
 
     
-    def uploadThingspeak(self, field_number, field_value,channel):
-        if(field_number==1):
-            urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyTemperature}&field{channel}={field_value}'
-            response = requests.get(urlToSend)
-        elif(field_number==2):
-            urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyHumidity}&field{channel}={field_value}'
-            response = requests.get(urlToSend)
-        elif(field_number==3):
-            urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyLuminosity}&field{channel}={field_value}'
-            response = requests.get(urlToSend)
+    def uploadThingspeak(self, field_number, field_value,channel,greenhouseID):
+        if(greenhouseID==1):
+            if(field_number==1):
+                urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyTemperature}&field{channel}={field_value}'
+                response = requests.get(urlToSend)
+            elif(field_number==2):
+                urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyHumidity}&field{channel}={field_value}'
+                response = requests.get(urlToSend)
+            elif(field_number==3):
+                urlToSend = f'{self.baseURL}{self.channelWriteAPIkeyLuminosity}&field{channel}={field_value}'
+                response = requests.get(urlToSend)
+            else:
+                print("Error")
+            
+            print(response.text)
         else:
-            print("Error")
-        
-        print(response.text)
+            print(f"I received the message on {greenhouseID}, but I can't store it in the database")
     
-    def GET(self,*uri, **params): #.../1/temperature
-        if(uri[1]=="temperature"):
-            channel=uri[0]
+    def GET(self,*uri, **params): #.../greenhouse1/area1/temperature
+        if(uri[2]=="temperature"):
+            greenhouse=int(uri[0].replace("greenhouse",""))
+            
+            #We can only create a database for one greenhouse
+            if(greenhouse!=1):
+                print("There's a problem, we don't have enough channel in the database, ill send you data of the first greenhouse")
+            
+            channel=uri[1].replace("area","")
+            
             urlToSend=f"https://api.thingspeak.com/channels/{self.temperatureChannelID}/fields/{channel}.json?api_key={self.channelReadAPIkeyTemperature}&results=10"
             r=requests.get(urlToSend)
             data=r.json()
             field_key = f"field{channel}"
             field_values = [feed[field_key] for feed in data["feeds"] if feed[field_key] is not None]
             json_output = json.dumps({"values": field_values})
-        elif(uri[1]=="humidity"):
-            channel=uri[0]
+            
+        elif(uri[2]=="humidity"):
+            greenhouse=int(uri[0].replace("greenhouse",""))
+            
+            #We can only create a database for one greenhouse
+            if(greenhouse!=1):
+                print("There's a problem, we don't have enough channel in the database, ill send you data of the first greenhouse")
+            
+            channel=uri[1].replace("area","")
             urlToSend=f"https://api.thingspeak.com/channels/{self.humidityChannelID}/fields/{channel}.json?api_key={self.channelReadAPIkeyHumidity}&results=10"
             r=requests.get(urlToSend)
             data=r.json()
             field_key = f"field{channel}"
             field_values = [feed[field_key] for feed in data["feeds"] if feed[field_key] is not None]
             json_output = json.dumps({"values": field_values})
-        elif(uri[1]=="luminosity"):
-            channel=uri[0]
+            
+        elif(uri[2]=="luminosity"):
+            greenhouse=int(uri[0].replace("greenhouse",""))
+            
+            #We can only create a database for one greenhouse
+            if(greenhouse!=1):
+                print("There's a problem, we don't have enough channel in the database, ill send you data of the first greenhouse")
+            
+            channel=uri[1].replace("area","")
             urlToSend=f"https://api.thingspeak.com/channels/{self.luminosityChannelID}/fields/{channel}.json?api_key={self.channelReadAPIkeyLuminosity}&results=10"
             r=requests.get(urlToSend)
             data=r.json()
@@ -150,7 +187,7 @@ if __name__ == "__main__":
         }
     }
     
-    #Inidirizzo IP--> http://localhost:9090/
+    #Indirizzo IP--> http://localhost:9090/
     cherrypy.config.update({'server.socket_host': '0.0.0.0', 'server.socket_port': 9090})
     cherrypy.tree.mount(ts_adaptor, '/', conf)
     

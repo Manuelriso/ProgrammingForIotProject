@@ -16,7 +16,7 @@ class CatalogREST(object):
          
          
         #greenhouse1/numberOfAreas   
-        if(uri[1]=="numberOfAreas" and len(uri)==2):
+        if(len(uri)==2 and uri[1]=="numberOfAreas"):
             greenhouse=int(uri[0].replace("greenhouse",""))
             AllGreenhouse=data["greenhouses"]
             
@@ -30,7 +30,7 @@ class CatalogREST(object):
             
         
         #greenhouse1/areas
-        if(uri[1]=="areas" and len(uri)==2):
+        if(len(uri)==2 and uri[1]=="areas"):
             greenhouse=int(uri[0].replace("greenhouse",""))
             AllGrennhouse=data["greenhouses"]
             
@@ -45,7 +45,7 @@ class CatalogREST(object):
          
          
         #greenhouse1/areas/1    
-        if(uri[1]=="areas" and len(uri)==3):
+        if(len(uri)==3 and uri[1]=="areas"):
             requestedArea=int(uri[2])
             greenhouse=int(uri[0].replace("greenhouse",""))
             AllGreenhouse=data["greenhouses"]
@@ -60,7 +60,7 @@ class CatalogREST(object):
                     
         
         #greenhouses/1
-        if(uri[0]=="greenhouses" and len(uri)==2):
+        if(len(uri)==2 and uri[0]=="greenhouses"):
             requestedGreenHouses=int(uri[1])
             greenhouses=data["greenhouses"]
             for registeredGreenHouse in greenhouses:
@@ -217,8 +217,8 @@ class CatalogREST(object):
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
         
-        #/greenhouses1/area
-        if(uri[1]=="area" and len(uri)==2):
+        #/greenhouse1/area
+        if(len(uri)==2 and uri[1]=="area"):
             greenhouseRequested=int(uri[0].replace("greenhouse",""))
             area=json.loads(body)
             
@@ -256,7 +256,7 @@ class CatalogREST(object):
         
         #Called by Security microservice every time there's an alert
         #/greenhouse1/area1/motion  
-        if(uri[2]=="motion" and len(uri)==3):
+        if(len(uri)==3 and uri[2]=="motion"):
             greenhouseRequested=int(uri[0].replace("greenhouse",""))
             areaID=int(uri[1].replace("area",""))
             

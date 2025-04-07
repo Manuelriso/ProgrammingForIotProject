@@ -15,6 +15,18 @@
                     "luminosityDataTopic": "greenhouse1/area1/luminosity",
                     "motionTopic": "greenhouse1/area1/motion",
                     "motionDetected": 8
+                },
+                {
+                    "ID": 2,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 10,
+                    "luminosityThreshold": 60,
+                    "plants": "ananas",
+                    "temperatureDataTopic": "greenhouse2/area2/temperature",
+                    "humidityDataTopic": "greenhouse2/area2/humidity",
+                    "luminosityDataTopic": "greenhouse2/area2/luminosity",
+                    "motionTopic": "greenhouse2/area2/motion",
+                    "motionDetected": 0
                 }
             ]
         }
@@ -25,19 +37,19 @@
             "ID": 6,
             "serviceName": "Security",
             "last_updated": "",
-            "last_update": 1743956372.397828
+            "last_update": 1743974564.32712
         },
         {
             "ID": 9,
             "serviceName": "ThreholdManagement",
             "last_updated": "",
-            "last_update": 1742982714.7515252
+            "last_update": 1743975412.0422738
         },
         {
             "ID": 3,
             "serviceName": "ThingspeakAdaptor",
             "last_updated": "",
-            "last_update": 1743069296.8797407
+            "last_update": 1743975435.2566676
         }
     ]
 }

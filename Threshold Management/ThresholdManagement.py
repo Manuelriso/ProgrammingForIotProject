@@ -27,71 +27,77 @@ class ThresholdManagement:
     
     
     def updateThresholds(self):
-        #We obtain all areas from the catalog
-        response=requests.get(f'{self.catalogURL}/areas')
+        #We obtain all greenhouses, and for every area in each greenhouse, we do the threshold management
+        response=requests.get(f'{self.catalogURL}/greenhouses')
         if response.status_code == 200:
-            data = response.json()  # Converte la risposta in dizionario Python
+            data = response.json()  # Python dictionary in data
         else:
-            print("Errore nella richiesta:", response.status_code)        
+            print("Request Error", response.status_code)        
         
-        for area in data["areas"]:
-            areaID=area["ID"]
-            temperatureThreshold=area["temperatureThreshold"]
-            humidityThreshold=area["humidityThreshold"]
-            luminosityThreshold=area["luminosityThreshold"]
-            
-            
-            #I get all data about temperature,humidity and luminosity from the ThisgSpeak
-            responseTemperature=requests.get(f'{self.thingSpeakURL}/{areaID}/temperature')
-            responseHumidity=requests.get(f'{self.thingSpeakURL}/{areaID}/humidity')
-            responseLuminosity=requests.get(f'{self.thingSpeakURL}/{areaID}/luminosity')
-            temperatureData=responseTemperature.json()
-            humidityData=responseHumidity.json()
-            luminosityData=responseLuminosity.json()
-            
-            #I calculate the mean of every pattern of data
-            temperatureSum=0
-            humiditySum=0
-            luminositySum=0
-            for value in temperatureData["values"]:
-                temperatureSum+=value
-            
-            for value in humidityData["values"]:
-                humiditySum+=value
+        for greenhouse in data["greenhouses"]:
+            greenhouseID=greenhouse["greenhouseID"]
+            for area in greenhouse["areas"]:
+                areaID=area["ID"]
+                temperatureThreshold=area["temperatureThreshold"]
+                humidityThreshold=area["humidityThreshold"]
+                luminosityThreshold=area["luminosityThreshold"]
                 
-            for value in luminosityData["values"]:
-                luminositySum+=value
                 
-            
-            temperatureMean=temperatureSum/len(temperatureData["values"])
-            humidityMean=humiditySum/len(humidityData["values"])
-            luminosityMean=luminositySum/len(luminosityData["values"])
-            
-            #if the temperature mean is much bigger then the threshold, then we need to dicrease the threshold, because today is very hot
-            if(temperatureMean>temperatureThreshold+5):
-                temperatureThreshold-=1
-            #In the opposite way, if outside is really cold, we can also increase the threshold
-            if(temperatureMean<temperatureThreshold-5):
-                temperatureThreshold+=1
+                #I get all data about temperature,humidity and luminosity from the ThingSpeakAdaptor
+                responseTemperature=requests.get(f'{self.thingSpeakURL}/greenhouse{greenhouseID}/area{areaID}/temperature')
+                responseHumidity=requests.get(f'{self.thingSpeakURL}/greenhouse{greenhouseID}/area{areaID}/humidity')
+                responseLuminosity=requests.get(f'{self.thingSpeakURL}/greenhouse{greenhouseID}/area{areaID}/luminosity')
+                temperatureData=responseTemperature.json()
+                humidityData=responseHumidity.json()
+                luminosityData=responseLuminosity.json()
                 
-            
-            #We do the same things for humidity and luminosity
-            if(humidityMean>humidityThreshold+5):
-                humidityThreshold-=1
-            if(humidityMean<humidityThreshold-5):
-                humidityThreshold+=1 
+                #I calculate the mean of every pattern of data
+                temperatureSum=0
+                humiditySum=0
+                luminositySum=0
+                for value in temperatureData["values"]:
+                    temperatureSum+=value
                 
-            
-            if(luminosityMean>luminosityThreshold+5):
-                luminosityThreshold-=1
-            if(luminosityMean<luminosityThreshold-5):
-                luminosityThreshold+=1  
+                for value in humidityData["values"]:
+                    humiditySum+=value
+                    
+                for value in luminosityData["values"]:
+                    luminositySum+=value
+                    
                 
-            area["temperatureThreshold"]=temperatureThreshold 
-            area["humidityThreshold"]=humidityThreshold 
-            area["luminosityThreshold"]=luminosityThreshold 
-            
-            requests.put(f'{self.catalogURL}/area', data=json.dumps(area))
+                if(len(temperatureData["values"])!=0 and len(humidityData["values"])!=0 and len(luminosityData["values"])!=0):
+                    temperatureMean=temperatureSum/len(temperatureData["values"])
+                    humidityMean=humiditySum/len(humidityData["values"])
+                    luminosityMean=luminositySum/len(luminosityData["values"])
+                    
+                    print(f"{temperatureMean}")
+                
+                    #if the temperature mean is much bigger then the threshold, then we need to dicrease the threshold, because today is very hot
+                    if(temperatureMean>temperatureThreshold+5):
+                        temperatureThreshold-=1
+                    #In the opposite way, if outside is really cold, we can also increase the threshold
+                    if(temperatureMean<temperatureThreshold-5):
+                        temperatureThreshold+=1
+                        
+                    
+                    #We do the same things for humidity and luminosity
+                    if(humidityMean>humidityThreshold+5):
+                        humidityThreshold-=1
+                    if(humidityMean<humidityThreshold-5):
+                        humidityThreshold+=1 
+                        
+                    
+                    if(luminosityMean>luminosityThreshold+5):
+                        luminosityThreshold-=1
+                    if(luminosityMean<luminosityThreshold-5):
+                        luminosityThreshold+=1  
+                    
+                area["temperatureThreshold"]=temperatureThreshold 
+                area["humidityThreshold"]=humidityThreshold 
+                area["luminosityThreshold"]=luminosityThreshold 
+                
+                requests.put(f'{self.catalogURL}/greenhouse{greenhouseID}/area', data=json.dumps(area))
+                print(f"I've sent an update to the catalog for the greenhouse {greenhouseID} and for the area {areaID}")
             
             
     

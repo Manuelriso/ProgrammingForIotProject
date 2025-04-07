@@ -12,5 +12,4 @@ with REST Web Services, and some computations will be done on this data, in orde
 dynamically change thresholds to activate some actuators to preserve the optimal
 environment.
 
-So it retrieves historical data from the Thingspeak Adaptor, based on those, it modify dinamically 
-thresholds about temperature and humidity, and then we send them with MQTT???? or we modify them in the catalog???
+We modify, if necessary, all the threshold values that we get from the catalog, based on the values uploaded in the ThingSpeak database.
