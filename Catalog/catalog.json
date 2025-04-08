@@ -2,7 +2,7 @@
     "greenhouses": [
         {
             "greenhouseID": 1,
-            "numberOfAreas": 1,
+            "numberOfAreas": 2,
             "areas": [
                 {
                     "ID": 1,
@@ -22,10 +22,10 @@
                     "temperatureThreshold": 10,
                     "luminosityThreshold": 60,
                     "plants": "ananas",
-                    "temperatureDataTopic": "greenhouse2/area2/temperature",
-                    "humidityDataTopic": "greenhouse2/area2/humidity",
-                    "luminosityDataTopic": "greenhouse2/area2/luminosity",
-                    "motionTopic": "greenhouse2/area2/motion",
+                    "temperatureDataTopic": "greenhouse1/area2/temperature",
+                    "humidityDataTopic": "greenhouse1/area2/humidity",
+                    "luminosityDataTopic": "greenhouse1/area2/luminosity",
+                    "motionTopic": "greenhouse1/area2/motion",
                     "motionDetected": 0
                 }
             ]
