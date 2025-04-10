@@ -118,10 +118,10 @@ class ThingspeakAdaptorRESTMQTT:
             
             print(response.text)
         else:
-            print(f"I received the message on {greenhouseID}, but I can't store it in the database")
+            print(f"I received the message on the greenhouse {greenhouseID}, but I can't store it in the database")
     
     def GET(self,*uri, **params): #.../greenhouse1/area1/temperature
-        if(uri[2]=="temperature"):
+        if(len(uri)==3 and uri[2]=="temperature"):
             greenhouse=int(uri[0].replace("greenhouse",""))
             
             #We can only create a database for one greenhouse
@@ -137,7 +137,7 @@ class ThingspeakAdaptorRESTMQTT:
             field_values = [feed[field_key] for feed in data["feeds"] if feed[field_key] is not None]
             json_output = json.dumps({"values": field_values})
             
-        elif(uri[2]=="humidity"):
+        elif(len(uri)==3 and uri[2]=="humidity"):
             greenhouse=int(uri[0].replace("greenhouse",""))
             
             #We can only create a database for one greenhouse
@@ -152,7 +152,7 @@ class ThingspeakAdaptorRESTMQTT:
             field_values = [feed[field_key] for feed in data["feeds"] if feed[field_key] is not None]
             json_output = json.dumps({"values": field_values})
             
-        elif(uri[2]=="luminosity"):
+        elif(len(uri)==3 and uri[2]=="luminosity"):
             greenhouse=int(uri[0].replace("greenhouse",""))
             
             #We can only create a database for one greenhouse
