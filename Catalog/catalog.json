@@ -14,7 +14,13 @@
                     "humidityDataTopic": "greenhouse1/area1/humidity",
                     "luminosityDataTopic": "greenhouse1/area1/luminosity",
                     "motionTopic": "greenhouse1/area1/motion",
-                    "motionDetected": 8
+                    "motionDetected": 0,
+                    "pumpActuation":"greenhouse1/area1/actuation/pump",
+                    "lightActuation":"greenhouse1/area1/actuation/light",
+                    "ventilationActuation":"greenhouse1/area1/actuation/ventilation",
+                    "pump": 0, 
+                    "light":"off",
+                    "ventilation":0
                 },
                 {
                     "ID": 2,
@@ -26,7 +32,13 @@
                     "humidityDataTopic": "greenhouse1/area2/humidity",
                     "luminosityDataTopic": "greenhouse1/area2/luminosity",
                     "motionTopic": "greenhouse1/area2/motion",
-                    "motionDetected": 0
+                    "motionDetected": 0,
+                    "pumpActuation":"greenhouse1/area2/actuation/pump",
+                    "lightActuation":"greenhouse1/area2/actuation/light",
+                    "ventilationActuation":"greenhouse1/area2/actuation/ventilation",
+                    "pump":0, 
+                    "light":"off",
+                    "ventilation":0
                 }
             ]
         }
@@ -37,7 +49,7 @@
             "ID": 6,
             "serviceName": "Security",
             "last_updated": "",
-            "last_update": 1743974564.32712
+            "last_update": 1744275067.362858
         },
         {
             "ID": 9,
