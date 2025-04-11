@@ -15,12 +15,12 @@
                     "luminosityDataTopic": "greenhouse1/area1/luminosity",
                     "motionTopic": "greenhouse1/area1/motion",
                     "motionDetected": 0,
-                    "pumpActuation":"greenhouse1/area1/actuation/pump",
-                    "lightActuation":"greenhouse1/area1/actuation/light",
-                    "ventilationActuation":"greenhouse1/area1/actuation/ventilation",
-                    "pump": 0, 
-                    "light":"off",
-                    "ventilation":0
+                    "pumpActuation": "greenhouse1/area1/actuation/pump",
+                    "lightActuation": "greenhouse1/area1/actuation/light",
+                    "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
                 },
                 {
                     "ID": 2,
@@ -33,12 +33,12 @@
                     "luminosityDataTopic": "greenhouse1/area2/luminosity",
                     "motionTopic": "greenhouse1/area2/motion",
                     "motionDetected": 0,
-                    "pumpActuation":"greenhouse1/area2/actuation/pump",
-                    "lightActuation":"greenhouse1/area2/actuation/light",
-                    "ventilationActuation":"greenhouse1/area2/actuation/ventilation",
-                    "pump":0, 
-                    "light":"off",
-                    "ventilation":0
+                    "pumpActuation": "greenhouse1/area2/actuation/pump",
+                    "lightActuation": "greenhouse1/area2/actuation/light",
+                    "ventilationActuation": "greenhouse1/area2/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
                 }
             ]
         }
@@ -62,6 +62,12 @@
             "serviceName": "ThingspeakAdaptor",
             "last_updated": "",
             "last_update": 1743975435.2566676
+        },
+        {
+            "ID": 10,
+            "serviceName": "NodeRED",
+            "last_updated": "",
+            "last_update": 1744363404.2250102
         }
     ]
 }

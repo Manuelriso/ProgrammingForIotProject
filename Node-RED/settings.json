@@ -1,0 +1,11 @@
+{
+    "catalogURL": "http://localhost:80/",
+    "thingspeakURL" : "http://localhost:9090/",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "serviceInfo": {
+        "ID": 10,
+        "serviceName": "NodeRED",
+        "last_updated": ""
+    }
+}
