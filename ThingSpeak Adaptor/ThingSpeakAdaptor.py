@@ -134,7 +134,7 @@ class ThingspeakAdaptorRESTMQTT:
             r=requests.get(urlToSend)
             data=r.json()
             field_key = f"field{channel}"
-            field_values = [feed[field_key] for feed in data["feeds"] if feed[field_key] is not None]
+            field_values = [float(feed[field_key]) for feed in data["feeds"] if feed[field_key] is not None]
             json_output = json.dumps({"values": field_values})
             
         elif(len(uri)==3 and uri[2]=="humidity"):
