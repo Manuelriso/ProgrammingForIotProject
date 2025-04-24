@@ -34,6 +34,7 @@ class ThresholdManagement:
         else:
             print("Request Error", response.status_code)        
         
+        print("\n\n"+str(data)+"\n\n")
         for greenhouse in data["greenhouses"]:
             greenhouseID=greenhouse["greenhouseID"]
             for area in greenhouse["areas"]:
@@ -56,41 +57,44 @@ class ThresholdManagement:
                 humiditySum=0
                 luminositySum=0
                 for value in temperatureData["values"]:
-                    temperatureSum+=value
+                    temperatureSum+=float(value)
                 
                 for value in humidityData["values"]:
-                    humiditySum+=value
+                    humiditySum+=float(value)
                     
                 for value in luminosityData["values"]:
-                    luminositySum+=value
+                    luminositySum+=float(value)
                     
                 
-                if(len(temperatureData["values"])!=0 and len(humidityData["values"])!=0 and len(luminosityData["values"])!=0):
-                    temperatureMean=temperatureSum/len(temperatureData["values"])
-                    humidityMean=humiditySum/len(humidityData["values"])
-                    luminosityMean=luminositySum/len(luminosityData["values"])
-                    
+                if(len(temperatureData["values"])!=0 or len(humidityData["values"])!=0 or len(luminosityData["values"])!=0):
+                    if(len(temperatureData["values"])!=0):
+                        #if the temperature mean is much bigger then the threshold, then we need to dicrease the threshold, because today is very hot
+
+                        temperatureMean=temperatureSum/len(temperatureData["values"])
+                        if(temperatureMean>temperatureThreshold+5):
+                            temperatureThreshold-=1
+                        #In the opposite way, if outside is really cold, we can also increase the threshold
+                        if(temperatureMean<temperatureThreshold-5):
+                            temperatureThreshold+=1
+                            
+                            
+                    if(len(humidityData["values"])!=0):
+                        humidityMean=humiditySum/len(humidityData["values"])
+                        #We do the same things for humidity and luminosity
+                        if(humidityMean>humidityThreshold+5):
+                            humidityThreshold-=1
+                        if(humidityMean<humidityThreshold-5):
+                            humidityThreshold+=1 
+                    if(len(luminosityData["values"])!=0):  
+                        luminosityMean=luminositySum/len(luminosityData["values"])               
+                        if(luminosityMean>luminosityThreshold+5):
+                            luminosityThreshold-=1
+                        if(luminosityMean<luminosityThreshold-5):
+                            luminosityThreshold+=1
+                            
+                            
                     print(f"{temperatureMean}")
-                
-                    #if the temperature mean is much bigger then the threshold, then we need to dicrease the threshold, because today is very hot
-                    if(temperatureMean>temperatureThreshold+5):
-                        temperatureThreshold-=1
-                    #In the opposite way, if outside is really cold, we can also increase the threshold
-                    if(temperatureMean<temperatureThreshold-5):
-                        temperatureThreshold+=1
-                        
-                    
-                    #We do the same things for humidity and luminosity
-                    if(humidityMean>humidityThreshold+5):
-                        humidityThreshold-=1
-                    if(humidityMean<humidityThreshold-5):
-                        humidityThreshold+=1 
-                        
-                    
-                    if(luminosityMean>luminosityThreshold+5):
-                        luminosityThreshold-=1
-                    if(luminosityMean<luminosityThreshold-5):
-                        luminosityThreshold+=1  
+                                          
                     
                 area["temperatureThreshold"]=temperatureThreshold 
                 area["humidityThreshold"]=humidityThreshold 

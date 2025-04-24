@@ -5,13 +5,14 @@ import requests
 class CatalogREST(object):
     exposed=True
     def GET(self,*uri,**params):
+        print(f"Richiesta ricevuta - URI: {uri}, Parametri: {params}")
         output={}
         
         with open("catalog.json","r") as file:
             data=json.load(file)
                 
             
-        if(uri[0]=="devices" and len(uri)==1):
+        if(len(uri)==1 and uri[0]=="devices"):
             output["devices"]=data["devices"]
          
          
@@ -25,7 +26,7 @@ class CatalogREST(object):
                     output["numberOfAreas"]=registeredGreenHouse["numberOfAreas"]
         
         
-        if(uri[0]=="services" and len(uri)==1):
+        if(len(uri)==1 and uri[0]=="services"):
             output["services"]=data["services"]
             
         
@@ -40,8 +41,9 @@ class CatalogREST(object):
         
         
         #greenhouses     
-        if(uri[0]=="greenhouses" and len(uri)==1):
+        if(len(uri)==1 and uri[0]=="greenhouses"):
             output["greenhouses"]=data["greenhouses"]
+            print(str(output))
          
          
         #greenhouse1/areas/1    
@@ -67,7 +69,6 @@ class CatalogREST(object):
                 if(registeredGreenHouse["greenhouseID"]==requestedGreenHouses):
                     output=registeredGreenHouse
         
-        
         return json.dumps(output)
     
     
@@ -75,7 +76,7 @@ class CatalogREST(object):
     def POST(self,*uri,**params):
         body=cherrypy.request.body.read()
         
-        if(uri[0]=="device"):
+        if(len(uri)==1 and uri[0]=="device"):
             device=json.loads(body)
             with open("catalog.json","r") as file:
                 data=json.load(file)
@@ -90,7 +91,7 @@ class CatalogREST(object):
                 
             return json.dumps(data)
         
-        if(uri[0]=="service"):
+        if(len(uri)==1 and uri[0]=="service"):
             service=json.loads(body)
             with open("catalog.json","r") as file:
                 data=json.load(file)
@@ -107,7 +108,7 @@ class CatalogREST(object):
         
         
         #/greenhouse1/area
-        if(uri[1]=="area"):
+        if(len(uri)==2 and uri[1]=="area"):
             greenhouseRequested=int(uri[0].replace("greenhouse",""))
             area=json.loads(body)
             
@@ -144,7 +145,7 @@ class CatalogREST(object):
             return json.dumps(data)
         
         #/greenhouse
-        if(uri[0]=="greenhouse"):
+        if(len(uri)==1 and uri[0]=="greenhouse"):
             greenhouse=json.loads(body)
             with open("catalog.json","r") as file:
                 data=json.load(file)
@@ -164,7 +165,7 @@ class CatalogREST(object):
     def PUT(self,*uri,**params):
         body=cherrypy.request.body.read()
         
-        if(uri[0]=="device"):
+        if(len(uri)==1 and uri[0]=="device"):
             device=json.loads(body)
             
             with open("catalog.json","r") as file:
@@ -180,9 +181,11 @@ class CatalogREST(object):
             data["devices"]=updatedDevices
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
+            
+            return json.dumps(data)
                 
         
-        if(uri[0]=="service"):
+        if(len(uri)==1 and uri[0]=="service"):
             service=json.loads(body)
             
             with open("catalog.json","r") as file:
@@ -198,9 +201,11 @@ class CatalogREST(object):
             data["services"]=updatedServices
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
+            
+            return json.dumps(data)
         
         
-        if(uri[0]=="greenhouse"):
+        if(len(uri)==1 and uri[0]=="greenhouse"):
             greenhouse=json.loads(body)
             
             with open("catalog.json","r") as file:
@@ -216,6 +221,8 @@ class CatalogREST(object):
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
+            
+            return json.dumps(data)
         
         #/greenhouse1/area
         if(len(uri)==2 and uri[1]=="area"):
@@ -252,6 +259,8 @@ class CatalogREST(object):
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
+            
+            return json.dumps(data)
          
         
         #Called by Security microservice every time there's an alert
@@ -293,8 +302,7 @@ class CatalogREST(object):
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
-            
-        return json.dumps(data)
+            return json.dumps(data)
 
 
 if __name__=="__main__":

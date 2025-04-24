@@ -2,7 +2,7 @@
     "greenhouses": [
         {
             "greenhouseID": 1,
-            "numberOfAreas": 2,
+            "numberOfAreas": 3,
             "areas": [
                 {
                     "ID": 1,
@@ -39,6 +39,48 @@
                     "pump": 0,
                     "light": "off",
                     "ventilation": 0
+                },
+                {
+                    "ID": 3,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 9,
+                    "luminosityThreshold": 60,
+                    "plants": "ananas",
+                    "temperatureDataTopic": "greenhouse1/area3/temperature",
+                    "humidityDataTopic": "greenhouse1/area3/humidity",
+                    "luminosityDataTopic": "greenhouse1/area3/luminosity",
+                    "motionTopic": "greenhouse1/area3/motion",
+                    "motionDetected": 0,
+                    "pumpActuation": "greenhouse1/area3/actuation/pump",
+                    "lightActuation": "greenhouse1/area3/actuation/light",
+                    "ventilationActuation": "greenhouse1/area3/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 2,
+            "numberOfAreas": 1,
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "tomatoes",
+                    "temperatureDataTopic": "greenhouse2/area1/temperature",
+                    "humidityDataTopic": "greenhouse2/area1/humidity",
+                    "luminosityDataTopic": "greenhouse2/area1/luminosity",
+                    "motionTopic": "greenhouse2/area1/motion",
+                    "motionDetected": 0,
+                    "pumpActuation": "greenhouse2/area1/actuation/pump",
+                    "lightActuation": "greenhouse2/area1/actuation/light",
+                    "ventilationActuation": "greenhouse2/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
                 }
             ]
         }
@@ -55,7 +97,7 @@
             "ID": 9,
             "serviceName": "ThreholdManagement",
             "last_updated": "",
-            "last_update": 1743975412.0422738
+            "last_update": 1745494401.1492865
         },
         {
             "ID": 3,
