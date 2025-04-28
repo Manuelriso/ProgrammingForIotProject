@@ -278,6 +278,9 @@ class CatalogREST(object):
                 if(greenhouseRequested==registeredGreenHouse["greenhouseID"]):
                     greenhouse=registeredGreenHouse
             
+            if greenhouse is None:
+                raise cherrypy.HTTPError(404, "Greenhouse not found")
+            
             areas=greenhouse["areas"]
             
             updatedAreas=[]
@@ -303,6 +306,72 @@ class CatalogREST(object):
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
             return json.dumps(data)
+        
+        
+    def DELETE(self,*uri,**params):
+            body=cherrypy.request.body.read()
+            
+            #greenhouse/1 it deletes the greenhouse with ID=1
+            if(len(uri)==2 and uri[0]=="greenhouse"):
+                grennhouseID=int(uri[1])
+                
+                with open("catalog.json","r") as file:
+                        data=json.load(file)
+                
+                updatedGreenhouses=[]
+                for registeredGreenhouse in data["greenhouses"]:
+                    if(registeredGreenhouse["greenhouseID"]==grennhouseID):
+                        continue
+                    else:
+                        updatedGreenhouses.append(registeredGreenhouse)
+                
+                data["greenhouses"]=updatedGreenhouses
+                with open("catalog.json","w")as file:
+                    json.dump(data,file,indent=4)
+                
+                return json.dumps(data)
+            
+            
+            #greenhouse1/area/1 it deletes the area with ID=1 in the greenhouse 1
+            if(len(uri)==3 and uri[1]=="area"):
+                grennhouseID=int(uri[0].replace("greenhouse",""))
+                areaID=int(uri[2])
+                
+                with open("catalog.json","r") as file:
+                        data=json.load(file)
+                
+                greenhouses=data["greenhouses"]
+                for registeredGreenHouse in greenhouses:
+                    if(grennhouseID==registeredGreenHouse["greenhouseID"]):
+                        greenhouse=registeredGreenHouse
+                
+                if greenhouse is None:
+                    raise cherrypy.HTTPError(404, "Greenhouse not found")
+                areas=greenhouse["areas"]
+                
+                updatedAreas=[]
+                for registeredArea in areas:
+                    if(registeredArea["ID"]==areaID):
+                        continue
+                    else:
+                        updatedAreas.append(registeredArea)
+                
+                
+                greenhouse["areas"]=updatedAreas
+                greenhouse["numberOfAreas"]=len(updatedAreas)
+                
+                updatedGreenhouses=[]
+                for registeredGreenhouses in data["greenhouses"]:
+                    if(registeredGreenhouses["greenhouseID"]==greenhouse["greenhouseID"]):
+                        updatedGreenhouses.append(greenhouse)
+                    else:
+                        updatedGreenhouses.append(registeredGreenhouses)
+                
+                
+                data["greenhouses"]=updatedGreenhouses
+                with open("catalog.json","w")as file:
+                    json.dump(data,file,indent=4)
+                return json.dumps(data)
 
 
 if __name__=="__main__":
