@@ -1,8 +1,49 @@
 version: '3.5'
 services:
   catalog:
-    build: ./catalog
+    build: ./Catalog
     expose:
     - "80"
     ports:
     - "8080:80"
+  Node-RED:
+    build: ./Node-RED
+    ports:
+      - "8082:8082"
+    depends_on: 
+      - catalog    
+    links:
+      - catalog
+  security:
+    build: ./Security
+    expose:
+      - "30"
+    ports:
+      - "30:30" 
+    depends_on:
+      - catalog  
+
+  thingspeak_adaptor:
+    build: ./ThingSpeak Adaptor  
+    expose:
+      - "9090"
+    ports:
+      - "9090:9090" 
+    depends_on:
+      - catalog  
+    links:
+      - catalog 
+      - threshold_management
+
+  threshold_management:
+    build: ./Threshold Management 
+    expose:
+      - "8081"
+    ports:
+      - "8081:8081"  
+    depends_on:
+      - catalog  
+      - thingspeak_adaptor  
+    links:
+      - catalog 
+      - thingspeak_adaptor  
