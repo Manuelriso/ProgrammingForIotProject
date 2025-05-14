@@ -43,7 +43,7 @@
                 {
                     "ID": 3,
                     "humidityThreshold": 80,
-                    "temperatureThreshold": 9,
+                    "temperatureThreshold": 12,
                     "luminosityThreshold": 60,
                     "plants": "ananas",
                     "temperatureDataTopic": "greenhouse1/area3/temperature",
@@ -91,25 +91,25 @@
             "ID": 6,
             "serviceName": "Security",
             "last_updated": "",
-            "last_update": 1744275067.362858
+            "last_update": 1747218823.994794
         },
         {
             "ID": 9,
             "serviceName": "ThreholdManagement",
             "last_updated": "",
-            "last_update": 1745494401.1492865
+            "last_update": 1747214337.1203213
         },
         {
             "ID": 3,
             "serviceName": "ThingspeakAdaptor",
             "last_updated": "",
-            "last_update": 1743975435.2566676
+            "last_update": 1747218823.9269042
         },
         {
             "ID": 10,
             "serviceName": "NodeRED",
             "last_updated": "",
-            "last_update": 1744363404.2250102
+            "last_update": 1747214396.62994
         }
     ]
 }

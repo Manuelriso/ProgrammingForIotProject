@@ -187,6 +187,8 @@ class CatalogREST(object):
         
         if(len(uri)==1 and uri[0]=="service"):
             service=json.loads(body)
+            print("I'm updating the service\n\n")
+            print(str(service))
             
             with open("catalog.json","r") as file:
                     data=json.load(file)

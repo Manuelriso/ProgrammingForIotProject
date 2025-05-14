@@ -1,13 +1,15 @@
 version: '3.5'
 services:
   catalog:
-    build: ./Catalog
+    build: ./catalog
     expose:
     - "80"
     ports:
     - "8080:80"
-  Node-RED:
-    build: ./Node-RED
+    volumes:
+    - ./catalog/catalog.json:/app/catalog.json
+  node-red:
+    build: ./node-red
     ports:
       - "8082:8082"
     depends_on: 
@@ -15,16 +17,23 @@ services:
     links:
       - catalog
   security:
-    build: ./Security
+    build: ./security
     expose:
       - "30"
     ports:
       - "30:30" 
     depends_on:
-      - catalog  
+      - catalog 
+
+  nodered-dashboard:
+    image: nodered/node-red
+    container_name: nodered-dashboard
+    ports:
+      - "1880:1880"
+    restart: unless-stopped 
 
   thingspeak_adaptor:
-    build: ./ThingSpeak Adaptor  
+    build: ./thingSpeak adaptor  
     expose:
       - "9090"
     ports:
@@ -33,10 +42,9 @@ services:
       - catalog  
     links:
       - catalog 
-      - threshold_management
 
   threshold_management:
-    build: ./Threshold Management 
+    build: ./threshold management 
     expose:
       - "8081"
     ports:
