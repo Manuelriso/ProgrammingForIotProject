@@ -88,7 +88,8 @@ class CatalogREST(object):
             data["devices"]=devices
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
-                
+            
+            cherrypy.response.status(201)    
             return json.dumps(data)
         
         if(len(uri)==1 and uri[0]=="service"):
@@ -104,6 +105,8 @@ class CatalogREST(object):
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
             
+            
+            cherrypy.response.status(201)
             return json.dumps(data)
         
         
@@ -142,6 +145,7 @@ class CatalogREST(object):
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
             
+            cherrypy.response.status(201)
             return json.dumps(data)
         
         #/greenhouse
@@ -158,8 +162,8 @@ class CatalogREST(object):
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
             
+            cherrypy.response.status(201)
             return json.dumps(data)
-        
         
                 
     def PUT(self,*uri,**params):
