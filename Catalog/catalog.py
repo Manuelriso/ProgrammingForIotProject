@@ -83,7 +83,7 @@ class CatalogREST(object):
             devices=data["devices"]
             for registeredDevice in devices:
                 if(device["ID"]==registeredDevice["ID"]):
-                    raise cherrypy.HTTPError(404,"Error in the id")
+                    raise cherrypy.HTTPError(400,"Error in the id")
             devices.append(device)
             data["devices"]=devices
             with open("catalog.json","w") as file:

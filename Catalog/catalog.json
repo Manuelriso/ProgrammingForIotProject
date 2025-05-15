@@ -15,6 +15,9 @@
                     "luminosityDataTopic": "greenhouse1/area1/luminosity",
                     "motionTopic": "greenhouse1/area1/motion",
                     "motionDetected": 0,
+                    "currentTemperature":0.0,
+                    "currentHumidity":0,
+                    "currentLuminosity":0,
                     "pumpActuation": "greenhouse1/area1/actuation/pump",
                     "lightActuation": "greenhouse1/area1/actuation/light",
                     "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
@@ -33,6 +36,9 @@
                     "luminosityDataTopic": "greenhouse1/area2/luminosity",
                     "motionTopic": "greenhouse1/area2/motion",
                     "motionDetected": 0,
+                    "currentTemperature":0.0,
+                    "currentHumidity":0,
+                    "currentLuminosity":0,
                     "pumpActuation": "greenhouse1/area2/actuation/pump",
                     "lightActuation": "greenhouse1/area2/actuation/light",
                     "ventilationActuation": "greenhouse1/area2/actuation/ventilation",
@@ -51,6 +57,9 @@
                     "luminosityDataTopic": "greenhouse1/area3/luminosity",
                     "motionTopic": "greenhouse1/area3/motion",
                     "motionDetected": 0,
+                    "currentTemperature":0.0,
+                    "currentHumidity":0,
+                    "currentLuminosity":0,
                     "pumpActuation": "greenhouse1/area3/actuation/pump",
                     "lightActuation": "greenhouse1/area3/actuation/light",
                     "ventilationActuation": "greenhouse1/area3/actuation/ventilation",
@@ -75,6 +84,9 @@
                     "luminosityDataTopic": "greenhouse2/area1/luminosity",
                     "motionTopic": "greenhouse2/area1/motion",
                     "motionDetected": 0,
+                    "currentTemperature":0.0,
+                    "currentHumidity":0,
+                    "currentLuminosity":0,
                     "pumpActuation": "greenhouse2/area1/actuation/pump",
                     "lightActuation": "greenhouse2/area1/actuation/light",
                     "ventilationActuation": "greenhouse2/area1/actuation/ventilation",
@@ -91,13 +103,13 @@
             "ID": 6,
             "serviceName": "Security",
             "last_updated": "",
-            "last_update": 1747218823.994794
+            "last_update": 1747297985.0797138
         },
         {
             "ID": 9,
             "serviceName": "ThreholdManagement",
             "last_updated": "",
-            "last_update": 1747214337.1203213
+            "last_update": 1747295266.1427205
         },
         {
             "ID": 3,
@@ -109,7 +121,7 @@
             "ID": 10,
             "serviceName": "NodeRED",
             "last_updated": "",
-            "last_update": 1747214396.62994
+            "last_update": 1747295265.4392347
         }
     ]
 }
