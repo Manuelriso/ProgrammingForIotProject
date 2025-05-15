@@ -145,7 +145,7 @@ class CatalogREST(object):
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
             
-            cherrypy.response.status(201)
+            cherrypy.response.status = 201
             return json.dumps(data)
         
         #/greenhouse
@@ -335,7 +335,7 @@ class CatalogREST(object):
                 with open("catalog.json","w")as file:
                     json.dump(data,file,indent=4)
                 
-                cherrypy.response.status(204)
+                cherrypy.response.status= 204
                 return json.dumps(data)
             
             
@@ -379,7 +379,7 @@ class CatalogREST(object):
                 with open("catalog.json","w")as file:
                     json.dump(data,file,indent=4)
                     
-                cherrypy.response.status(204)
+                cherrypy.response.status = 204
                 return json.dumps(data)
 
 
