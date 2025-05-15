@@ -2,7 +2,9 @@
     "greenhouses": [
         {
             "greenhouseID": 1,
+            "telegram_ID": 1513626438,
             "numberOfAreas": 3,
+            "creation_date": "09-07-1816",
             "areas": [
                 {
                     "ID": 1,
@@ -62,7 +64,9 @@
         },
         {
             "greenhouseID": 2,
+            "telegram_ID": 1513626438,
             "numberOfAreas": 1,
+            "creation_date": "09-07-1816",
             "areas": [
                 {
                     "ID": 1,
