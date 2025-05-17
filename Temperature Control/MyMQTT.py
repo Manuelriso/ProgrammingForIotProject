@@ -2,10 +2,10 @@ import paho.mqtt.client as PahoMQTT
 import json
 
 class MyMQTT:
-    def __init__(self, broker, port, clinet_id, notifier):
+    def __init__(self, broker, port, client_id, notifier):
         self.broker=broker
         self.port=port
-        self.client_id=clinet_id
+        self.client_id=client_id
         self.notifier=notifier
         self._issubscriber=False
         self._paho_mqtt=PahoMQTT.Client(self.client_id, True)

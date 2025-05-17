@@ -126,6 +126,24 @@
             "serviceName": "NodeRED",
             "last_updated": "",
             "last_update": 1747295265.4392347
+        },
+        {
+            "ID": 73,
+            "serviceName": "pump",
+            "last_updated": "",
+            "last_update": 1747465497.2767563
+        },
+        {
+            "ID": 64,
+            "serviceName": "Temp",
+            "last_updated": "",
+            "last_update": 1747463016.4259148
+        },
+        {
+            "ID": 34,
+            "serviceName": "light",
+            "last_updated": "",
+            "last_update": 1747466806.9173858
         }
     ]
 }

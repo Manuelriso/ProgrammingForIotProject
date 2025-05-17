@@ -1,0 +1,15 @@
+{
+    "catalogURL": "http://localhost:8082/",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "serviceInfo": {
+        "ID": 34,
+        "serviceName": "light",
+        "last_updated": ""
+    },
+    "DeviceInfo": {
+        "ID": 54,
+        "deviceName": "LightController",
+        "deviceType": "controller"
+    }
+}

@@ -1,7 +1,7 @@
 import cherrypy
 import json
 import time
-from pumpcontroller import PumpController
+from LightController import LightController
 from CatalogClient import CatalogAPI, Catalog_Navigator
 
 if __name__ == "__main__":
@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # Initialize components directly
     catalog_navigator = Catalog_Navigator(settings=settings)  # Pass settings here
     catalog_api = CatalogAPI(catalog_navigator, settings)
-    pump_controller = PumpController(settings)
+    pump_controller = LightController(settings)
     
     # Register the service
     catalog_api.registerService()

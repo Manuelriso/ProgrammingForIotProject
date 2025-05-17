@@ -4,10 +4,9 @@ import time
 import threading
 from CatalogClient import *
 import uuid
-import requests
 
 
-class TempController:
+class LightController:
     def __init__(self, settings):
         self.settings = settings
         self.broker = settings["brokerIP"]
@@ -32,8 +31,8 @@ class TempController:
             # Subscribe to each topic individually
             for topic in current_topics:
                 if topic:  # Ensure topic is not None
-                    self.mqtt_client.mysubscribe(topic)
                     print(f"Subscribed to new topic: {topic}")
+                    self.mqtt_client.mysubscribe(topic)
         except Exception as e:
             print(f"Error initializing pump controller: {e}")
             # Initialize with empty catalog navigator if there's an error
@@ -116,8 +115,7 @@ class TempController:
 
             # Get thresholds from catalog once
             thresholds = {
-                "temperature": self.catalog_navigator.searchByThreshold(greenhouse_id, area_id, "temperatureThreshold"),
-                "humidity": self.catalog_navigator.searchByThreshold(greenhouse_id, area_id, "humidityThreshold")
+                "luminosity": self.catalog_navigator.searchByThreshold(greenhouse_id, area_id, "luminosityThreshold")
             }
 
             # Validate thresholds
@@ -126,34 +124,34 @@ class TempController:
                 return
 
             # Determine pump state based on sensor type
-            temp_value = 0
-            if sensor_type == "temperature" and sensor_value > thresholds["temperature"]:
-                print(f"High temperature ({sensor_value} > {thresholds['temperature']}), activating pump")
-                temp_value = 1
-            elif sensor_type == "humidity" and sensor_value < thresholds["humidity"]:
-                print(f"Low humidity ({sensor_value} < {thresholds['humidity']}), activating pump")
-                temp_value = 1
-            elif sensor_type not in ["temperature", "humidity"]:
+            lum_value = "off"
+            if sensor_type == "luminosity" and sensor_value > thresholds["luminosity"]:
+                print(f"High luminosity ({sensor_value} > {thresholds['luminosity']}), activating light")
+                lum_value = "off"
+            elif sensor_type == "luminosity" and sensor_value < thresholds["luminosity"]:
+                print(f"Low luminosity ({sensor_value} <= {thresholds['luminosity']}), deactivating light")
+                lum_value = "on"
+            elif sensor_type not in ["luminosity"]:
                 print(f"Ignoring unsupported sensor type: {sensor_type}")
                 return
 
             # Prepare and publish pump command
-            pump_topic = f"greenhouse{greenhouse_id}/area{area_id}/actuation/ventilation"
+            pump_topic = f"greenhouse{greenhouse_id}/area{area_id}/actuation/light"
             pump_msg = {
                 "bn": f"greenhouse{greenhouse_id}/area{area_id}",
                 "e": [{
                     "n": "pump",
-                    "v": temp_value,
+                    "v": lum_value,
                     "t": timestamp,
                     "u": "boolean"
                 }]
             }
             self.mqtt_client.mypublish(pump_topic, json.dumps(pump_msg))
-            print(f"Published pump {temp_value} to {pump_topic}")
+            print(f"Published pump {lum_value} to {pump_topic}")
 
             # Update catalog through API
             catalog_api = CatalogAPI(self.catalog_navigator, self.settings)
-            update_result = catalog_api.UpdateActuation(greenhouse_id, area_id, ventilation=temp_value)
+            update_result = catalog_api.UpdateActuation(greenhouse_id, area_id, light=lum_value)
             
             if "error" in update_result.get("message", "").lower():
                 print(f"Failed to update catalog: {update_result['message']}")

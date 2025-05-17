@@ -105,7 +105,7 @@ class Catalog_Navigator:
         return service_ids
 
 
-    def insert_temp_actuation(self, greenhouse_id, area_id, value):
+    def insert_light_actuation(self, greenhouse_id, area_id, value):
         # Validate input
         if value not in [0, 1]:
             return {"message": "Invalid value. Must be 0 or 1."}
@@ -116,10 +116,10 @@ class Catalog_Navigator:
                 # Search for the area
                 for area in greenhouse["areas"]:
                     if area["ID"] == area_id:
-                        # Update the ventilation value
-                        area["ventilation"] = value
+                        # Update the light value
+                        area["light"] = value
                         return {
-                            "message": f"ventilation actuation updated to {value} in greenhouse {greenhouse_id}, area {area_id}."
+                            "message": f"light actuation updated to {value} in greenhouse {greenhouse_id}, area {area_id}."
                         }
                 return {"message": f"Area ID {area_id} not found in greenhouse {greenhouse_id}"}
         return {"message": f"Greenhouse ID {greenhouse_id} not found"}
@@ -237,7 +237,7 @@ class CatalogAPI(object):
     
     # Handle PUT requests for updating an actuation
 
-    def UpdateActuation(self, greenhouseID, areaID, ventilation=None):
+    def UpdateActuation(self, greenhouseID, areaID, light=None):
         try:
             # 1. Get the entire catalog
             response = requests.get(f'{self.catalogURL}')
@@ -267,9 +267,9 @@ class CatalogAPI(object):
             if area is None:
                 return {"message": f"Area {areaID} not found in greenhouse {greenhouseID}"}
             
-            # 3. Update the ventilation value
-            if ventilation is not None:
-                area["ventilation"] = ventilation
+            # 3. Update the light value
+            if light is not None:
+                area["light"] = light
             
             # 4. Prepare the payload (entire area with updated values)
             update_payload = area
@@ -278,7 +278,7 @@ class CatalogAPI(object):
             response = requests.put(f'{self.catalogURL}/actuation',json=update_payload)
             response.raise_for_status()
             
-            print(f"ventilation actuation updated to {ventilation} in greenhouse {greenhouseID}, area {areaID}")
+            print(f"light actuation updated to {light} in greenhouse {greenhouseID}, area {areaID}")
             return {
                 "message": "Actuation updated successfully",
                 "updated_area": area

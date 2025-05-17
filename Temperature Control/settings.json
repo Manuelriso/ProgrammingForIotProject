@@ -1,0 +1,15 @@
+{
+    "catalogURL": "http://localhost:8082/",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "serviceInfo": {
+        "ID": 64,
+        "serviceName": "Temp",
+        "last_updated": ""
+    },
+    "DeviceInfo": {
+        "ID": 54,
+        "deviceName": "TempController",
+        "deviceType": "controller"
+    }
+}

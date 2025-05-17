@@ -3,6 +3,8 @@ import json
 import time
 import threading
 from CatalogClient import *
+import uuid
+import requests
 
 
 class PumpController:
@@ -11,28 +13,31 @@ class PumpController:
         self.broker = settings["brokerIP"]
         self.port = settings["brokerPort"]
         
-        
-        # Initialize MyMQTT with notifier
-        #NO client ID in the settings.json
-        self.mqtt_client = MyMQTT(self.broker, self.port, settings["clientID"], notifier=self)
-        #self.mqtt_client.start()
+        # Initialize MyMQTT
+        self.mqtt_client = MyMQTT(client_id=str(uuid.uuid1()), broker=self.broker, port=self.port, notifier=self)
+        self.mqtt_client.start()
 
-        # Initialize Catalog_Navigator
-        self.catalog_navigator = Catalog_Navigator()
-        GH_ID= self.catalog_navigator.get_greenhouse_ID()
-        Areas_ID= self.catalog_navigator.get_areas_ID()
-        devices_ID= self.catalog_navigator.get_devices_ID()
-        Services_ID= self.catalog_navigator.get_services_ID()
-        
-        
-
-        # Get all subscription topics from the catalog
-        subscription_topics = self.catalog_navigator.get_all_subscription_topics()
-
-        # Subscribe to each topic individually
-        for topic in subscription_topics:
-            if topic:  # Ensure topic is not None
-                self.mqtt_client.mysubscribe(topic)
+        try:
+            # Fetch catalog data
+            response = requests.get(f'{self.settings["catalogURL"]}')
+            response.raise_for_status()
+            catalog_data = response.json()
+            
+            # Create Catalog_Navigator with the fetched data and settings
+            self.catalog_navigator = Catalog_Navigator(catalog_data=catalog_data, settings=self.settings)
+            
+            # Get current subscription topics from catalog
+            current_topics = set(self.catalog_navigator.get_all_subscription_topics())
+            
+            # Subscribe to each topic individually
+            for topic in current_topics:
+                if topic:  # Ensure topic is not None
+                    self.mqtt_client.mysubscribe(topic)
+                    print(f"Subscribed to new topic: {topic}")
+        except Exception as e:
+            print(f"Error initializing pump controller: {e}")
+            # Initialize with empty catalog navigator if there's an error
+            self.catalog_navigator = Catalog_Navigator(settings=self.settings)
 
     def startSim(self):
         """Start the MQTT client"""
@@ -47,40 +52,52 @@ class PumpController:
         
         
     def update_subscriptions(self):
-        """Update MQTT subscriptions based on current catalog state"""
-        # Get current topics from catalog
-        current_topics = set(self.catalog_navigator.get_all_subscription_topics())
-        
-        # Get currently subscribed topics
-        subscribed_topics = set(getattr(self.mqtt_client, 'subscribed_topics', []))
-        
-        # Unsubscribe from removed topics
-        for topic in subscribed_topics - current_topics:
-            if topic:  # Ensure topic is not None
-                self.mqtt_client.unsubscribe(topic)
-                print(f"Unsubscribed from removed topic: {topic}")
-        
-        # Subscribe to new topics
-        for topic in current_topics - subscribed_topics:
-            if topic:  # Ensure topic is not None
-                self.mqtt_client.mysubscribe(topic)
-                print(f"Subscribed to new topic: {topic}")
-        
-        # Update the subscribed topics list
-        self.mqtt_client.subscribed_topics = list(current_topics)
-        
+        """Update MQTT subscriptions based on current catalog state via REST API"""
+        try:
+            # Step 1: Get the full catalog via REST
+            response = requests.get(f'{self.settings["catalogURL"]}')
+            response.raise_for_status()
+            catalog_data = response.json()
+
+            # Step 2: Create Catalog_Navigator with the fetched data
+            navigator = Catalog_Navigator(catalog_data)
+
+            # Step 3: Get current subscription topics from catalog
+            current_topics = set(navigator.get_all_subscription_topics())
+
+            # Step 4: Get currently subscribed topics from MQTT client
+            subscribed_topics = set(getattr(self.mqtt_client, 'subscribed_topics', []))
+
+            # Step 5: Unsubscribe from removed topics
+            for topic in subscribed_topics - current_topics:
+                if topic:
+                    self.mqtt_client.unsubscribe(topic)
+                    print(f"Unsubscribed from removed topic: {topic}")
+
+            # Step 6: Subscribe to new topics
+            for topic in current_topics - subscribed_topics:
+                if topic:
+                    self.mqtt_client.mysubscribe(topic)
+                    print(f"Subscribed to new topic: {topic}")
+
+            # Step 7: Update local record of subscribed topics
+            self.mqtt_client.subscribed_topics = list(current_topics)
+
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to update subscriptions: {e}")
+        except Exception as e:
+            print(f"Error updating subscriptions: {e}")
             
     # Notify 
     # Notify gy getting the topic that was subscribed to and the payload and then does some processing and then publish and put request to the required key value
     def notify(self, topic, payload):
         try:
-            # Parse topic format: greenhouseX/areaY/sensorType
+            # Parse topic and payload
             topic_parts = topic.split('/')
             if len(topic_parts) != 3:
                 print(f"Ignoring malformed topic: {topic}")
                 return
 
-            # Extract numeric IDs
             try:
                 greenhouse_id = int(topic_parts[0].replace("greenhouse", ""))
                 area_id = int(topic_parts[1].replace("area", ""))
@@ -89,7 +106,6 @@ class PumpController:
                 print(f"Invalid ID format in topic: {topic}")
                 return
 
-            # Parse payload
             try:
                 payload_dict = json.loads(payload)
                 sensor_value = float(payload_dict.get("value", 0))
@@ -98,32 +114,31 @@ class PumpController:
                 print(f"Invalid payload: {payload} - Error: {str(e)}")
                 return
 
-            # Process based on sensor type
-            pump_value = 0  # Default to off
-            
-            if sensor_type == "temperature":
-                # Example: Turn on pump if temperature too high
-                threshold = self.catalog_navigator.searchByThreshold(greenhouse_id, area_id, "tempThreshold")
-                if threshold and sensor_value > threshold:
-                    pump_value = 1
-                    print(f"High temperature ({sensor_value} > {threshold}), activating pump")
-                    
-            elif sensor_type == "humidity":
-                # Example: Turn on pump if humidity too low
-                threshold = self.catalog_navigator.searchByThreshold(greenhouse_id, area_id, "humidityThreshold")
-                if threshold and sensor_value < threshold:
-                    pump_value = 1
-                    print(f"Low humidity ({sensor_value} < {threshold}), activating pump")
-                    
-            
-            else:
+            # Get thresholds from catalog once
+            thresholds = {
+                "temperature": self.catalog_navigator.searchByThreshold(greenhouse_id, area_id, "temperatureThreshold"),
+                "humidity": self.catalog_navigator.searchByThreshold(greenhouse_id, area_id, "humidityThreshold")
+            }
+
+            # Validate thresholds
+            if None in thresholds.values():
+                print(f"Missing thresholds for greenhouse {greenhouse_id}, area {area_id}")
+                return
+
+            # Determine pump state based on sensor type
+            pump_value = 0
+            if sensor_type == "temperature" and sensor_value > thresholds["temperature"]:
+                print(f"High temperature ({sensor_value} > {thresholds['temperature']}), activating pump")
+                pump_value = 1
+            elif sensor_type == "humidity" and sensor_value < thresholds["humidity"]:
+                print(f"Low humidity ({sensor_value} < {thresholds['humidity']}), activating pump")
+                pump_value = 1
+            elif sensor_type not in ["temperature", "humidity"]:
                 print(f"Ignoring unsupported sensor type: {sensor_type}")
                 return
 
-            # Create pump actuation topic
+            # Prepare and publish pump command
             pump_topic = f"greenhouse{greenhouse_id}/area{area_id}/actuation/pump"
-            
-            # Prepare pump command message
             pump_msg = {
                 "bn": f"greenhouse{greenhouse_id}/area{area_id}",
                 "e": [{
@@ -133,21 +148,18 @@ class PumpController:
                     "u": "boolean"
                 }]
             }
-
-            # Publish pump command
             self.mqtt_client.mypublish(pump_topic, json.dumps(pump_msg))
             print(f"Published pump {pump_value} to {pump_topic}")
 
-            # Update catalog
-            self.catalog_navigator.insert_pump_actuation(greenhouse_id, area_id, pump_value)
-            
-            # Call UpdateActuation through CatalogAPI
+            # Update catalog through API
             catalog_api = CatalogAPI(self.catalog_navigator, self.settings)
-            catalog_api.UpdateActuation(greenhouse_id, area_id, pump=pump_value)
+            update_result = catalog_api.UpdateActuation(greenhouse_id, area_id, pump=pump_value)
+            
+            if "error" in update_result.get("message", "").lower():
+                print(f"Failed to update catalog: {update_result['message']}")
 
         except Exception as e:
             print(f"Error in notify: {str(e)}")
-
 
 
     

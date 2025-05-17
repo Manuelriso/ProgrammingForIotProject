@@ -4,19 +4,30 @@ from datetime import datetime
 import cherrypy
 import time
 
-file_path="Catalog/catalog.json"
-# Catalog_Navigator class handles the device catalog and implements the required methods
+
 class Catalog_Navigator:
-    def __init__(self):
+    def __init__(self, catalog_data=None, settings=None):
+        self.settings = settings
+        # Initialize with default structure
+        self.data = {"greenhouses": [], "devices": [], "services": []}
         
-        # Initialize with catalog data (usually loaded from a JSON file)
-        try:
-            with open(file_path, "r") as catalog_file:
-                self.data = json.load(catalog_file)
-            print("Catalog data loaded successfully.")
-        except Exception as e:
-            print(f"Error loading catalog: {e}")
-            self.data = None
+        # If catalog_data is provided, update our data with it
+        if catalog_data:
+            self.data.update(catalog_data)
+            
+        # If we have settings and no data, try to fetch from catalogURL
+        if self.settings and "catalogURL" in self.settings and not catalog_data:
+            try:
+                response = requests.get(f'{self.settings["catalogURL"]}/catalog')
+                response.raise_for_status()
+                fetched_data = response.json()
+                # Only update if the fetched data has the expected structure
+                if all(key in fetched_data for key in ["greenhouses", "devices", "services"]):
+                    self.data.update(fetched_data)
+                    print("Catalog data loaded successfully from REST API.")
+            except Exception as e:
+                print(f"Error loading catalog: {e}")
+                # Keep the default structure
 
 
     def get_catalog(self):
@@ -92,46 +103,6 @@ class Catalog_Navigator:
         for service in self.data["services"]:
             service_ids.append(service["ID"])
         return service_ids
-
-    
-    # Insert a new device into the catalog if it doesn't already exist
-    def insertDevice(self, ID, device_name):
-        # Check if the device with the same ID or name already exists
-        for device in self.data["devices"]:
-            if device["ID"] == ID or device.get("deviceName") == device_name:
-                return {"message": "Device with this ID or name already exists"}
-
-        # Insert the new device
-        new_device = {
-            "ID": ID,
-            "deviceName": device_name
-        }
-        self.data["devices"].append(new_device)
-        return {"message": "Device inserted successfully", "device": new_device}
-    
-    def insertService(self):
-        try:
-            # Load serviceInfo from settings.json
-            with open("settings.json", "r") as settings_file:
-                settings = json.load(settings_file)
-                service_info = settings[0]["serviceInfo"]  # Access the first dictionary in the list
-
-            ID = service_info["ID"]
-            service_name = service_info["serviceName"]
-
-            # Check if the service with the same ID or name already exists
-            for service in self.data["services"]:
-                if service["ID"] == ID or service.get("serviceName") == service_name:
-                    return {"message": "Service with this ID or name already exists"}
-
-            # Insert the new service with additional fields
-            service_info["last_update"] = 0.0  # Add/update this key
-            self.data["services"].append(service_info)
-
-            return {"message": "Service inserted successfully", "service": service_info}
-
-        except Exception as e:
-            return {"message": f"Error inserting service: {str(e)}"}
 
 
     def insert_pump_actuation(self, greenhouse_id, area_id, value):
@@ -250,74 +221,73 @@ class CatalogAPI(object):
         self.settings = settings
         self.catalogURL = settings['catalogURL']
         self.serviceInfo = settings['serviceInfo']
-        self.deviceInfo = settings['DeviceInfo']
-    
+
     
     # Handle POST requests for inserting a new service
     def registerService(self):
         self.serviceInfo['last_update'] = time.time()  # Use proper timestamp
         try:
-            response = requests.post(
-                f'{self.catalogURL}/service',
-                json=self.serviceInfo  # use `json=` to set content-type automatically
-            )
-            return response.json()
+            requests.post(f'{self.catalogURL}/service',json=self.serviceInfo )
         except requests.exceptions.RequestException as e:
             return {"message": f"Failed to register service: {e}"}
         
-        
-        
-    # Handle POST requests for inserting a new device
-    def registerDevice(self):
-        self.serviceInfo['last_update'] = time.time()  # Use proper timestamp
-        try:
-            response = requests.post(
-                f'{self.catalogURL}/service',
-                json=self.deviceInfo  # use `json=` to set content-type automatically
-            )
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"message": f"Failed to register service: {e}"}
-    
-    
+    def updateService(self):
+        self.serviceInfo['last_update'] = time.time()
+        requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))   
     
     # Handle PUT requests for updating an actuation
 
-    def UpdateActuation(self, greenhouseID, areaID,pump=None):
-        # Construct the dictionary of fields to update
-        updates = {}
-        
-        if pump is not None:
-            updates["pump"] = 1
-
-        if not updates:
-            print("No actuation values provided to update.")
-            return
-
-        payload = {
-            "greenhouseID": greenhouseID,
-            "areaID": areaID,
-            "updates": updates
-        }
-
+    def UpdateActuation(self, greenhouseID, areaID, pump=None):
         try:
-            response = requests.put(f"{self.catalogURL}/actuation", json=payload)
-            if response.status_code == 200:
-                print("Actuation updated successfully.")
-            else:
-                print(f"Failed to update actuation. Status code: {response.status_code} | Response: {response.text}")
+            # 1. Get the entire catalog
+            response = requests.get(f'{self.catalogURL}')
+            response.raise_for_status()
+            catalog_data = response.json()
+            
+            # 2. Use Catalog_Navigator to find and update the area
+            navigator = Catalog_Navigator(catalog_data)
+            
+            # Find the greenhouse
+            greenhouse = None
+            for gh in navigator.data["greenhouses"]:
+                if gh["greenhouseID"] == greenhouseID:
+                    greenhouse = gh
+                    break
+            
+            if greenhouse is None:
+                return {"message": f"Greenhouse {greenhouseID} not found"}
+            
+            # Find the area
+            area = None
+            for a in greenhouse["areas"]:
+                if a["ID"] == areaID:
+                    area = a
+                    break
+            
+            if area is None:
+                return {"message": f"Area {areaID} not found in greenhouse {greenhouseID}"}
+            
+            # 3. Update the pump value
+            if pump is not None:
+                area["pump"] = pump
+            
+            # 4. Prepare the payload (entire area with updated values)
+            update_payload = area
+            
+            # 5. Make the PUT request to update the area
+            response = requests.put(f'{self.catalogURL}/actuation',json=update_payload)
+            response.raise_for_status()
+            
+            print(f"Pump actuation updated to {pump} in greenhouse {greenhouseID}, area {areaID}")
+            return {
+                "message": "Actuation updated successfully",
+                "updated_area": area
+            }
+            
         except requests.exceptions.RequestException as e:
             print(f"Error updating actuation: {e}")
+            return {"message": f"Failed to update actuation: {e}"}
     
-    # Handle PUT requests for updating a service
-    def updateService(self):
-        self.serviceInfo['last_update'] = time.time()
-        requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
-        
-    # Handle PUT requests for updating a new service 
-    def updateDevice(self):
-        self.serviceInfo['last_update'] = time.time()
-        requests.put(f'{self.catalogURL}/service', data=json.dumps(self.deviceInfo))   
 
     
     
