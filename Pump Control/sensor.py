@@ -51,7 +51,7 @@ class MyMQTT:
 
 if __name__ == '__main__':
     c = Catalog_Navigator()
-    catalog = c.getCatalog()
+    catalog = c.get_catalog()
     pub = MyMQTT(10, "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
 
