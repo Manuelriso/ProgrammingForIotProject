@@ -1,0 +1,81 @@
+import time
+import random
+import json
+# import board # Uncomment if using a DHT sensor
+# import adafruit_dht # Uncomment if using a DHT sensor
+import paho.mqtt.client as PahoMQTT
+
+# sensor = adafruit_dht.DHT11(board.D4) # Uncomment if using a DHT sensor
+
+def generate_temperature(base_temp=20.0, variation=8.0):
+    """Simulate a temperature value around a base temperature."""
+    return round(random.uniform(base_temp - variation, base_temp + variation), 1)
+
+def generate_humidity(base_humidity=60.0, variation=10.0):
+    """Simulate a humidity value around a base percentage."""
+    return round(random.uniform(base_humidity - variation, base_humidity + variation), 1)
+
+def generate_binary():
+    """Generate a random binary value (0 or 1)."""
+    return random.randint(0, 1)
+
+class MyMQTT:
+    def __init__(self, clientID, broker, port):
+        self.broker = broker
+        self.port = port
+        self.clientID = clientID
+        self._isSubscriber = False
+        # create an instance of paho.mqtt.client
+        self._paho_mqtt = PahoMQTT.Client(clientID, True)
+        # register the callback
+        self._paho_mqtt.on_connect = self.myOnConnect
+    
+    def myOnConnect(self, paho_mqtt, userdata, flags, rc):
+        print("Connected to %s with result code: %d" % (self.broker, rc))
+    
+    def myPublish(self, topic, msg):
+        # publish a message with a certain topic
+        self._paho_mqtt.publish(topic, json.dumps(msg), 2) # 2 is the qos
+    
+    def start(self):
+        # manage connection to broker
+        self._paho_mqtt.connect(self.broker, self.port)
+        self._paho_mqtt.loop_start()
+
+    def stop(self):
+        self._paho_mqtt.loop_stop()
+        self._paho_mqtt.disconnect()
+
+if '__name__' == '__main__':
+    c = Catalog_Navigator()
+    catalog = c.getCatalog()
+    pub = MyMQTT(10, "mqtt.eclipseprojects.io", 1883)
+    pub.start()
+
+    while True:
+        for i in catalog:
+            for greenhouse in i: # i is greenhouses
+                for area in greenhouse["areas"]:
+                    if area["ID"] == "1":
+                        #sense temperature
+                        topicTemp = c.searchByTopic(1, 1, "temperatureDataTopic")
+                        dictTemp = { "value" : sensor.temperature }
+                        pub.myPublish(topicTemp, dictTemp)
+                        #sense humidity
+                        topicHum = c.searchByTopic(1, 1, "humidityDataTopic")
+                        dictHum = { "value" : sensor.humidity }
+                        pub.myPublish(topicHum, dictHum)
+                    else:
+                        topicTemp = c.searchByTopic(i["greenhouseID"], area["ID"], "temperatureDataTopic")
+                        dictTemp = { "value" : generate_temperature() }
+                        pub.myPublish(topicTemp, dictTemp)
+                        #sense humidity
+                        topicHum = c.searchByTopic(i["greenhouseID"], area["ID"], "humidityDataTopic")
+                        dictHum = { "value" : generate_humidity() }
+                        pub.myPublish(topicHum, dictHum)
+                        #sense motion
+                        topicMotion = c.searchByTopic(i["greenhouseID"], area["ID"], "motionTopic")
+                        generalMotion = generate_binary()
+                        pub.myPublish(topicMotion, generalMotion)
+        
+        time.sleep(15)
