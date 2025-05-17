@@ -138,7 +138,7 @@ if __name__ == '__main__':
                     pub.myPublish(topicMotion, generalMotion)
         
                     # now put request to the catalog
-                    update = requests.put("http://localhost:8082/catalog", json=catalog)
+                    update = requests.put("http://localhost:8082/greenhouse", json=catalog)
                     if update.status_code == 200:
                         print("Catalog updated successfully")
                     else:

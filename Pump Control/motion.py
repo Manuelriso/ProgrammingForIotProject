@@ -58,7 +58,7 @@ if __name__ == '__main__':
         catalog["greenhouses"][0]["areas"][0]["motionDetected"] = 1
         pub.myPublish("greenhouse1/area1/motion", MqttMotion)
         #put
-        update = requests.put("http://localhost:8082/catalog", json=catalog)
+        update = requests.put("http://localhost:8082/greenhouse", json=catalog)
         pir.wait_for_no_motion() #these functions are blocking
         print("Motion stopped")
         MqttMotion = {
@@ -73,5 +73,5 @@ if __name__ == '__main__':
         catalog["greenhouses"][0]["areas"][0]["motionDetected"] = 0
         pub.myPublish("greenhouse1/area1/motion", MqttMotion)
         #put
-        update = requests.put("http://localhost:8082/catalog", json=catalog)
+        update = requests.put("http://localhost:8082/greenhouse", json=catalog)
 
