@@ -4,6 +4,7 @@ import time
 from pumpcontroller import PumpController
 from CatalogClient import CatalogAPI, Catalog_Navigator
 
+
 if __name__ == "__main__":
     # Load settings
     settings = json.load(open('settings.json'))
