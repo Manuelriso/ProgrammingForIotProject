@@ -49,7 +49,7 @@ class MyMQTT:
         self._paho_mqtt.loop_stop()
         self._paho_mqtt.disconnect()
 
-if '__name__' == '__main__':
+if __name__ == '__main__':
     c = Catalog_Navigator()
     catalog = c.getCatalog()
     pub = MyMQTT(10, "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
