@@ -39,7 +39,7 @@ class MyMQTT:
 if __name__ == '__main__':
     c = Catalog_Navigator()
     catalog = c.getCatalog()    
-    pub = MyMQTT(20, "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
+    pub = MyMQTT("20", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
 
     while True:
