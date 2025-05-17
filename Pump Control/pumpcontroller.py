@@ -24,7 +24,7 @@ class PumpController:
             catalog_data = response.json()
             
             # Create Catalog_Navigator with the fetched data and settings
-            self.catalog_navigator = Catalog_Navigator(catalog_data=catalog_data, settings=self.settings)
+            self.catalog_navigator = Catalog_Navigator(settings=self.settings)
             
             # Get current subscription topics from catalog
             current_topics = set(self.catalog_navigator.get_all_subscription_topics())

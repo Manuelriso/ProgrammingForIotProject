@@ -11,23 +11,20 @@ class Catalog_Navigator:
         # Initialize with default structure
         self.data = {"greenhouses": [], "devices": [], "services": []}
         
-        # If catalog_data is provided, update our data with it
-        if catalog_data:
-            self.data.update(catalog_data)
-            
-        # If we have settings and no data, try to fetch from catalogURL
-        if self.settings and "catalogURL" in self.settings and not catalog_data:
-            try:
-                response = requests.get(f'{self.settings["catalogURL"]}/catalog')
-                response.raise_for_status()
-                fetched_data = response.json()
-                # Only update if the fetched data has the expected structure
-                if all(key in fetched_data for key in ["greenhouses", "devices", "services"]):
-                    self.data.update(fetched_data)
-                    print("Catalog data loaded successfully from REST API.")
-            except Exception as e:
-                print(f"Error loading catalog: {e}")
-                # Keep the default structure
+       # If catalog_data is provided, update our data with it
+       # If we have settings and no data, try to fetch from catalogURL
+
+        try:
+            response = requests.get(f'{self.settings["catalogURL"]}/greenhouses')
+            response.raise_for_status()
+            fetched_data = response.json()
+            print(f"Fetched data from {self.settings['catalogURL']}: {fetched_data}")
+             # Only update if the fetched data has the expected structure
+            self.data=fetched_data
+            print("Catalog data loaded successfully from REST API.")
+        except Exception as e:
+            print(f"Error loading catalog: {e}")
+            # Keep the default structure
 
 
     def get_catalog(self):

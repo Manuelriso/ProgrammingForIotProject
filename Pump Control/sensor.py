@@ -50,13 +50,15 @@ class MyMQTT:
         self._paho_mqtt.disconnect()
 
 if __name__ == '__main__':
-    c = Catalog_Navigator()
+    c = Catalog_Navigator(settings=json.load(open('settings.json')))
     catalog = c.get_catalog()
     pub = MyMQTT("10", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
-    print(f"Catalog: {catalog['greenhouses'][0]['greenhouseID']}")
+    print(f"Catalog: {catalog}")
 
     while True:
+            c = Catalog_Navigator(settings=json.load(open('settings.json')))
+            catalog = c.get_catalog()
             for greenhouse in catalog["greenhouses"]: # iterate over greenhouses
                 for area in greenhouse["areas"]:
                     # Comment if not using the board (only ID 1)
@@ -91,6 +93,7 @@ if __name__ == '__main__':
                     #    pub.myPublish(topicHum, dictHum) 
                     #else: 
                     topicTemp = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "temperatureDataTopic")
+                    print(f"Topic for temperature: {topicTemp}")
                     dictTemp = {
                         "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}",
                         "e": [{
@@ -136,12 +139,15 @@ if __name__ == '__main__':
                     #debug
                     print(f"Motion for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: {area['motionDetected']}")
                     pub.myPublish(topicMotion, generalMotion)
-        
+
+                    
                     # now put request to the catalog
-                    update = requests.put("http://localhost:8082/greenhouse", json=catalog)
-                    if update.status_code == 200:
-                        print("Catalog updated successfully")
-                    else:
-                       print("Failed to update catalog")
+                    for greenhouse in catalog["greenhouses"]:
+                        update = requests.put("http://localhost:8082/greenhouse", data=json.dumps(greenhouse))
+                        print(f"Update status code: {update.status_code}")
+                        if update.status_code == 200:
+                            print("Catalog updated successfully")
+                        else:
+                            print("Failed to update catalog")
                 
-                    time.sleep(15) #frequency of sensors (due to database update)
+            time.sleep(15) #frequency of sensors (due to database update)

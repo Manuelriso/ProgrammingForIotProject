@@ -17,8 +17,8 @@
                     "luminosityDataTopic": "greenhouse1/area1/luminosity",
                     "motionTopic": "greenhouse1/area1/motion",
                     "motionDetected": 0,
-                    "currentTemperature": 0.0,
-                    "currentHumidity": 0,
+                    "currentTemperature": 17.7,
+                    "currentHumidity": 63.5,
                     "currentLuminosity": 0,
                     "pumpActuation": "greenhouse1/area1/actuation/pump",
                     "lightActuation": "greenhouse1/area1/actuation/light",
@@ -131,7 +131,7 @@
             "ID": 73,
             "serviceName": "pump",
             "last_updated": "",
-            "last_update": 1747465497.2767563
+            "last_update": 1747478834.372192
         },
         {
             "ID": 64,

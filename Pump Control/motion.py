@@ -73,5 +73,12 @@ if __name__ == '__main__':
         catalog["greenhouses"][0]["areas"][0]["motionDetected"] = 0
         pub.myPublish("greenhouse1/area1/motion", MqttMotion)
         #put
-        update = requests.put("http://localhost:8082/greenhouse", json=catalog)
+        for greenhouse in catalog["greenhouses"]:
+            update = requests.put("http://localhost:8082/greenhouse", data=json.dumps(greenhouse))
+            print(f"Update status code: {update.status_code}")
+            if update.status_code == 200:
+                print("Catalog updated successfully")
+            else:
+                print("Failed to update catalog")
+                
 
