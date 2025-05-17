@@ -1,6 +1,10 @@
+# only real time hardware
 from gpiozero import MotionSensor
 import paho.mqtt.client as PahoMQTT
+import requests
 import json
+import time
+from CatalogClient import CatalogAPI, Catalog_Navigator
 import board
 
 pir = MotionSensor(17) # out plugged into GPIO17
@@ -35,18 +39,39 @@ class MyMQTT:
 if '__name__' == '__main__':
     c = Catalog_Navigator()
     catalog = c.getCatalog()    
-    pub = MyMQTT(20, "mqtt.eclipseprojects.io", 1883)
+    pub = MyMQTT(20, "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
 
     while True:
         print("Continue scan")
-        pir.wait_for_motion()
+        pir.wait_for_motion() #these functions are blocking
         print("Motion detected") 
-        dictMotion = 1
-        catalog["greenhouses"][0]["areas"][0]["motionDetected"] = dictMotion
-        pub.myPublish("greenhouse1/area1/motion", dictMotion)
-        pir.wait_for_no_motion()
+        MqttMotion = {
+                    "bn": f"greenhouse1/area1",
+                    "e": [{
+                            "n": "motion",
+                            "v": 1,
+                            "t": time.time(),
+                            "u": "boolean"
+                        }]
+        }
+        catalog["greenhouses"][0]["areas"][0]["motionDetected"] = 1
+        pub.myPublish("greenhouse1/area1/motion", MqttMotion)
+        #put
+        update = requests.put("http://localhost:8082/catalog", json=catalog)
+        pir.wait_for_no_motion() #these functions are blocking
         print("Motion stopped")
-        dictMotion = 0
-        catalog["greenhouses"][0]["areas"][0]["motionDetected"] = dictMotion
-        pub.myPublish("greenhouse1/area1/motion", dictMotion)
+        MqttMotion = {
+                    "bn": f"greenhouse1/area1",
+                    "e": [{
+                            "n": "motion",
+                            "v": 0,
+                            "t": time.time(),
+                            "u": "boolean"
+                        }]
+        }
+        catalog["greenhouses"][0]["areas"][0]["motionDetected"] = 0
+        pub.myPublish("greenhouse1/area1/motion", MqttMotion)
+        #put
+        update = requests.put("http://localhost:8082/catalog", json=catalog)
+

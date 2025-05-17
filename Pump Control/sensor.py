@@ -1,6 +1,9 @@
 import time
+import cherrypy
+import requests
 import random
 import json
+from CatalogClient import CatalogAPI, Catalog_Navigator
 # import board # Uncomment if using a DHT sensor
 # import adafruit_dht # Uncomment if using a DHT sensor
 import paho.mqtt.client as PahoMQTT
@@ -49,33 +52,89 @@ class MyMQTT:
 if '__name__' == '__main__':
     c = Catalog_Navigator()
     catalog = c.getCatalog()
-    pub = MyMQTT(10, "mqtt.eclipseprojects.io", 1883)
+    pub = MyMQTT(10, "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
 
     while True:
         for i in catalog:
             for greenhouse in i: # i is greenhouses
                 for area in greenhouse["areas"]:
-                    if area["ID"] == "1":
+                    # Comment if not using the board (only ID 1)
+                    # the indentation must be modified also (''' near before if)
+
+                    ''' if area["ID"] == "1":
                         #sense temperature
                         topicTemp = c.searchByTopic(1, 1, "temperatureDataTopic")
-                        dictTemp = { "value" : sensor.temperature }
+                        dictTemp = {
+                            "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area["ID"]}",
+                            "e": [{
+                                    "n": "temperature",
+                                    "v": sensor.temperature,
+                                    "t": time.time(),
+                                    "u": "double"
+                                }]
+                            }
+                        area["currentTemperature"] = dictTemp["e"][0]["v"]
                         pub.myPublish(topicTemp, dictTemp)
                         #sense humidity
                         topicHum = c.searchByTopic(1, 1, "humidityDataTopic")
-                        dictHum = { "value" : sensor.humidity }
-                        pub.myPublish(topicHum, dictHum)
-                    else:
-                        topicTemp = c.searchByTopic(i["greenhouseID"], area["ID"], "temperatureDataTopic")
-                        dictTemp = { "value" : generate_temperature() }
-                        pub.myPublish(topicTemp, dictTemp)
-                        #sense humidity
-                        topicHum = c.searchByTopic(i["greenhouseID"], area["ID"], "humidityDataTopic")
-                        dictHum = { "value" : generate_humidity() }
-                        pub.myPublish(topicHum, dictHum)
-                        #sense motion
-                        topicMotion = c.searchByTopic(i["greenhouseID"], area["ID"], "motionTopic")
-                        generalMotion = generate_binary()
-                        pub.myPublish(topicMotion, generalMotion)
+                        dictHum = {
+                            "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area["ID"]}",
+                            "e": [{
+                                    "n": "humidity",
+                                    "v": sensor.humidity,
+                                    "t": time.time(),
+                                    "u": "percentage"
+                                }]
+                            }
+                        area["currentHumidity"] = dictHum["e"][0]["v"]
+                        pub.myPublish(topicHum, dictHum) 
+                    else: '''
+                topicTemp = c.searchByTopic(i["greenhouseID"], area["ID"], "temperatureDataTopic")
+                dictTemp = {
+                    "bn": f"greenhouse{i['greenhouseID']}/area{area['ID']}",
+                    "e": [{
+                            "n": "temperature",
+                            "v": generate_temperature(),
+                            "t": time.time(),
+                            "u": "double"
+                        }]
+                }
+                area["currentTemperature"] = dictTemp["e"][0]["v"]
+                pub.myPublish(topicTemp, dictTemp)
+                
+                # sense humidity
+                topicHum = c.searchByTopic(i["greenhouseID"], area["ID"], "humidityDataTopic")
+                dictHum = {
+                    "bn": f"greenhouse{i['greenhouseID']}/area{area['ID']}",
+                    "e": [{
+                            "n": "humidity",
+                            "v": generate_humidity(),
+                            "t": time.time(),
+                            "u": "percentage"
+                        }]
+                }
+                area["currentHumidity"] = dictHum["e"][0]["v"]
+                pub.myPublish(topicHum, dictHum)
+                
+                # sense motion
+                topicMotion = c.searchByTopic(i["greenhouseID"], area["ID"], "motionTopic")
+                generalMotion = {
+                    "bn": f"greenhouse{i['greenhouseID']}/area{area['ID']}",
+                    "e": [{
+                            "n": "motion",
+                            "v": generate_binary(), # if allerts are a problem, just put zeros here
+                            "t": time.time(),
+                            "u": "boolean"
+                        }]
+                }
+                area["motionDetected"] = generalMotion["e"][0]["v"]
+                pub.myPublish(topicMotion, generalMotion)
         
-        time.sleep(15)
+        # now put request to the catalog
+        update = requests.put("http://localhost:8082/catalog", json=catalog)
+        if update.status_code == 200:
+            print("Catalog updated successfully")
+        else:
+            print("Failed to update catalog")
+        time.sleep(15) #frequency of sensors (due to database update)
