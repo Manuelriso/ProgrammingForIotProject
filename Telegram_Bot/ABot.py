@@ -6,7 +6,7 @@ from datetime import datetime
 
 # Estados del árbol de conversación
 # MAIN_MENU, CREATE_GH, CREATE_A, INPUT_GH_ID, MANAGE_GH, MANAGE_AREA, CONFIRM_X_GH, ADD_A, DELETE_A, CONFIRM_X_A,  CONFIRM_X_BOTH = range(11)
-MAIN_MENU, WAIT_NEW_GH_ID, WAIT_NEW_GH_PLANT, CREATE_A, INPUT_GH_ID, HANDLING_GH_ID, CONFIRM_X_GH, MANAGE_GH, SHOWING_AVAILABLE_AREAS, CONFIRM_X_A, CONFIRM_X_BOTH, ADD_A, WAIT_AREA_INSTRUCTION = range(14)
+MAIN_MENU, WAIT_NEW_GH_ID, WAIT_NEW_GH_PLANT, CREATE_A, INPUT_GH_ID, HANDLING_GH_ID, CONFIRM_X_GH, MANAGE_GH, SHOWING_AVAILABLE_AREAS, CONFIRM_X_A, CONFIRM_X_BOTH, ADD_A, WAIT_AREA_INSTRUCTION, FINAL_STAGE = range(14)
 
 # Diccionario temporal por usuario
 user_data = {}
@@ -28,6 +28,11 @@ main_menu_keyboard = InlineKeyboardMarkup([
 back_to_MM = InlineKeyboardMarkup([
             [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]
         ])
+bye_button = InlineKeyboardMarkup([
+            [InlineKeyboardButton("BYE", callback_data='bye')]
+        ])
+
+end_markup = InlineKeyboardMarkup(back_to_MM.inline_keyboard + bye_button.inline_keyboard)
 
 A_Mg_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton("VERIFY HUMIDITY", callback_data='check_humidity')],
@@ -61,24 +66,24 @@ async def create_greenhouse_and_area(catalog_url, user_id, greenhouse_id, plant_
             "numberOfAreas": 1,
             "creation_date": datetime.now().strftime("%d-%m-%Y"),
             "areas": [
-                {
-                    "ID": 1, 
-                    "humidityThreshold": 80,  # This should be a variable
-                    "temperatureThreshold": 21,  # This should be a variable
-                    "luminosityThreshold": 60,  # This should be a variable
-                    "plants": plant_type,
-                    "temperatureDataTopic": "greenhouse1/area1/temperature",
-                    "humidityDataTopic": "greenhouse1/area1/humidity",
-                    "luminosityDataTopic": "greenhouse1/area1/luminosity",
-                    "motionTopic": "greenhouse1/area1/motion",
-                    "motionDetected": 0,
-                    "pumpActuation": "greenhouse1/area1/actuation/pump",
-                    "lightActuation": "greenhouse1/area1/actuation/light",
-                    "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
-                    "pump": 0,
-                    "light": "off",
-                    "ventilation": 0
-                }
+            {
+                "ID": 1, 
+                "humidityThreshold": 80,  # This should be a variable
+                "temperatureThreshold": 21,  # This should be a variable
+                "luminosityThreshold": 60,  # This should be a variable
+                "plants": plant_type,
+                "temperatureDataTopic": f"greenhouse{int(greenhouse_id)}/area1/temperature",
+                "humidityDataTopic": f"greenhouse{int(greenhouse_id)}/area1/humidity",
+                "luminosityDataTopic": f"greenhouse{int(greenhouse_id)}/area1/luminosity",
+                "motionTopic": f"greenhouse{int(greenhouse_id)}/area1/motion",
+                "motionDetected": 0,
+                "pumpActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/pump",
+                "lightActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/light",
+                "ventilationActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/ventilation",
+                "pump": 0,
+                "light": "off",
+                "ventilation": 0
+            }
             ]
         }
         # Log the POST request for debugging purposes
@@ -100,18 +105,18 @@ async def create_area(catalog_url, greenhouse_id, area_id, plant_type) -> bool:
         # Aquí debes definir la estructura del área que deseas crear
         new_area = {
             "ID": area_id,
-            "humidityThreshold": 80, ########## THIS SHOULD BE A VARIABLE
-            "temperatureThreshold": 21, ######### THIS SHOULD BE A VARIABLE
-            "luminosityThreshold": 60, ############ THIS SHOULD BE A VARIABLE
+            "humidityThreshold": 80,  ########## THIS SHOULD BE A VARIABLE
+            "temperatureThreshold": 21,  ######### THIS SHOULD BE A VARIABLE
+            "luminosityThreshold": 60,  ############ THIS SHOULD BE A VARIABLE
             "plants": plant_type,
-            "temperatureDataTopic": "greenhouse1/area1/temperature",
-            "humidityDataTopic": "greenhouse1/area1/humidity",
-            "luminosityDataTopic": "greenhouse1/area1/luminosity",
-            "motionTopic": "greenhouse1/area1/motion",
+            "temperatureDataTopic": f"greenhouse{int(greenhouse_id)}/area{area_id}/temperature",
+            "humidityDataTopic": f"greenhouse{int(greenhouse_id)}/area{area_id}/humidity",
+            "luminosityDataTopic": f"greenhouse{int(greenhouse_id)}/area{area_id}/luminosity",
+            "motionTopic": f"greenhouse{int(greenhouse_id)}/area{area_id}/motion",
             "motionDetected": 0,
-            "pumpActuation": "greenhouse1/area1/actuation/pump",
-            "lightActuation": "greenhouse1/area1/actuation/light",
-            "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
+            "pumpActuation": f"greenhouse{int(greenhouse_id)}/area{area_id}/actuation/pump",
+            "lightActuation": f"greenhouse{int(greenhouse_id)}/area{area_id}/actuation/light",
+            "ventilationActuation": f"greenhouse{int(greenhouse_id)}/area{area_id}/actuation/ventilation",
             "pump": 0,
             "light": "off",
             "ventilation": 0
@@ -224,7 +229,22 @@ async def list_areas(catalog_url, greenhouse_id) -> list:
         except requests.exceptions.RequestException as e:
             print(f"Request error: {e}")
             return []
-    
+        
+async def get_area(catalog_url, greenhouse_id, areaID) -> list:
+    try: #greenhouse1/areas/1 
+        response = requests.get(f"{catalog_url}greenhouse{greenhouse_id}/areas/{areaID}")
+        if response.status_code == 200:
+            area = response.json()
+            return area
+        else:
+            print(f"Error in the request: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Error while retrieving area details: {e}. Contact support.")
+        return None
+
+
+
 # if response.status_code == 200:
 #     data = response.json()  # Obtén el cuerpo de la respuesta
 #     areas = data.get("areas", [])  # Esto asegura que 'areas' exista y sea una lista vacía si no está presente
@@ -254,6 +274,7 @@ def remove_greenhouse(user_id, greenhouse_id): #only from internal temporal list
         gh for gh in user_data[user_id]['their_greenhouses']
         if gh['greenhouseID'] != greenhouse_id
     ]
+
 
 ############################### CONVERSATION STATES ###############################
 # Inicio del bot
@@ -742,7 +763,6 @@ async def confirm_delete_both(update: Update, context: ContextTypes.DEFAULT_TYPE
 #     # Aquí puedes manejar la lógica para las acciones del invernadero
 #     pass
 
-
 ############################## Callback Query Handlers ##############################
 async def handle_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.effective_user.id
@@ -780,8 +800,6 @@ async def handle_back_to_main_menu(update: Update, context: ContextTypes.DEFAULT
         )
     return MAIN_MENU
 
-
-
 # async def handle_back_to_create_gh(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 #     user_data[update.effective_user.id] = {} ### REVISAR
 #     await update.message.reply_text("Regresando a la creación del invernadero...")
@@ -792,36 +810,71 @@ async def handle_acciones(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await update.callback_query.message.reply_text("Funcionalidad no implementada todavía. FINALIZANDO")
     return ConversationHandler.END
 
-async def handle_verify_humidity(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # Aquí puedes manejar la lógica para verificar la humedad
-    await update.callback_query.message.reply_text("Funcionalidad no implementada todavía. FINALIZANDO")
-    return ConversationHandler.END
+async def handle_verify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    catalog_url = context.bot_data['catalog_url']
+    user_id = update.effective_user.id
+    greenhouse_id = user_data[user_id]['gh_to_manage']
+    area_processing = user_data[user_id]['area_to_do']
+    #se comunica con el catalog y revisa la "currentTemperature".
+    area = await get_area(catalog_url, greenhouse_id, area_processing)
+    current_temperature = area['currentTemperature']
+    current_humidity = area['currentHumidity']
+    current_luminosity = area['currentLuminosity']
+    
+    query = update.callback_query
+    await query.answer()  # Siempre respondé el callback aunque sea vacío
+    to_verify = query.data  
 
-async def handle_verify_temperature(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # Aquí puedes manejar la lógica para verificar la temperatura
-    await update.callback_query.message.reply_text("Funcionalidad no implementada todavía. FINALIZANDO")
-    return ConversationHandler.END
+    #Ofrece boton de back to main menu (back_to_MM) o de bye
+    if to_verify == 'check_temperature':
+        await update.callback_query.message.reply_text( #english
+            f"Current temperature in area {area_processing} of greenhouse {greenhouse_id} is: {current_temperature}°C",
+            reply_markup=end_markup
+        )
+    elif to_verify == 'check_luminosity':
+        await update.callback_query.message.reply_text( #english
+            f"Current luminosity in area {area_processing} of greenhouse {greenhouse_id} is: {current_luminosity}%",
+            reply_markup=end_markup
+        )
+    elif to_verify == 'check_humidity':
+        await update.callback_query.message.reply_text( #english
+            f"Current humidity in area {area_processing} of greenhouse {greenhouse_id} is: {current_humidity}%",
+            reply_markup=end_markup
+        )
+    return FINAL_STAGE
 
-async def handle_verify_luminosity(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # Aquí puedes manejar la lógica para verificar la luminosidad
-    await update.callback_query.message.reply_text("Funcionalidad verify no implementada todavía. FINALIZANDO")
-    return ConversationHandler.END
+async def handle_actuators_a(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    catalog_url = context.bot_data['catalog_url']
+    user_id = update.effective_user.id
+    greenhouse_id = user_data[user_id]['gh_to_manage']
+    area_processing = user_data[user_id]['area_to_do']
 
-async def handle_manage_pump(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # Aquí puedes manejar la lógica para administrar el ventilador
-    await update.callback_query.message.reply_text("Funcionalidad manage pump no implementada todavía. FINALIZANDO")
-    return ConversationHandler.END
-
-async def handle_manage_fan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # Aquí puedes manejar la lógica para administrar el ventilador
-    await update.callback_query.message.reply_text("Funcionalidad manage fan no implementada todavía. FINALIZANDO")
-    return ConversationHandler.END
-
-async def handle_manage_light(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # Aquí puedes manejar la lógica para administrar la luz
-    await update.message.reply_text("Funcionalidad manage light no implementada todavía. FINALIZANDO")
-    return ConversationHandler.END
-
+    query = update.callback_query
+    await query.answer()  # Siempre respondé el callback aunque sea vacío
+    actuator_selection = query.data 
+    #it uses MQTT to send the command to the actuators
+    #It should publish to the topic                 "pumpActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/pump",
+                #"lightActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/light",
+                #"ventilationActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/ventilation",
+    if actuator_selection == 'manage_pump':
+        await set_actuator(catalog_url, greenhouse_id, area_processing, "pumpActuation", )
+    elif actuator_selection == 'manage_light':
+        await set_actuator(catalog_url, greenhouse_id, area_processing, "lightActuation", to_set_on_off)
+    elif actuator_selection == 'manage_fan':
+        await set_actuator(catalog_url, greenhouse_id, area_processing, "ventilationActuation", to_set_on_off)
+    else:
+        await update.callback_query.message.reply_text("Invalid actuator. Please try again.",
+                                                       reply_markup=InlineKeyboardMarkup(back_to_MM)
+        )
+        return FINAL_STAGE
+    
+    await update.callback_query.message.reply_text(
+        f"Actuators {to_set_on_off} in area {area_processing} of greenhouse {greenhouse_id} are now: KAPUT",
+        reply_markup=end_markup)
+    return FINAL_STAGE
+    
+async def set_actuator(catalog_url, greenhouse_id, area_processing, actuator_type):
+    return None
 
 
 ############################# CLASSES #############################
@@ -895,16 +948,20 @@ class BotMain:
                 WAIT_AREA_INSTRUCTION
                 : [
                     CallbackQueryHandler(handle_acciones, pattern='acciones_invernadero'),
-                    CallbackQueryHandler(handle_verify_humidity, pattern='check_humidity'),
-                    CallbackQueryHandler(handle_verify_temperature, pattern='check_temperature'),
-                    CallbackQueryHandler(handle_verify_luminosity, pattern='check_luminosity'),
-                    CallbackQueryHandler(handle_manage_pump, pattern='manage_pump'),
-                    CallbackQueryHandler(handle_manage_fan, pattern='manage_fan'),
-                    CallbackQueryHandler(handle_manage_light, pattern='manage_light'),
+                    CallbackQueryHandler(handle_verify, pattern='check_humidity'),
+                    CallbackQueryHandler(handle_verify, pattern='check_temperature'),
+                    CallbackQueryHandler(handle_verify, pattern='check_luminosity'),
+                    CallbackQueryHandler(handle_actuators_a, pattern='manage_pump'),
+                    CallbackQueryHandler(handle_actuators_a, pattern='manage_fan'),
+                    CallbackQueryHandler(handle_actuators_a, pattern='manage_light'),
                     CallbackQueryHandler(handle_back_to_main_menu, pattern='back_to_main_menu'),
                 ],
                 CONFIRM_X_BOTH: [
                     CallbackQueryHandler(confirm_delete_both, pattern='confirm_delete_both'),
+                ],
+                FINAL_STAGE: [
+                    CallbackQueryHandler(handle_back_to_main_menu, pattern='back_to_main_menu'),
+                    CallbackQueryHandler(handle_bye, pattern='bye'),
                 ],
             },
             fallbacks=[CommandHandler('start', start)]
