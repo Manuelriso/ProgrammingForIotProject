@@ -173,7 +173,6 @@ class CatalogREST(object):
         
                 
     def PUT(self,*uri,**params):
-        body=cherrypy.request.body.read()
         
         if(len(uri)==1 and uri[0]=="device"):
             device=json.loads(body)
