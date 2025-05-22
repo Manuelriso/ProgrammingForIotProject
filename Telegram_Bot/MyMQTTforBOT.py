@@ -15,7 +15,6 @@ class MyMQTT:
         self._paho_mqtt.on_connect = self.myOnConnect
         self._paho_mqtt.on_message = self.myOnMessageReceived
  
- 
     def myOnConnect (self, paho_mqtt, userdata, flags, rc):
         print ("Connected to %s with result code: %d" % (self.broker, rc))
 
@@ -27,9 +26,18 @@ class MyMQTT:
         self.notifier.notify(msg.topic, msg.payload) #instead msg.payload we could put json.loads(msg)
         
 
-    def myPublish (self, topic, msg):
-        # publish a message with a certain topic
-        self._paho_mqtt.publish(topic, json.dumps(msg), 2)
+    def myPublish(self, topic, msg):
+        try:
+            info = self._paho_mqtt.publish(topic, json.dumps(msg), 2)
+
+            # Paho devuelve un objeto MQTTMessageInfo con un atributo .rc
+            if info.rc == 0:
+                return {"status_code": 200}
+            else:
+                return {"status_code": 500, "error": f"Publish failed with rc={info.rc}"}
+
+        except Exception as e:
+            return {"status_code": 500, "error": str(e)}
        
  
     def mySubscribe (self, topic):
