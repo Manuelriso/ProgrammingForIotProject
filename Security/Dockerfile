@@ -1,16 +1,14 @@
+# set the kernel to use
 FROM python:3.8-alpine
+# copy all the files in the container
+
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install -r requirements.txt
 
-# Copy application files
 COPY . .
 
-# Create and populate Catalog directory
-RUN mkdir -p /app/Catalog
-COPY Catalog/catalog.json /app/Catalog/catalog.json
+# install the needed requirements
 
-EXPOSE 8082
-CMD ["python", "main.py"]
+RUN pip3 install -r requirements.txt
+# the command that will be executed when the container will start
+CMD ["python3","./Security.py"]

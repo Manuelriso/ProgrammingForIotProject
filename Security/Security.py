@@ -16,10 +16,10 @@ class SecurityRESTMQTT:
         self.port = settings["brokerPort"]
         self.topics = settings["mqttTopics"]  # Lista di topic
         
-        self.mqttClient = MyMQTT(clientID=str(uuid.uuid1()), broker=self.broker, port=self.port, notifier=self)
+        self.mqttClient = MyMQTT(client_id=str(uuid.uuid1()), broker=self.broker, port=self.port, notifier=self)
         self.mqttClient.start()   
             
-        self.mqttClient.mySubscribe(self.topics)        
+        self.mqttClient.mysubscribe(self.topics)        
         self.actualTime = time.time()
     
     def registerService(self):

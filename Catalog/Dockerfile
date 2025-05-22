@@ -6,6 +6,7 @@ WORKDIR /app
 
 
 COPY . .
+
 # install the needed requirements
 
 RUN chmod 666 catalog.json
