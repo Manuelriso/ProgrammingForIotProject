@@ -33,11 +33,17 @@ class CatalogREST(object):
         #greenhouse1/areas
         if(len(uri)==2 and uri[1]=="areas"):
             greenhouse=int(uri[0].replace("greenhouse",""))
-            AllGrennhouse=data["greenhouses"]
+            AllGreenhouse=data["greenhouses"]
             
-            for registeredGreenHouse in AllGrennhouse:
+            found = False
+            for registeredGreenHouse in AllGreenhouse:
                 if(registeredGreenHouse["greenhouseID"]==greenhouse):
                     output["areas"]=registeredGreenHouse["areas"]
+                    found = True
+                    break
+            if not found:
+                raise cherrypy.HTTPError(404, "Greenhouse non trovata")
+
         
         
         #greenhouses     
@@ -89,7 +95,7 @@ class CatalogREST(object):
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
             
-            cherrypy.response.status(201)    
+            cherrypy.response.status=201   
             return json.dumps(data)
         
         if(len(uri)==1 and uri[0]=="service"):
@@ -106,7 +112,7 @@ class CatalogREST(object):
                 json.dump(data,file,indent=4)
             
             
-            cherrypy.response.status(201)
+            cherrypy.response.status=201
             return json.dumps(data)
         
         
@@ -162,7 +168,7 @@ class CatalogREST(object):
             with open("catalog.json","w") as file:
                 json.dump(data,file,indent=4)
             
-            cherrypy.response.status(201)
+            cherrypy.response.status=201
             return json.dumps(data)
         
                 
@@ -391,7 +397,7 @@ if __name__=="__main__":
             'tools.sessions.on': True
         }
     }
-    cherrypy.config.update({'server.socket_host': '0.0.0.0', 'server.socket_port': 8082})
+    cherrypy.config.update({'server.socket_host': '0.0.0.0', 'server.socket_port': 8080})
     #cherrypy.config.update({'server.socket_port': 8080})
     cherrypy.tree.mount(catalogClient, '/', conf)
     cherrypy.engine.start()
