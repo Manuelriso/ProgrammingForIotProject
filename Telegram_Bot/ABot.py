@@ -856,8 +856,9 @@ async def handle_actuators_a(update: Update, context: ContextTypes.DEFAULT_TYPE)
     #It should publish to the topic                 "pumpActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/pump",
                 #"lightActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/light",
                 #"ventilationActuation": f"greenhouse{int(greenhouse_id)}/area1/actuation/ventilation",
+    
     if actuator_selection == 'manage_pump':
-        await set_actuator(catalog_url, greenhouse_id, area_processing, "pumpActuation", )
+        await set_actuator(catalog_url, greenhouse_id, area_processing, "pumpActuation",to_set_on_off)
     elif actuator_selection == 'manage_light':
         await set_actuator(catalog_url, greenhouse_id, area_processing, "lightActuation", to_set_on_off)
     elif actuator_selection == 'manage_fan':
@@ -868,14 +869,16 @@ async def handle_actuators_a(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         return FINAL_STAGE
     
-    await update.callback_query.message.reply_text(
-        f"Actuators {to_set_on_off} in area {area_processing} of greenhouse {greenhouse_id} are now: KAPUT",
-        reply_markup=end_markup)
+    if response.status_code == 200:
+        await update.callback_query.message.reply_text(
+            f"Actuators {to_set_on_off} in area {area_processing} of greenhouse {greenhouse_id} are now: {to_set_on_off}",
+            reply_markup=end_markup
+        )
     return FINAL_STAGE
     
-async def set_actuator(catalog_url, greenhouse_id, area_processing, actuator_type):
+async def set_actuator(catalog_url, greenhouse_id, area_processing, actuator_type, to_set_on_off):
+    # I should know what parameters I can give to the thingies.
     return None
-
 
 ############################# CLASSES #############################
 class BotMain:
@@ -885,6 +888,10 @@ class BotMain:
 
         application = Application.builder().token(self.token).build()
         application.bot_data['catalog_url'] = self.catalog_url
+
+        self.notifier = TelegramAlertNotifier(application, self.catalog_url)
+        self.mqtt_client = MyMQTT("BotAlertListener", self.mqtt_broker, self.mqtt_port, self.notifier)
+
 
         # # Mapa greenhouse_id → user_id
         # self.greenhouse_user_map = {}
