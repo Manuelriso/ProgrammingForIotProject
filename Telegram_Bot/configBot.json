@@ -1,6 +1,11 @@
 {
     "telegram_token": "7703194233:AAFuyj34cSV2nX699SLWQ_KiA7SBgARy4Dw",
-    "catalog_url": "http://localhost:8082/",
+    "catalog_url": "http://localhost:80/",
     "port": 1883,
-    "brokerIP": "mqtt.eclipseprojects.io" 
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "default_thresholds": {
+        "temperature": { "min": 5, "max": 35, "unit": "°C" , "suggested": 21 },
+        "humidity": { "min": 45, "max": 95, "unit": "%H" , "suggested": 80 },
+        "light": { "min": 15, "max": 80, "unit": "% of 80000lux" , "suggested": 60 }
+      }
 }
