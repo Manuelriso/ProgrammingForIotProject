@@ -99,6 +99,58 @@
                     "ventilation": 0
                 }
             ]
+        },
+        {
+            "greenhouseID": 4,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "23-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 25,
+                    "luminosityThreshold": 27,
+                    "plants": "Mandioca",
+                    "temperatureDataTopic": "greenhouse4/area1/temperature",
+                    "humidityDataTopic": "greenhouse4/area1/humidity",
+                    "luminosityDataTopic": "greenhouse4/area1/luminosity",
+                    "motionTopic": "greenhouse4/area1/motion",
+                    "motionDetected": 0,
+                    "pumpActuation": "greenhouse4/area1/actuation/pump",
+                    "lightActuation": "greenhouse4/area1/actuation/light",
+                    "ventilationActuation": "greenhouse4/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 3,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "23-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 45,
+                    "plants": "Hibiscus",
+                    "temperatureDataTopic": "greenhouse3/area1/temperature",
+                    "humidityDataTopic": "greenhouse3/area1/humidity",
+                    "luminosityDataTopic": "greenhouse3/area1/luminosity",
+                    "motionTopic": "greenhouse3/area1/motion",
+                    "motionDetected": 0,
+                    "pumpActuation": "greenhouse3/area1/actuation/pump",
+                    "lightActuation": "greenhouse3/area1/actuation/light",
+                    "ventilationActuation": "greenhouse3/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
         }
     ],
     "devices": [],
