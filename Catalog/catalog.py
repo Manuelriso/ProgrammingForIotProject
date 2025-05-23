@@ -75,6 +75,7 @@ class CatalogREST(object):
                 if(registeredGreenHouse["greenhouseID"]==requestedGreenHouses):
                     output=registeredGreenHouse
         
+        cherrypy.response.status=200
         return json.dumps(output)
     
     
@@ -173,7 +174,8 @@ class CatalogREST(object):
         
                 
     def PUT(self,*uri,**params):
-        
+        body=cherrypy.request.body.read()
+
         if(len(uri)==1 and uri[0]=="device"):
             device=json.loads(body)
             
@@ -190,7 +192,8 @@ class CatalogREST(object):
             data["devices"]=updatedDevices
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
-            
+
+            cherrypy.response.status=200 ##############
             return json.dumps(data)
                 
         
@@ -212,7 +215,8 @@ class CatalogREST(object):
             data["services"]=updatedServices
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
-            
+
+            cherrypy.response.status=200 ##############
             return json.dumps(data)
         
         
@@ -232,7 +236,8 @@ class CatalogREST(object):
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
-            
+
+            cherrypy.response.status=200 ##############
             return json.dumps(data)
         
         #/greenhouse1/area
@@ -270,7 +275,8 @@ class CatalogREST(object):
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
-            
+
+            cherrypy.response.status=200 ##############
             return json.dumps(data)
          
         
@@ -282,7 +288,6 @@ class CatalogREST(object):
             
             with open("catalog.json","r") as file:
                     data=json.load(file)
-                    
                     
             greenhouses=data["greenhouses"]
             for registeredGreenHouse in greenhouses:
@@ -302,7 +307,6 @@ class CatalogREST(object):
                 else:
                     updatedAreas.append(registeredArea)
             
-            
             greenhouse["areas"]=updatedAreas
             
             updatedGreenhouses=[]
@@ -312,15 +316,16 @@ class CatalogREST(object):
                 else:
                     updatedGreenhouses.append(registeredGreenhouses)
             
-            
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
                 json.dump(data,file,indent=4)
+
+            cherrypy.response.status=200 ##############
             return json.dumps(data)
         
         
     def DELETE(self,*uri,**params):
-            body=cherrypy.request.body.read()
+            #body=cherrypy.request.body.read()
             
             #greenhouse/1 it deletes the greenhouse with ID=1
             if(len(uri)==2 and uri[0]=="greenhouse"):
