@@ -3,7 +3,7 @@ import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from datetime import datetime
-import MyMQTTforBOT as MyMQTTforBOT
+import MyMQTTforBOT
 from functools import partial #for inserting parameters in callbacks
 
 # Estados del árbol de conversación
@@ -23,48 +23,42 @@ def load_config():
 ######################### Keyboards #########################
 ## Main menu keyboard
 main_menu_keyboard = InlineKeyboardMarkup([
-    [InlineKeyboardButton("ADD GREENHOUSE", callback_data='add_greenhouse')],
-    [InlineKeyboardButton("MANAGE GREENHOUSES", callback_data='manage_greenhouses')],
-    [InlineKeyboardButton("DELETE GREENHOUSE", callback_data='delete_greenhouse')],
-    [InlineKeyboardButton("BYE", callback_data='bye')]
+    [InlineKeyboardButton("➕ Add Greenhouse", callback_data='add_greenhouse')],
+    [InlineKeyboardButton("🛠️ Manage Greenhouses", callback_data='manage_greenhouses')],
+    [InlineKeyboardButton("🗑️ Delete Greenhouse", callback_data='delete_greenhouse')],
+    [InlineKeyboardButton("👋 Exit", callback_data='bye')]
 ])
+
 ## Back to main menu keyboard
-back_to_MM = InlineKeyboardMarkup([
-            [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]
-        ])
-bye_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("BYE", callback_data='bye')]
-        ])
+back_to_MM = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Main Menu", callback_data='back_to_main_menu')]])
 
-end_markup = InlineKeyboardMarkup(back_to_MM.inline_keyboard + bye_button.inline_keyboard)
+bye_button = InlineKeyboardMarkup([[InlineKeyboardButton("👋 Exit", callback_data='bye')]])
 
-# A_Mg_markup = InlineKeyboardMarkup([
-#             [InlineKeyboardButton("VERIFY HUMIDITY", callback_data='check_humidity')],
-#             [InlineKeyboardButton("VERIFY TEMPERATURE", callback_data='check_temperature')],
-#             [InlineKeyboardButton("VERIFY LUMINOSITY", callback_data='check_luminosity')],
-#             [InlineKeyboardButton("MANAGE PUMP", callback_data='manage_pump')],
-#             [InlineKeyboardButton("MANAGE FAN", callback_data='manage_fan')],
-#             [InlineKeyboardButton("MANAGE LIGHT", callback_data='manage_light')],
-#             [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')],
-#             [InlineKeyboardButton("BYE", callback_data='bye')]
-#         ]) 
+end_markup = InlineKeyboardMarkup([back_to_MM.inline_keyboard[0] + bye_button.inline_keyboard[0]])
 
 A_Mg_markup = InlineKeyboardMarkup([
-    # Sensores (3 en una fila)
-    [InlineKeyboardButton("HUMIDITY 🌫️", callback_data='check_humidity'),
-     InlineKeyboardButton("TEMPERATURE 🌡️", callback_data='check_temperature'),
-     InlineKeyboardButton("LUMINOSITY ☀️", callback_data='check_luminosity')],
+    # Sensors (3 in a row)
+    [InlineKeyboardButton("🌫️ Humidity", callback_data='check_humidity'),
+     InlineKeyboardButton("🌡️ Temperature", callback_data='check_temperature'),
+     InlineKeyboardButton("☀️ Luminosity", callback_data='check_luminosity')],
     
-    # Actuadores (3 en una fila)
-    [InlineKeyboardButton("PUMP 💧", callback_data='manage_pump'),
-     InlineKeyboardButton("FAN 🌬️", callback_data='manage_fan'),
-     InlineKeyboardButton("LIGHT 💡", callback_data='manage_light')],
+    # Actuators (3 in a row)
+    [InlineKeyboardButton("💧 Pump", callback_data='manage_pump'),
+     InlineKeyboardButton("🌬️ Fan", callback_data='manage_fan'),
+     InlineKeyboardButton("💡 Light", callback_data='manage_light')],
     
-    # Opciones generales (2 en una fila)
-    [InlineKeyboardButton("BACK 🔙", callback_data='back_to_main_menu'),
-     InlineKeyboardButton("BYE 👋", callback_data='bye')]
+    # General options (2 in a row)
+    [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='back_to_main_menu'),
+     InlineKeyboardButton("👋 Exit", callback_data='bye')]
 ])
 
+areas_keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("🛠️ Manage Areas", callback_data='gestion_areas'),
+    InlineKeyboardButton("➕ Add Area", callback_data='agregar_areas')],
+    [InlineKeyboardButton("📊 View Historical Data", callback_data='storical_data_gh'),
+     InlineKeyboardButton("🗑️ Delete Area", callback_data='eliminacion_area')],
+    [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='back_to_main_menu')]
+])
 
 ######################### AUXILIARY FUNCTIONS #########################
 ### Verify if the greenhouse ID exists in the database
@@ -75,10 +69,10 @@ async def check_gh_id_exists(catalog_url, greenhouse_id) -> bool:
         response = requests.get(f"{catalog_url}greenhouses", timeout=5)
         if response.status_code == 200:
             greenhouses = response.json().get("greenhouses", [])
-            print("IDs in catalog:", [gh['greenhouseID'] for gh in greenhouses])
-            print("Checking ID:", greenhouse_id)
+            # print("IDs in catalog:", [gh['greenhouseID'] for gh in greenhouses])
+            # print("Checking ID:", greenhouse_id)
             result = any(int(gh['greenhouseID']) == int(greenhouse_id) for gh in greenhouses)
-            print("Exists:", result)
+            # print("Exists:", result)
             return result
         else:
             print("Response status not 200:", response.status_code)
@@ -121,9 +115,9 @@ async def create_greenhouse_and_area(catalog_url, user_id, greenhouse_id, plant_
             }
             ]
         }
-        print(f"Sending POST request to: {catalog_url}greenhouse")
+        # print(f"Sending POST request to: {catalog_url}greenhouse")
         response = requests.post(f"{catalog_url}greenhouse", json=new_greenhouse)  # POST request ###singular
-        print(f"Status code: {response.status_code}")
+        # print(f"Status code: {response.status_code}")
         if response.status_code == 201:
             return True
         else:
@@ -357,9 +351,10 @@ async def handle_plant_set_start_thresholds(update: Update, context: ContextType
         # Ask for the temperature threshold/objective
         await update.message.reply_text(
             f"Plant type accepted! This area will contain plants of type: {plant_type}.\n"
-            f"Let's set up some parameters.\n"
-            f"Please insert the temperature desired between {min_val} y {max_val} or choose the suggested:",
-            reply_markup=markup_option
+            f"**Let's set up some parameters.**\n"
+            f"Please insert the maximal temperature to be tolerated between {min_val} y {max_val} or choose the suggested:",
+            reply_markup=markup_option,
+            parse_mode="Markdown"
         )
         user_data[user_id]['threshold_stage'] = 'temperature'
         return SET_THRESHOLDS
@@ -386,13 +381,15 @@ async def ask_objective_threshold(update: Update, context: ContextTypes.DEFAULT_
     markup_option = await build_suggestion_keyboard(suggested)
     if update.message:
         await update.message.reply_text(
-            f"Please enter the threshold for {label} between {min_val}{unit} and {max_val}{unit}, or use the suggested value:",
-            reply_markup=markup_option
+            f"Please enter the minimum threshold for *{label}* between *{min_val}{unit}* and *{max_val}{unit}*, or use the suggested value:",
+            reply_markup=markup_option,
+            parse_mode="Markdown"
         )
     elif update.callback_query:
-        await update.callback_query.answer()
-        await update.callback_query.message.reply_text(f"Please enter the threshold for {label} between {min_val}{unit} and {max_val}{unit}, or use the suggested value:",
-            reply_markup=markup_option
+        await update.message.reply_text(
+            f"Please enter the minimum threshold for *{label}* between *{min_val}{unit}* and *{max_val}{unit}*, or use the suggested value:",
+            reply_markup=markup_option,
+            parse_mode="Markdown"
         )
     return SET_THRESHOLDS
 
@@ -421,16 +418,17 @@ async def handle_threshold_input(update: Update, context: ContextTypes.DEFAULT_T
     suggested_val = d_thresholds[stage_of_set]["suggested"]
     unit = d_thresholds[stage_of_set]["unit"]
 
-    print (" >> Stage of set:", stage_of_set, "you arrived to the comparison of inserted value and min and max")
+    # print (" >> Stage of set:", stage_of_set, "you arrived to the comparison of inserted value and min and max")
 
     if not (min_val <= value <= max_val):
-        await update.message.reply_text(f"The value must be between {min_val}{unit} and {max_val}{unit}. Please try again or choose the recommended value.",
-                                        reply_markup=await build_suggestion_keyboard(suggested_val, include_back=False)
+        await update.message.reply_text(f"The value must be between *{min_val}{unit}* and *{max_val}{unit}*. Please try again or choose the recommended value.",
+                        reply_markup=await build_suggestion_keyboard(suggested_val, include_back=False),
+                        parse_mode="Markdown"
         )
         return SET_THRESHOLDS
     
     user_data[user_id][f"{stage_of_set}_threshold"] = value
-    print(" >> Value accepted:", value, "for stage:", stage_of_set, user_data[user_id][f"{stage_of_set}_threshold"])
+    # print(" >> Value accepted:", value, "for stage:", stage_of_set, user_data[user_id][f"{stage_of_set}_threshold"])
 
     # Move to the next threshold
     if stage_of_set == 'temperature':
@@ -441,24 +439,23 @@ async def handle_threshold_input(update: Update, context: ContextTypes.DEFAULT_T
         return await ask_objective_threshold(update, context)
     elif stage_of_set == 'light':
         text_shown = (
-            f"✔ Thresholds configured:\n"
-            f"🌡 Temperature: {user_data[user_id]['temperature_threshold']}{d_thresholds['temperature']['unit']}\n"
-            f"💧 Humidity: {user_data[user_id]['humidity_threshold']}{d_thresholds['humidity']['unit']}\n"
-            f"💡 Light: {user_data[user_id]['light_threshold']}{d_thresholds['light']['unit']}\n"
-            "Please wait while the request is being processed. Thank you!"
+            f"✔ *Thresholds configured*:\n"
+            f"🌡 *Temperature*: {user_data[user_id]['temperature_threshold']}{d_thresholds['temperature']['unit']}\n"
+            f"💧 *Humidity*: {user_data[user_id]['humidity_threshold']}{d_thresholds['humidity']['unit']}\n"
+            f"💡 *Light*: {user_data[user_id]['light_threshold']}{d_thresholds['light']['unit']}\n"
+            "_Please wait while the request is being processed. Thank you!_"
         )
         if update.message:
-            await update.message.reply_text(text_shown)
+            await update.message.reply_text(text_shown, parse_mode="Markdown")
         elif update.callback_query:
-            await update.callback_query.message.reply_text(text_shown)
+            await update.callback_query.message.reply_text(text_shown, parse_mode="Markdown")
 
         # If creating a new greenhouse and area for the first time
         if user_data[user_id].get('new_gh_id') is not None: #so add a new greenhouse with area
-            print(">> Creating the first greenhouse and area after thresholds")
+            # print(">> Creating the first greenhouse and area after thresholds")
             return await handle_create_first_a(update, context)
         # If creating a new area in an existing greenhouse
         elif user_data[user_id].get('gh_to_manage') is not None: # so add a new area
-            # Get the thresholds from user_data
             await add_area_confirm(update, context)
         else:
             print(">> Internal error: issues between return functions")
@@ -496,7 +493,7 @@ async def add_area_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return FINAL_STAGE
 
 async def handle_create_first_a(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    print(">> Entró a handle_create_first_a")
+    # print(">> Entró a handle_create_first_a")
     catalog_url = context.bot_data['catalog_url']
     user_id = update.effective_user.id
     gh_id = user_data[user_id]['new_gh_id']
@@ -511,20 +508,27 @@ async def handle_create_first_a(update: Update, context: ContextTypes.DEFAULT_TY
     
     if success:
         del user_data[user_id]['new_gh_id']  # Remove the key from user_data
-        await update.message.reply_text(f"Greenhouse successfully created! ID: {gh_id}.\nIts first area contains plants of type: {plant_type}.\n"
-                                        "Return to the main menu.",
-            reply_markup=back_to_MM
+        await update.message.reply_text(
+            f"✅ *Greenhouse Created Successfully!*\n"
+            f"🆔 *ID*: `{gh_id}`\n"
+            f"🌱 *First Area*: Plants of type: `{plant_type}`\n\n"
+            f"Your greenhouse is now ready. Use the Main Menu to manage it.",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
         )
         return MAIN_MENU
     else:
-        await update.message.reply_text("Error creating the greenhouse. Please try again or contact support.",
-                                        reply_markup=back_to_MM)
+        await update.message.reply_text(
+            "🚨 Oops! Something went wrong while creating your greenhouse. Please try again.\n"
+            "If the issue persists, feel free to contact our support team for assistance. 🌱",
+            reply_markup=back_to_MM
+        )
         return CREATE_A
 
 ######## Manage and Delete combined part ##########
 ### List and elect the GreenHouse to Manage/Delete
 async def handle_input_gh_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    print(">> Entered to handle_input_gh_id")
+    # print(">> Entered to handle_input_gh_id")
     user_id = update.effective_user.id
     #user_data[user_id]['gh_to_delete'] = None #Either this line or not use a BACK button
     #user_data[user_id]['gh_to_manage'] = None #Either this line or not use a BACK button
@@ -544,8 +548,9 @@ async def handle_input_gh_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # If the user has no greenhouses, send a message and return to the main menu
     if not user_data[user_id]['their_greenhouses']:
         await update.callback_query.message.reply_text(
-            "You don't have any greenhouses. Please go back and create one first.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]])
+            "It seems like you don't have any greenhouses yet. 🌱\n"
+            "Please go back to the main menu and create one to get started!",
+            reply_markup=back_to_MM
         )
         return MAIN_MENU
     # List the user's greenhouses and ask for the ID
@@ -554,30 +559,36 @@ async def handle_input_gh_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
         for gh in sorted(user_data[user_id]['their_greenhouses'], key=lambda x: int(x['greenhouseID']))
     )
     await update.callback_query.message.reply_text(
-        f"Here are your greenhouses:\n{gh_list}\n\nPlease enter the ID of the greenhouse you want to {cosa_fai}:",
-        reply_markup=(back_to_MM)
+        f"🌱 *Your Greenhouses:*\n\n{gh_list}\n\n"
+        f"Please type the *ID* of the greenhouse you want to *{cosa_fai}*.\n"
+        reply_markup=back_to_MM,
+        parse_mode="Markdown"
     )
     return HANDLING_GH_ID
 
 async def handle_gh_id_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        print(">> Entered handle_gh_id_selection")
+        # print(">> Entered handle_gh_id_selection")
         user_id = update.effective_user.id
 
         id_selected = update.message.text.strip()
         # Verify if the ID is valid, numeric, and has a maximum of 5 digits
         if not (id_selected.isdigit() and len(id_selected) < 5):
-            del id_selected  # Is this necessary?
+            # del id_selected  # Is this necessary?
             await update.message.reply_text(
-                "Invalid ID. It must be numeric and have a maximum of 5 digits. Please try again.",
-                reply_markup=(back_to_MM)
+                f"❌ Invalid ID entered! Please ensure the ID is numeric and contains a maximum of 5 digits.\n"
+                "_💡 Tip: Check the list of available greenhouses above and try again._",
+                reply_markup=(back_to_MM),
+                parse_mode="Markdown"
             )
             return HANDLING_GH_ID
 
         # Verify that the ID belongs to the user
         if not any(gh["greenhouseID"] == id_selected for gh in user_data[user_id]['their_greenhouses']):
             await update.message.reply_text(
-                "This greenhouse does not exist or does not belong to you. Please choose from the list.",
-                reply_markup=(back_to_MM)
+                "🚫 The greenhouse ID you entered does not exist or does not belong to you. 🌱\n"
+                "_💡 Please double-check the list of available greenhouses above and try again._",
+                reply_markup=back_to_MM,
+                parse_mode="Markdown"
             )
             return HANDLING_GH_ID
 
@@ -588,26 +599,21 @@ async def handle_gh_id_selection(update: Update, context: ContextTypes.DEFAULT_T
             user_data[user_id]['gh_to_delete'] = id_selected
             await update.message.reply_text(f"ID accepted! The greenhouse to delete is: {id_selected}.")
             await update.message.reply_text(
-                f"Are you sure you want to delete the greenhouse with ID: {id_selected}?",
+                f"⚠️ Are you sure you want to permanently delete the greenhouse with ID: {id_selected}?\n"
+                "This action cannot be undone. Please confirm your choice:",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("CONFIRM", callback_data='confirm_delete_gh')],
-                    [InlineKeyboardButton("CANCEL", callback_data='cancel_delete_gh')]
+                    [InlineKeyboardButton("✅ CONFIRM", callback_data='confirm_delete_gh')],
+                    [InlineKeyboardButton("❌ CANCEL", callback_data='cancel_delete_gh')]
                 ])
             )
             return CONFIRM_X_GH
 
         elif action == 'manage_greenhouses':
             user_data[user_id]['gh_to_manage'] = id_selected
-            await update.message.reply_text(f"You have chosen the greenhouse with ID: {id_selected}.")
             await update.message.reply_text(
-                "What would you like to do?",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("MANAGE AREAS", callback_data='gestion_areas')],
-                    [InlineKeyboardButton("ADD AREAS", callback_data='agregar_areas')],
-                    [InlineKeyboardButton("DELETE AREA", callback_data='eliminacion_area')],
-                    [InlineKeyboardButton("STORICAL DATA", callback_data='storical_data_gh')],
-                    [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]
-                ])
+                f"✅ You have selected the greenhouse with ID: {id_selected}.\n"
+                "What would you like to do next? 🌱",
+                reply_markup=areas_keyboard
             )
             return MANAGE_GH
 
@@ -625,37 +631,41 @@ async def handle_delete_gh(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     # If the user confirms deletion
     if decision == 'confirm_delete_gh':
-        print("Entered confirm_delete_gh decision")
+        # print("Entered confirm_delete_gh decision")
         if await delete_entire_greenhouse(catalog_url, greenhouse_to_delete):
-            await update.callback_query.message.reply_text(f"Greenhouse with ID: {greenhouse_to_delete} successfully deleted.")
+            await update.callback_query.message.reply_text(
+                f"✅ Greenhouse with ID: {greenhouse_to_delete} has been successfully deleted. 🌱\n"
+                "You can now return to the main menu to manage your other greenhouses or create a new one.",
+                reply_markup=back_to_MM
+            )
+            # Update the user's greenhouse list to reflect the deletion
             user_data[user_id]['their_greenhouses'] = [
                 gh for gh in user_data[user_id]['their_greenhouses']
                 if gh['greenhouseID'] != greenhouse_to_delete
             ]
-            # Remove the greenhouse from the user's list
             del user_data[user_id]['gh_to_delete']  # Remove the key from user_data
-            # Return to the main menu
-            await update.callback_query.message.reply_text(
-                "Return to the main menu...",
-                reply_markup=back_to_MM
-            )
             return MAIN_MENU
         else:
-            await update.callback_query.message.reply_text("Error deleting the greenhouse. Please try again.",
-                                                           reply_markup=(back_to_MM)
+            await update.callback_query.message.reply_text(
+                "🚨 Oops! Something went wrong while trying to delete the greenhouse. 🌱\n"
+                "Please try again or contact support if the issue persists. 💡",
+                reply_markup=back_to_MM
             )
             return CONFIRM_X_GH
+        
     elif decision == 'cancel_delete_gh':
         await update.callback_query.message.reply_text("Deletion canceled.")
         del user_data[user_id]['gh_to_delete']
         # Return to the main menu
         await update.callback_query.message.reply_text(
-            "Return to the main menu...",
+            "✅ Action canceled successfully. Return to the main menu.",
             reply_markup=back_to_MM
         )
         return MAIN_MENU
     else:
-        await update.callback_query.message.reply_text("Invalid option. Please try again. Goodbye.")
+        await update.callback_query.message.reply_text(
+            "⚠️ Invalid option selected. Please try again or contact support if the issue persists. Goodbye."
+        )
         return ConversationHandler.END
 
 ######## Managing Greenhouse section ########
@@ -666,25 +676,32 @@ async def handle_add_area(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     greenhouse_id = user_data[user_id]['gh_to_manage']
     # user_data[user_id]['area_to_add'] = None  # Either this line or not use a BACK button
 
-    # Send the message with the generated buttons
-    print("Entered handle_add_area")
+    # print("Entered handle_add_area")
     await update.callback_query.message.reply_text(
-        "Let's add an area!"
+        "🌱 Great! Let's add a new area to your greenhouse. 🌟\n"
     )
     available_id = await next_area_id(catalog_url, greenhouse_id)
 
     if available_id == 0:
-        await update.callback_query.message.reply_text("The greenhouse already has 4 areas. No more can be added. Please add a new greenhouse or delete an area of this one.")
         await update.callback_query.message.reply_text(
-            "Please return to the main menu.",
-            reply_markup=(back_to_MM)
+            "🚫 *Maximum Areas Reached!*\n\n"
+            "This greenhouse already has the maximum of 4 areas. 🌱\n"
+            "To add more areas, you can either:\n"
+            "_1️⃣ Create a new greenhouse._\n"
+            "_2️⃣ Delete an existing area in this greenhouse._\n\n"
+            "Please return to the main menu to proceed.",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
         )
         return MAIN_MENU  # MANAGE_GH
     else:
         user_data[user_id]['new_area_id'] = available_id
-        await update.callback_query.message.reply_text(f"The area to be addes will be the Number: {available_id}.\n Please enter the type of plant (max 30 characters):",
-                                                       reply_markup=(back_to_MM)
-                                                       )
+        await update.callback_query.message.reply_text(
+            f"Great! The new area will be assigned the ID: *{available_id}*.\n"
+            f"Please enter the type of plant you want to grow in this area (maximum 30 characters):",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
+        )
         return WAIT_PLANT
 
 ### Manage Greenhouse
@@ -693,22 +710,22 @@ async def handle_manage_gh(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     catalog_url = context.bot_data['catalog_url']
     greenhouse_id = user_data[user_id]['gh_to_manage']
 
-    print(">> Entered handle_manage_gh")
+    # print(">> Entered handle_manage_gh")
     query = update.callback_query
     await query.answer()  # Always respond to the callback, even if empty
     action = query.data
     await query.edit_message_reply_markup(reply_markup=None)
-    print(f">> Selected action: {action}")
+    #print(f">> Selected action: {action}")
 
     user_data[user_id]['area_managing_desired_action'] = action
 
-    print(">> Saved in user data for area managing desired action: ", user_data[user_id]['area_managing_desired_action'])
+    #print(">> Saved in user data for area managing desired action: ", user_data[user_id]['area_managing_desired_action'])
     # Get the areas
     areas = await list_areas(catalog_url, greenhouse_id)
-
     text_1 = (
-        f"These are the areas of the greenhouse with ID: {greenhouse_id}:\n" +
-        "\n".join([f"{area[0]} - {area[1]}" for area in areas])
+        f"🌱 *Areas in Greenhouse ID: {greenhouse_id}*:\n\n" +
+        "\n".join([f"🔹 *{area[0]} - {area[1]}*" for area in areas]) +
+        "\n\n💡 _*Tip:* Select an area below to proceed._"
     )
 
     # Build markup for areas (buttons)
@@ -740,7 +757,7 @@ async def handle_manage_gh(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     
 async def checking_what_to_do_showed_areas(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         user_id = update.effective_user.id
-        print(">> Entered checking_what_to_do_showed_areas")
+        # print(">> Entered checking_what_to_do_showed_areas")
 
         query = update.callback_query
         await query.answer()  # Always respond to the callback even if empty
@@ -761,24 +778,28 @@ async def checking_what_to_do_showed_areas(update: Update, context: ContextTypes
                 parse_mode='Markdown',
                 reply_markup=A_Mg_markup
             )
-            print (">> You are in line 729/759 checking what to do and to do is manage area.. waiting instruction")
+            # print (">> You are in line 729/759 checking what to do and to do is manage area.. waiting instruction")
             return WAIT_AREA_INSTRUCTION
 
         # If the user chooses to delete areas
         elif next_step == 'eliminacion_area':
             user_data[user_id]['area_to_delete'] = id_to_do
             await update.callback_query.message.reply_text(
-                f"Are you sure you want to delete the area with ID: {id_to_do}?",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("CONFIRM", callback_data='confirm_delete_area')],
-                    [InlineKeyboardButton("CANCEL", callback_data='cancel_delete_area')]
-                ])
+            f"⚠️ *Confirmation Required*\n\n"
+            f"Are you sure you want to delete the area with ID: *{id_to_do}*? This action cannot be undone. 🚨",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ CONFIRM", callback_data='confirm_delete_area')],
+                [InlineKeyboardButton("❌ CANCEL", callback_data='cancel_delete_area')]
+            ]),
+            parse_mode="Markdown"
             )
-            print(">> About to confirm elimination of area pre entering CONFIRM X A state..... 742")
             return CONFIRM_X_A
 
         else:
-            await update.callback_query.message.reply_text("Invalid option. Please try again or contact support.")
+            await update.callback_query.message.reply_text(
+            "❌ Invalid option selected. Please try again or contact support if the issue persists. 🙏",
+            reply_markup=back_to_MM
+            )
             return ConversationHandler.END
         
 async def handle_storical_data_gh(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -815,29 +836,32 @@ async def handle_wait_new_a_plant(update: Update, context: ContextTypes.DEFAULT_
         # Verify that the plant type does not exceed 30 characters
         if len(plant_type) > 30 or not plant_type.isalnum():
             await update.message.reply_text(
-                "Error: Do not exceed 30 characters. Only letters and numbers are allowed. Please try again.",
-                reply_markup=(back_to_MM)
+            "🚫 *Error:* The plant type must not exceed 30 characters and should only contain letters and numbers. 🌱\n"
+            "💡 Please try again with a valid input.",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
             )
-            del plant_type
             return ADD_A
 
         if await create_area(catalog_url, greenhouse_id, new_id, plant_type, temperature_threshold, humidity_threshold, light_threshold):
             await update.message.reply_text(
-                f"Area successfully created! ID: {new_id}.\nIt contains plants of type: {plant_type}."
+            f"✅ *Success!* The area has been created successfully. 🎉\n\n"
+            f"🆔 *Area ID:* `{new_id}`\n"
+            f"🌱 *Plant Type:* `{plant_type}`\n\n"
+            "You can now return to the main menu or manage your greenhouse further.",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
             )
+            del user_data[user_id]['new_area_id']  # Remove the key from user_data
+            return MAIN_MENU
         else:
-            await update.message.reply_text("Error creating the area. Please try again.",
-                                            reply_markup=(back_to_MM)
+            await update.message.reply_text(
+            "🚨 *Error:* Something went wrong while creating the area. 🌱\n"
+            "💡 Please try again or contact support if the issue persists.",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
             )
-            return ADD_A  # Handle this better if needed.....
-
-        del user_data[user_id]['new_area_id']  # Remove the key from user_data
-        # Return to the main menu
-        await update.message.reply_text(
-            "Return to the main menu.",
-            reply_markup=back_to_MM
-        )
-        return MAIN_MENU
+            return ADD_A
 
 ### Delete Area ## me falta pero lo de controlar si es la ultima area..........
 async def handle_delete_area(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -850,11 +874,14 @@ async def handle_delete_area(update: Update, context: ContextTypes.DEFAULT_TYPE)
     # If it is the last area, ask for confirmation to delete the greenhouse as well
     if len(areas) == 1:
         await update.callback_query.message.reply_text(
-            "This is the last area in the greenhouse. Are you sure you want to delete it? The greenhouse will also be deleted.",
+            "⚠️ *Warning: Last Area in Greenhouse*\n\n"
+            "This is the last area in the greenhouse. Deleting it will also remove the entire greenhouse. 🚨\n\n"
+            "Are you sure you want to proceed? This action cannot be undone. Please confirm your choice:",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("CONFIRM BOTH", callback_data='confirm_delete_both')],
-                [InlineKeyboardButton("CANCEL", callback_data='cancel_delete_both')]
-            ])
+                [InlineKeyboardButton("✅ CONFIRM DELETE BOTH", callback_data='confirm_delete_both')],
+                [InlineKeyboardButton("❌ CANCEL", callback_data='cancel_delete_both')]
+            ]),
+            parse_mode="Markdown"
         )
         return CONFIRM_X_BOTH
     else:
@@ -935,7 +962,6 @@ async def confirm_delete_both(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.callback_query.message.reply_text("Critical error. Please try again. Goodbye.")
         return ConversationHandler.END
 
-
 # async def handle_actions_invernadero(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 #     # Aquí puedes manejar la lógica para las acciones del invernadero
 #     pass
@@ -944,7 +970,12 @@ async def confirm_delete_both(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def handle_bye(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_id = update.effective_user.id
     user_data[user_id] = {}
-    bye_msg = "Goodbye! See you next time. Thank you for choosing us!"
+    bye_msg = (
+        "👋 Thank you for using our Greenhouse Management Bot! 🌱\n\n"
+        "We hope you had a great experience managing your greenhouses and areas. If you have any feedback or need assistance, "
+        "feel free to reach out to our support team or upgrade your plan. 💬\n\n"
+        "Take care and see you next time! 🚀"
+    )
     if update.message:
         await update.message.reply_text(bye_msg)
     elif update.callback_query:
@@ -961,19 +992,19 @@ async def handle_back_to_main_menu(update: Update, context: ContextTypes.DEFAULT
     query = update.callback_query
     if query:
         await query.answer()
-        print( "arrivato a 894, back to main menu")
-        # Remove the previous buttons from that message
-        await query.edit_message_reply_markup(reply_markup=None)
+        # print( "arrivato a 894, back to main menu")
+        await query.edit_message_reply_markup(reply_markup=None) # Remove the previous buttons from that message
         # Send a new message with text and new buttons
         await query.message.reply_text(
-            "Welcome to the Main Menu.\n What would you like to do?",
+            "🌟 Welcome back to the Main Menu! 🌱\n\n"
+            "What would you like to do next? Please select an option below:",
             reply_markup=main_menu_keyboard
         )
     else:
-        # If not a callback, just send the new message with buttons
-        print( "arrivato a 904, back to main menu")
+        # print( "arrivato a 904, back to main menu")
         await update.message.reply_text(
-            "Welcome to the Main Menu.\n What would you like to do?",
+            "🌟 Welcome back to the Main Menu! 🌱\n\n"
+            "What would you like to do next? Please select an option below:",
             reply_markup=main_menu_keyboard
         )
     return MAIN_MENU
@@ -983,10 +1014,10 @@ async def handle_back_to_main_menu(update: Update, context: ContextTypes.DEFAULT
 #     await update.message.reply_text("Regresando a la creación del invernadero...")
 #     return CREATE_GH
 
-async def handle_acciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    # Aquí puedes manejar la lógica para las acciones del invernadero
-    await update.callback_query.message.reply_text("Funcionalidad no implementada todavía. FINALIZANDO")
-    return ConversationHandler.END
+# async def handle_acciones(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+#     # Aquí puedes manejar la lógica para las acciones del invernadero
+#     await update.callback_query.message.reply_text("Funcionalidad no implementada todavía. FINALIZANDO")
+#     return ConversationHandler.END
 
 async def handle_verify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     catalog_url = context.bot_data['catalog_url']
@@ -996,9 +1027,10 @@ async def handle_verify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     
     # Communicate with the catalog and retrieve the current values
     area = await get_area(catalog_url, greenhouse_id, area_processing)
-    if area.status_code != 200:
-        await update.callback_query.message.reply_text("Error retrieving area data. Please try again or contact support.",
-                                                       reply_markup=end_markup
+    if area is None:
+        await update.callback_query.message.reply_text(
+            "❌ Error retrieving area data. Please try again or contact support.",
+            reply_markup=end_markup
         )
         return FINAL_STAGE
     
@@ -1016,14 +1048,17 @@ async def handle_verify(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         variable = "luminosity"
         current_value = area.get('currentLuminosity', 'Unknown')
 
-    unit = area.get('unit', 'Unknown')
+    config_key = "light" if variable == "luminosity" else variable
+    unit = context.bot_data['default_thresholds'][config_key]['unit']
 
     await query.edit_message_reply_markup(reply_markup=None)
     await update.callback_query.message.reply_text(
-            f"📟 The current {variable} in Area {area_processing} of greenhouse {greenhouse_id} is: {current_value}{unit}.\n",
-            parse_mode="Markdown",
-            reply_markup=A_Mg_markup
-        )
+        f"📟 *Current Status:*\n"
+        f"🌱 *Greenhouse ID:* `{greenhouse_id}` 📍 *Area ID:* `{area_processing}`\n 🔍 *{variable.capitalize()}:* `{current_value} {unit}`\n\n"
+        f"💡 *What would you like to do next?*",
+        parse_mode="Markdown",
+        reply_markup=A_Mg_markup
+    )
     return WAIT_AREA_INSTRUCTION
 
 async def handle_actuators_a(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -1032,9 +1067,10 @@ async def handle_actuators_a(update: Update, context: ContextTypes.DEFAULT_TYPE)
     area_processing = user_data[user_id]['area_to_do']
 
     query = update.callback_query
-    await query.answer()  # Siempre respondé el callback aunque sea vacío
+    await query.answer()  # Always respond to the callback even if empty
     actuator_selection = query.data
     user_data[user_id]['actuator_selection'] = actuator_selection
+
     await query.edit_message_reply_markup(reply_markup=None)
 
     if actuator_selection == 'manage_pump':
@@ -1045,12 +1081,15 @@ async def handle_actuators_a(update: Update, context: ContextTypes.DEFAULT_TYPE)
         macchinetta = "ventilation system"
     
     await update.callback_query.message.reply_text(
-        f"Do you want to turn on or off the {macchinetta} in Area {area_processing} of Greenhouse {greenhouse_id}?",
+        f"🌟 *Control Actuator*\n"
+        f"You have selected the *{macchinetta}* in Area *{area_processing}* of Greenhouse *{greenhouse_id}*.\n"
+        f"Would you like to turn it *ON* or *OFF*? 🤔",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("ON", callback_data='on')],
-            [InlineKeyboardButton("OFF", callback_data='off')],
-            [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]
-        ])
+            [InlineKeyboardButton("✅ Turn ON", callback_data='on'),
+             InlineKeyboardButton("❌ Turn OFF", callback_data='off')],
+            [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='back_to_main_menu')]
+        ]),
+        parse_mode="Markdown"
     )
     return WAIT_ACTUATOR_STATE
 
@@ -1069,11 +1108,12 @@ async def handle_actuator_state(update: Update, context: ContextTypes.DEFAULT_TY
 
     #Check if the actuator is already on or off
     state_a = await check_actuator_state(catalog_url, greenhouse_id, area_processing, actuator_selection)
+    # print (">> State of the actuator: ", state_a, "linea 1063, funciona ese check?" )
     user_data[user_id]['actuator_state'] = state_a
 
-    print(">> Actuator selection: ", actuator_selection)
-    print( ">> To_set_on_off: ", to_set_on_off)
-    print (">> Actuator state line 1033: ", state_a)
+    # print(">> Actuator selection: ", actuator_selection)
+    # print( ">> To_set_on_off: ", to_set_on_off)
+    # print (">> Actuator state line 1033: ", state_a)
 
     if actuator_selection == 'manage_pump':
         oki = await set_actuator(update, greenhouse_id, area_processing, "pumpActuation",to_set_on_off, publisherMQTT)
@@ -1088,63 +1128,77 @@ async def handle_actuator_state(update: Update, context: ContextTypes.DEFAULT_TY
         return FINAL_STAGE
     
     #check if to_set_on_off is 1 or 0 and convert it to on or off for showing to the user
-    if to_set_on_off == 1:
+    if to_set_on_off == 1 or to_set_on_off == "1" or to_set_on_off == "on":
         to_set_on_off_show = "ON"
-    elif to_set_on_off == 0:
+    elif to_set_on_off == 0 or to_set_on_off == "0" or to_set_on_off == "off":
         to_set_on_off_show = "OFF"
 
     # Check the response from the MQTT publish
-    if oki["status_ok"] == 200:
+    if isinstance(oki, dict) and oki.get("status_ok") == "nochange":
         await update.callback_query.message.reply_text(
-            f"Actuator {actuator_selection} in Area {area_processing} of Greenhouse {greenhouse_id} is now: {to_set_on_off_show}",
-            reply_markup=end_markup
+            f"ℹ️ The actuator is already set to *{normalize_state_to_str(state_a)}*. No changes were made. ✅\n"
+            "You can return to the Main Menu or perform another action.",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
         )
-    else:
-        await update.callback_query.message.reply_text(f"Error sending MQTT command: {oki.get('error', 'unknown')}. Contact Support.",
-                                                       reply_markup=end_markup
-)
+        return MAIN_MENU
+    elif isinstance(oki, dict) and oki.get("status_ok") == True:
+        await update.callback_query.message.reply_text(
+            f"✅ Success! The actuator *{actuator_selection}* in Area *{area_processing}* of Greenhouse *{greenhouse_id}* is now set to *{to_set_on_off_show}*. 🎉",
+            reply_markup=end_markup,
+            parse_mode="Markdown"
+        )
+    elif isinstance(oki, dict) and oki.get("status_ok") == False:
+        await update.callback_query.message.reply_text(
+            f"⚠️ Oops! There was an error sending the MQTT command. 🚨\n"
+            f"Error details: *{oki.get('error', 'Unknown error. Please check logs')}*.\n"
+            "Please try again or contact support if the issue persists. 🙏",
+            reply_markup=end_markup,
+            parse_mode="Markdown"
+        )
     return FINAL_STAGE
 
 async def check_actuator_state(catalog_url, greenhouse_id, area_processing, actuator_type):
-    try: #greenhouse1/areas/1  #greenhouse1/areas/1 
-        response = await get_area(catalog_url, greenhouse_id, area_processing)
-        if response.status_code == 200:
-            area = response.json()
-            #get the actuator state
-            if actuator_type == "pumpActuation":
-                state = area['pump']
-            elif actuator_type == "lightActuation":
-                state = area['light']
-            elif actuator_type == "ventilationActuation":
-                state = area['ventilation']
-            else:
-                print("Invalid actuator type")
-                return None
-            return state
-        else:
-            print(f"Error in the request: {response.status_code}")
+    try:
+        area = await get_area(catalog_url, greenhouse_id, area_processing)
+        if area is None:
+            print("❌ Area not found")
             return None
+
+        # # Debugging information
+        # statedebug = area.get('pump')
+        # print(f"DEBUG - Actuator state (pump): {statedebug} (type: {type(statedebug)})")
+        # print("Actuator type: ", actuator_type)
+
+        if actuator_type == "manage_pump":
+            state = area.get('pump')
+        elif actuator_type == "manage_light":
+            state = area.get('light')
+        elif actuator_type == "manage_fan":
+            state = area.get('ventilation')
+        else:
+            print("Invalid actuator_type:", actuator_type)
+            return None
+        # print(f"✅ Actuator state ({actuator_type}): {state}")
+        return state
     except Exception as e:
-        print(f"Error while retrieving area details: {e}. Contact support.")
+        print(f"❌ Error while retrieving the actuator state: {e}")
         return None
+
 
 async def set_actuator(update, greenhouse_id, area_processing, actuator_type, to_set_on_off, publisherMQTT):
     user_id = update.effective_user.id
     state_previous = user_data[user_id]['actuator_state']
     action_wanted = to_set_on_off
 
-
-    print(f"DEBUG - user_id: {user_id}")
-    print(f"DEBUG - state_previous (actuator_state): {state_previous} (type: {type(state_previous)})")
-    print(f"DEBUG - action_wanted (to_set_on_off): {action_wanted} (type: {type(action_wanted)})")
-
+    # print(f"DEBUG - user_id: {user_id}")
+    # print(f"DEBUG - state_previous (actuator_state): {state_previous} (type: {type(state_previous)})")
+    # print(f"DEBUG - action_wanted (to_set_on_off): {action_wanted} (type: {type(action_wanted)})")
+    # print (f"DEBUG - actuator_type: {actuator_type} (type: {type(actuator_type)})")
 
     if normalize_state_to_int(state_previous) == normalize_state_to_int(action_wanted):
-            await update.callback_query.message.reply_text(
-                f"The actuator is already {normalize_state_to_str(state_previous)}.\n No changes made. Return to Main Menu.",
-                reply_markup=back_to_MM
-            )
-            return FINAL_STAGE #OR MAIN MENU
+            # print ("DEBUG - No change needed. Actuator is already in the desired state.")
+            return {"status_ok": "nochange", "status_code": "alreadySET"}
     else:
         try:
             # Construct the topic based on the actuator type
@@ -1156,42 +1210,51 @@ async def set_actuator(update, greenhouse_id, area_processing, actuator_type, to
                 topic = f"greenhouse{greenhouse_id}/area{area_processing}/actuation/ventilation"
             else:
                 await update.callback_query.message.reply_text(
-                    "Invalid actuator type. Please try again. if the problem persists, contact support.",
+                    "⚠️ Oops! It seems like the selected actuator type is invalid. 🌱\n"
+                    "💡 Please try again or contact support if the issue persists. Thank you for your patience! 🙏",
                     reply_markup=end_markup
                 )
-                return FINAL_STAGE
+                return {"status_ok": False, "status_code": "noactuatorType"}
             
-            #it uses MQTT to send the command to the actuators
-    #It should publish to the topic                 "pumpActuation": f"greenhouse{int(greenhouse_id)}/area{area_id}/actuation/pump",
+            #It uses MQTT to send the command to the actuators
+            #It should publish to the topics:
+                # "pumpActuation": f"greenhouse{int(greenhouse_id)}/area{area_id}/actuation/pump",
                 #"lightActuation": f"greenhouse{int(greenhouse_id)}/area{area_id}/actuation/light",
                 #"ventilationActuation": f"greenhouse{int(greenhouse_id)}/area{area_id}/actuation/ventilation",
-        # and the payload should be {"state": 1} or {"state": 0} ## VERIFYYYYY
-
-            # Simulate sending the actuation command (replace with actual MQTT or API call)
-            #payload = {"state": to_set_on_off}
 
             if actuator_type == "lightActuation":
-                payload = action_wanted.lower()  # 'on' o 'off'
+                payload = {"state": action_wanted.lower()}  # if it's STRING
             else:
-                # Para otros, enviamos entero 0 o 1
-                payload = normalize_state_to_int(action_wanted)  # int 0 o 1
+                payload = {"state": normalize_state_to_int(action_wanted)}  # if it's INT, just in case normalize.
+            # print(f"DEBUG - Payload: {payload} (type: {type(payload)})")
 
-            response = publisherMQTT.publish(topic, payload)
+            response = publisherMQTT.myPublish(topic, payload)
+            print ("estamos en esta pasrte 1185")
+            if response["status_code"] != 200:
+                print("Error publishing MQTT message:", response.get("error"))
+            # print ("estamos en esta parte 1188")
 
-
-            if response.rc == 0:
-                print(f"Actuator command sent to {topic} with payload {payload}. Response: {response.rc}")
-                return {"status_ok": True, "rc": response.rc}
+            if isinstance(response, dict):
+                status = response.get("status_code")
+                if status == 200:
+                    # print(f"Actuator command sent to {topic} with payload {payload}. Response: {status}")
+                    return {"status_ok": True, "status_code": status}
+                else:
+                    # print(f"Error al publicar mensaje MQTT. Código: {status}")
+                    return {"status_ok": False, "status_code": status}
             else:
-                print("Error al publicar mensaje MQTT")
-                return {"status_ok": False, "rc": response.rc}
+                # print("Error al publicar mensaje MQTT")
+                # print(f"Response no es dict: {response} (tipo: {type(response)})")
+                return {"status_ok": False, "status_code": "Unknown"}
+
         except Exception as e:
             print(f"Error while setting actuator state: {e}")
             await update.callback_query.message.reply_text(
-                "An error occurred while setting the actuator state. Please try again. If the problem persists, contact support.",
+                "🚨 Oops! Something went wrong while trying to set the actuator state. 🌱\n"
+                "💡 Please try again or contact support if the issue persists. Thank you for your patience! 🙏",
                 reply_markup=end_markup
             )
-            return FINAL_STAGE
+            return {"status_ok": False, "status_code": "Fatal"}
 
     #state_a is 0 or 1 for "pump or ventialation" and on or off for light.
 
@@ -1210,15 +1273,16 @@ def normalize_state_to_str(value):
     else:
         return "OFF"
 
-
 async def timeout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    if update.message:
+    print(f"[TIMEOUT] Closing session for user {user_id}")
+
+    if user_id in user_data:
         del user_data[user_id]
+
+    if update.message:
         await update.message.reply_text("⏳ Timeout. The conversation was closed due to inactivity.")
     elif update.callback_query:
-        del user_data[user_id]
-        await update.callback_query.answer("⏳ Timeout.")
         await update.callback_query.message.reply_text("⏳ Timeout. The conversation was closed due to inactivity.")
     return ConversationHandler.END
 
@@ -1311,7 +1375,7 @@ class BotMain:
                 ],        
                 WAIT_AREA_INSTRUCTION
                 : [
-                    CallbackQueryHandler(handle_acciones, pattern='acciones_invernadero'),
+                    # CallbackQueryHandler(handle_acciones, pattern='acciones_invernadero'),
                     CallbackQueryHandler(handle_verify, pattern='check_humidity'),
                     CallbackQueryHandler(handle_verify, pattern='check_temperature'),
                     CallbackQueryHandler(handle_verify, pattern='check_luminosity'),
@@ -1350,8 +1414,11 @@ class BotMain:
 if __name__ == "__main__":
     config = load_config()
     DEFAULT_THRESHOLDS = config["default_thresholds"]
+
     #instance of MyMQTT
-    MQTTBuddy = MyMQTTforBOT.MyMQTT(2903, config.get("mqtt_broker"), config.get("mqtt_port"))
+    MQTTBuddy = MyMQTTforBOT.MyMQTT("29031234009", config.get("brokerIP"), config.get("port"))
+    MQTTBuddy.start()
+
     bot = BotMain(config)
     bot.run()
 

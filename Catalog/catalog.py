@@ -5,7 +5,7 @@ import requests
 class CatalogREST(object):
     exposed=True
     def GET(self,*uri,**params):
-        print(f"Richiesta ricevuta - URI: {uri}, Parametri: {params}")
+        #print(f"Richiesta ricevuta - URI: {uri}, Parametri: {params}")
         output={}
         
         with open("catalog.json","r") as file:
@@ -49,7 +49,7 @@ class CatalogREST(object):
         #greenhouses     
         if(len(uri)==1 and uri[0]=="greenhouses"):
             output["greenhouses"]=data["greenhouses"]
-            print(str(output))
+            #print(str(output))
          
          
         #greenhouse1/areas/1    
