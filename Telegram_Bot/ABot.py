@@ -1,4 +1,5 @@
 import json
+import re
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
@@ -10,6 +11,7 @@ from functools import partial #for inserting parameters in callbacks
 # MAIN_MENU, CREATE_GH, CREATE_A, INPUT_GH_ID, MANAGE_GH, MANAGE_AREA, CONFIRM_X_GH, ADD_A, DELETE_A, CONFIRM_X_A,  CONFIRM_X_BOTH = range(11)
 MAIN_MENU, WAIT_NEW_GH_ID, WAIT_PLANT, CHECK_FIRST_THRESHOLD, SET_THRESHOLDS, CREATE_A, INPUT_GH_ID, HANDLING_GH_ID, CONFIRM_X_GH, MANAGE_GH, SHOWING_AVAILABLE_AREAS, CONFIRM_X_A, CONFIRM_X_BOTH, ADD_A, WAIT_AREA_INSTRUCTION, WAIT_ACTUATOR_STATE, FINAL_STAGE = range(17)
 
+#CREATE_A to be deleted.....
 #STATES PER 
 
 # Diccionario temporal por usuario
@@ -55,7 +57,7 @@ A_Mg_markup = InlineKeyboardMarkup([
 areas_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("🛠️ Manage Areas", callback_data='gestion_areas'),
     InlineKeyboardButton("➕ Add Area", callback_data='agregar_areas')],
-    [InlineKeyboardButton("📊 View Historical Data", callback_data='storical_data_gh'),
+    [InlineKeyboardButton("📊 Historical Data", callback_data='storical_data_gh'),
      InlineKeyboardButton("🗑️ Delete Area", callback_data='eliminacion_area')],
     [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='back_to_main_menu')]
 ])
@@ -278,6 +280,9 @@ async def build_suggestion_keyboard(suggested_value: int, include_back: bool = T
         keyboard.append([InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')])
     return InlineKeyboardMarkup(keyboard)
 
+def escape_md_v2(text: str) -> str:
+    return re.sub(r'([_*\[\]()~`>#+=|{}.!\\-])', r'\\\1', str(text))
+
 ############################### CONVERSATION STATES ###############################
 # Start of the BOT
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -285,46 +290,62 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_data[user_id] = {}
     await update.message.reply_text('GREENHOUSE ALLA TERRONE', reply_markup=ReplyKeyboardRemove())
     # Reply keyboard in the text area
-    await update.message.reply_text(f"Welcome! Your ID is {user_id}. What would you like to do?", reply_markup=main_menu_keyboard)
+    await update.message.reply_text(
+        f"🌟 Welcome to the Greenhouse Management Bot! 🌱\n\n"
+        f"Your unique ID is: `{user_id}`.\n"
+        f"Please select an option from the menu below to get started:",
+        reply_markup=main_menu_keyboard,
+        parse_mode="Markdown"
+    )
     user_data[user_id]['their_greenhouses'] = await check_gh_ownership(user_id, context.bot_data['catalog_url'])
     return MAIN_MENU
 
 ####### CREATION PART ##########
 ### Handle the addition/creation of a greenhouse ID
 async def handle_wait_new_gh_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    print(">> You entered handle_wait_new_gh_id")
+    # print(">> You entered handle_wait_new_gh_id")
 
     await update.callback_query.message.reply_text(
-        "Please enter a numeric ID (maximum 5 digits), or press BACK to return to the main menu.",
-        reply_markup=back_to_MM
+        "🌟 *Create a New Greenhouse* 🌱\n\n"
+        "Please enter a unique numeric ID for your greenhouse (maximum 5 digits). This ID will help us identify your greenhouse.\n\n",
+        reply_markup=back_to_MM,
+        parse_mode="Markdown"
     )
     return WAIT_NEW_GH_ID
 
 async def handle_check_gh_id_and_wait_new_gh_plant(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    print(">> You entered handle_check_gh_id_and_wait_new_gh_plant")
+    # print(">> You entered handle_check_gh_id_and_wait_new_gh_plant")
     user_id = update.effective_user.id
     catalog_url = context.bot_data['catalog_url']
 
     gh_id = update.message.text.strip()
     
     if not (gh_id.isdigit() and len(gh_id) < 5):
-        await update.message.reply_text("Invalid ID. It must be numeric and have a maximum of 5 digits. Please try again.",
-        reply_markup=back_to_MM 
+        await update.message.reply_text(
+            "🚫 *Invalid ID!*\n\n"
+            "The ID must be numeric and contain a maximum of 5 digits. 🌱\n",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
         )
         return WAIT_NEW_GH_ID
+
     # Verify if the ID already exists in the database
     if await check_gh_id_exists(catalog_url, gh_id):
-        await update.message.reply_text("This ID is already in use. Please choose another one.",
-        reply_markup=back_to_MM                      
+        await update.message.reply_text(
+            "⚠️ *ID Already in Use!*\n\n"
+            "The ID you entered is already associated with another greenhouse. Please choose another one. 🌱\n",
+            reply_markup=back_to_MM,
+            parse_mode="Markdown"
         )
         return WAIT_NEW_GH_ID
     # If the ID is valid and does not exist, save it in user_data
     user_data[user_id]['new_gh_id'] = gh_id
     await update.message.reply_text(
-        f"ID accepted! Your greenhouse will have the ID: {gh_id}.\n"
-        "Let's design its first area!\n"
-        "Please enter the type of plant for the area (maximum 30 characters):",
-        reply_markup=(back_to_MM)
+        f"🎉 Great! The ID *{gh_id}* has been successfully reserved for your new greenhouse. 🌱\n\n"
+        "*Now, let's design its first area! 🌟\n*"
+        "Please tell me the type of plant you'd like to grow in this area (maximum 30 characters):",
+        reply_markup=back_to_MM,
+        parse_mode="Markdown"
     )
     return WAIT_PLANT
 
@@ -338,60 +359,32 @@ async def handle_plant_set_start_thresholds(update: Update, context: ContextType
 
     plant_type = update.message.text.strip()
     # Verify that the plant type does not exceed 30 characters
-    if (len(plant_type) > 30 or not plant_type.isalnum()):
-        await update.message.reply_text("Error: Do not exceed 30 characters, only letters and numbers are allowed. Please try again.",
-        reply_markup=(back_to_MM)
+    if len(plant_type) > 30 or not re.match(r'^[a-zA-Z0-9 ]+$', plant_type):
+        await update.message.reply_text(
+            "🚫 Error: Max 30 characters. Use only letters, numbers and spaces.",
+            reply_markup=back_to_MM
         )
         return WAIT_PLANT
+
     else:
         user_data[user_id]['plant_type'] = plant_type
         min_val, max_val, suggested = thresholds["temperature"]["min"], thresholds["temperature"]["max"], thresholds["temperature"]["suggested"]
         markup_option = await build_suggestion_keyboard(suggested)
 
-        # Ask for the temperature threshold/objective
         await update.message.reply_text(
-            f"Plant type accepted! This area will contain plants of type: {plant_type}.\n"
-            f"**Let's set up some parameters.**\n"
-            f"Please insert the maximal temperature to be tolerated between {min_val} y {max_val} or choose the suggested:",
+            "\n".join([
+                "🌱 *Plant Type Accepted\\!* 🎉",
+                f"This area will be dedicated to growing *{escape_md_v2(plant_type)}*\\. 🌟",
+                "*Now, let\\'s configure some important parameters for your area\\.*",
+                "",
+                "Please enter the *maximum temperature* that can be tolerated for this area\\. 🌡️",
+                f"💡 ***Tip:*** Choose a value between *{escape_md_v2(min_val)}°C* and *{escape_md_v2(max_val)}°C*, or select the suggested value below\\."
+            ]),
             reply_markup=markup_option,
-            parse_mode="Markdown"
+            parse_mode="MarkdownV2"
         )
         user_data[user_id]['threshold_stage'] = 'temperature'
         return SET_THRESHOLDS
-
-async def ask_objective_threshold(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    stage_of_set = user_data[user_id]['threshold_stage']
-    thresholds = context.application.bot_data["default_thresholds"]
-    unit = thresholds[stage_of_set]["unit"]
-    
-    if stage_of_set == "humidity":
-        min_val, max_val, suggested = thresholds["humidity"]["min"], thresholds["humidity"]["max"], thresholds["humidity"]["suggested"]
-        label = "humidity"
-    elif stage_of_set == "light":
-        min_val, max_val, suggested = thresholds["light"]["min"], thresholds["light"]["max"], thresholds["light"]["suggested"]
-        label = "luminosity"
-    else:
-        if update.message:
-            await update.message.reply_text("Internal error: unknown stage. Please contact support.")
-        elif update.callback_query:
-            await update.callback_query.answer("Internal error: unknown stage. Please contact support.")
-        return ConversationHandler.END
-
-    markup_option = await build_suggestion_keyboard(suggested)
-    if update.message:
-        await update.message.reply_text(
-            f"Please enter the minimum threshold for *{label}* between *{min_val}{unit}* and *{max_val}{unit}*, or use the suggested value:",
-            reply_markup=markup_option,
-            parse_mode="Markdown"
-        )
-    elif update.callback_query:
-        await update.message.reply_text(
-            f"Please enter the minimum threshold for *{label}* between *{min_val}{unit}* and *{max_val}{unit}*, or use the suggested value:",
-            reply_markup=markup_option,
-            parse_mode="Markdown"
-        )
-    return SET_THRESHOLDS
 
 async def handle_threshold_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -462,6 +455,41 @@ async def handle_threshold_input(update: Update, context: ContextTypes.DEFAULT_T
     else:
         await update.message.reply_text("Internal error. Unrecognized stage. If the issue persists, contact support. Goodbye.")
         return ConversationHandler.END
+    
+async def ask_objective_threshold(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    stage_of_set = user_data[user_id]['threshold_stage']
+    thresholds = context.application.bot_data["default_thresholds"]
+    unit = thresholds[stage_of_set]["unit"]
+    
+    if stage_of_set == "humidity":
+        min_val, max_val, suggested = thresholds["humidity"]["min"], thresholds["humidity"]["max"], thresholds["humidity"]["suggested"]
+        label = "humidity"
+    elif stage_of_set == "light":
+        min_val, max_val, suggested = thresholds["light"]["min"], thresholds["light"]["max"], thresholds["light"]["suggested"]
+        label = "luminosity"
+    else:
+        if update.message:
+            await update.message.reply_text("Internal error: unknown stage. Please contact support.")
+        elif update.callback_query:
+            await update.callback_query.answer("Internal error: unknown stage. Please contact support.")
+        return ConversationHandler.END
+
+    markup_option = await build_suggestion_keyboard(suggested)
+    if update.message:
+        await update.message.reply_text(
+            f"Please enter the minimum threshold for *{label}* between *{min_val}{unit}* and *{max_val}{unit}*, or use the suggested value:",
+            reply_markup=markup_option,
+            parse_mode="Markdown"
+        )
+    elif update.callback_query:
+        #await update.callback_query.answer()
+        await update.callback_query.message.reply_text(
+            f"Please enter the minimum threshold for *{label}* between *{min_val}{unit}* and *{max_val}{unit}*, or use the suggested value:",
+            reply_markup=markup_option,
+            parse_mode="Markdown"
+        )
+    return SET_THRESHOLDS
 
 async def add_area_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     print(">> You entered add_area_end_phase")
@@ -476,11 +504,11 @@ async def add_area_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     light_threshold = user_data[user_id]['light_threshold']
     print(">> Creating a new area in an existing greenhouse after thresholds")
     if await create_area(catalog_url, greenhouse_id, new_id, plant_type, temperature_threshold, humidity_threshold, light_threshold):
-        # Remove the thresholds from user_data
-        del user_data[user_id]['temperature_threshold']
-        del user_data[user_id]['humidity_threshold']
-        del user_data[user_id]['light_threshold']
-        #NOT NEEDED IF THE BACK TO MAIN MENU DELETES THE ENTIRE user_data
+        # # Remove the thresholds from user_data
+        # del user_data[user_id]['temperature_threshold']
+        # del user_data[user_id]['humidity_threshold']
+        # del user_data[user_id]['light_threshold']
+        # #NOT NEEDED IF THE BACK TO MAIN MENU DELETES THE ENTIRE user_data
         text_shown = f"Area successfully created! ID: {user_data[user_id]['new_area_id']}.\nIt contains plants of type: {plant_type}.\nReturn to the main menu."
         if update.message:
             await update.message.reply_text(text_shown, reply_markup=back_to_MM)
@@ -523,7 +551,7 @@ async def handle_create_first_a(update: Update, context: ContextTypes.DEFAULT_TY
             "If the issue persists, feel free to contact our support team for assistance. 🌱",
             reply_markup=back_to_MM
         )
-        return CREATE_A
+        return MAIN_MENU
 
 ######## Manage and Delete combined part ##########
 ### List and elect the GreenHouse to Manage/Delete
@@ -560,7 +588,7 @@ async def handle_input_gh_id(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )
     await update.callback_query.message.reply_text(
         f"🌱 *Your Greenhouses:*\n\n{gh_list}\n\n"
-        f"Please type the *ID* of the greenhouse you want to *{cosa_fai}*.\n"
+        f"Please type the *ID* of the greenhouse you want to *{cosa_fai}*.\n", ### THIS COMMA
         reply_markup=back_to_MM,
         parse_mode="Markdown"
     )
@@ -750,8 +778,9 @@ async def handle_manage_gh(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     # Edit the original message to show text + buttons
     await query.edit_message_text(
-        text=text_1 + "\n \n" + prompt,
-        reply_markup=InlineKeyboardMarkup(markup_areas)
+        text=text_1 + "\n\n" + prompt,
+        reply_markup=InlineKeyboardMarkup(markup_areas),
+        parse_mode="Markdown"
     )
     return SHOWING_AVAILABLE_AREAS
     
@@ -1339,10 +1368,10 @@ class BotMain:
                     CallbackQueryHandler(handle_threshold_input, pattern=r"^\d+$"),
                     CallbackQueryHandler(handle_back_to_main_menu, pattern='back_to_main_menu'),
                 ],
-                CREATE_A: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_first_a), ########## CONTROL
-                    CallbackQueryHandler(handle_back_to_main_menu, pattern='back_to_main_menu'),
-                ],
+                # CREATE_A: [
+                #     MessageHandler(filters.TEXT & ~filters.COMMAND, handle_create_first_a), ########## CONTROL
+                #     CallbackQueryHandler(handle_back_to_main_menu, pattern='back_to_main_menu'),
+                # ],
                 INPUT_GH_ID: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, handle_input_gh_id),
                     CallbackQueryHandler(handle_back_to_main_menu, pattern='back_to_main_menu'),
