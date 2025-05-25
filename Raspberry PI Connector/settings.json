@@ -1,0 +1,15 @@
+{
+    "catalogURL": "http://localhost:8082/",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "serviceInfo": {
+        "ID": 73,
+        "serviceName": "pump",
+        "last_updated": ""
+    },
+    "DeviceInfo": {
+        "ID": 54,
+        "deviceName": "PumpController",
+        "deviceType": "controller"
+    }
+}
