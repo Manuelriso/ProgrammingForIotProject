@@ -6,7 +6,7 @@ from CatalogClient import *
 import uuid
 
 
-class LightController:
+class SecurityController:
     def __init__(self, settings):
         self.settings = settings
         self.broker = settings["brokerIP"]
@@ -113,42 +113,33 @@ class LightController:
 
         try:
             payload_dict = json.loads(payload)
-            
+
             sensor_value = payload_dict["e"][0]["v"]
-            #print(f"Received payload: {sensor_value}")
+            print(f"Received value: {sensor_value}")
             timestamp = payload_dict.get("timestamp", time.time())
         except (json.JSONDecodeError, ValueError) as e:
             print(f"Invalid payload: {payload} - Error: {str(e)}")
             return
 
-            # Get thresholds from catalog once
-        thresholds = {
-            "luminosity": self.catalog_navigator.searchByThreshold(greenhouse_id, area_id, "luminosityThreshold")
-        }
 
-        # Validate thresholds
-        if None in thresholds.values():
-            print(f"Missing thresholds for greenhouse {greenhouse_id}, area {area_id}")
-            return
+ 
 
             # Determine pump state based on sensor type
         lum_value = "off"
-        if sensor_type == "luminosity" and sensor_value > thresholds["luminosity"]:
-            print(f"High luminosity ({sensor_value} > {thresholds['luminosity']}), activating light")
-            lum_value = "off"
-        elif sensor_type == "luminosity" and sensor_value < thresholds["luminosity"]:
-            print(f"Low luminosity ({sensor_value} <= {thresholds['luminosity']}), deactivating light")
+        if sensor_value > 0:
+            print("Motion detected, activating light")
             lum_value = "on"
-        elif sensor_type not in ["luminosity"]:
-            print(f"Ignoring unsupported sensor type: {sensor_type}")
-            return
+        elif sensor_value <= 0:
+            print("No motion, deactivating light")
+            lum_value = "off"
+
 
             # Prepare and publish pump command
         lum_topic = f"greenhouse{greenhouse_id}/area{area_id}/actuation/light"
         lum_msg = {
             "bn": f"greenhouse{greenhouse_id}/area{area_id}",
             "e": [{
-                "n": "pump",
+                "n": "light",
                 "v": lum_value,
                 "t": timestamp,
                 "u": "boolean"

@@ -47,7 +47,7 @@ if __name__ == '__main__':
         pir.wait_for_motion() #these functions are blocking
         print("Motion detected") 
         MqttMotion = {
-                    "bn": f"greenhouse1/area1",
+                    "bn": f"greenhouse1/area1/motion",
                     "e": [{
                             "n": "motion",
                             "v": 1,

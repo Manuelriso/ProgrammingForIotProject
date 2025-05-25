@@ -57,8 +57,11 @@ if __name__ == '__main__':
     print(f"Catalog: {catalog}")
 
     while True:
-            c = Catalog_Navigator(settings=json.load(open('settings.json')))
+            #get must return the updated value already, without reinitializing the catalog
+            # c = Catalog_Navigator(settings=json.load(open('settings.json')))
             catalog = c.get_catalog()
+            # debug
+            print(f"Catalog: {catalog}, brongioli.")
             for greenhouse in catalog["greenhouses"]: # iterate over greenhouses
                 for area in greenhouse["areas"]:
                     # Comment if not using the board (only ID 1)
@@ -68,7 +71,7 @@ if __name__ == '__main__':
                         #sense temperature
                     #    topicTemp = c.searchByTopic(1, 1, "temperatureDataTopic")
                     #    dictTemp = {
-                    #        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area["ID"]}",
+                    #        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area["ID"]}/temperature",
                     #        "e": [{
                     #                "n": "temperature",
                     #                "v": sensor.temperature,
@@ -81,7 +84,7 @@ if __name__ == '__main__':
                     #    #sense humidity
                     #    topicHum = c.searchByTopic(1, 1, "humidityDataTopic")
                     #    dictHum = {
-                    #        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area["ID"]}",
+                    #        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area["ID"]}/humidity",
                     #        "e": [{
                     #                "n": "humidity",
                     #                "v": sensor.humidity,
@@ -95,7 +98,7 @@ if __name__ == '__main__':
                     topicTemp = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "temperatureDataTopic")
                     print(f"Topic for temperature: {topicTemp}")
                     dictTemp = {
-                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}",
+                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/temperature",
                         "e": [{
                                 "n": "temperature",
                                 "v": generate_temperature(),
@@ -111,7 +114,7 @@ if __name__ == '__main__':
                     # sense humidity
                     topicHum = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "humidityDataTopic")
                     dictHum = {
-                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}",
+                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/humidity",
                         "e": [{
                                 "n": "humidity",
                                 "v": generate_humidity(),
@@ -127,7 +130,7 @@ if __name__ == '__main__':
                     # sense motion
                     topicMotion = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "motionTopic")
                     generalMotion = {
-                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}",
+                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/motion",
                         "e": [{
                                "n": "motion",
                                "v": generate_binary(), # if allerts are a problem, just put zeros here
@@ -140,14 +143,28 @@ if __name__ == '__main__':
                     print(f"Motion for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: {area['motionDetected']}")
                     pub.myPublish(topicMotion, generalMotion)
 
+                    # sense luminosity
+                    topicLum = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "luminosityDataTopic")
+                    dictLum = {
+                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/luminosity",
+                        "e": [{
+                                "n": "luminosity",
+                                "v": (generate_humidity()+5)/1.5, # just random percentage value
+                                "t": time.time(),
+                                "u": "percentage"
+                            }]
+                    }
+                    area["currentLuminosity"] = dictLum["e"][0]["v"] #update json
+                    pub.myPublish(topicLum, dictLum) #publish to topic Luminosity
+
                     
                     # now put request to the catalog
-                    for greenhouse in catalog["greenhouses"]:
-                        update = requests.put("http://localhost:8082/greenhouse", data=json.dumps(greenhouse))
-                        print(f"Update status code: {update.status_code}")
-                        if update.status_code == 200:
-                            print("Catalog updated successfully")
-                        else:
-                            print("Failed to update catalog")
+            for greenhouse in catalog["greenhouses"]:
+                update = requests.put("http://localhost:8082/greenhouse", data=json.dumps(greenhouse))
+                print(f"Update status code: {update.status_code}")
+                if update.status_code == 200:
+                    print("Catalog updated successfully")
+                else:
+                    print("Failed to update catalog")
                 
             time.sleep(15) #frequency of sensors (due to database update)

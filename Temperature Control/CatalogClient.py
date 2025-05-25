@@ -6,7 +6,7 @@ import time
 
 
 class Catalog_Navigator:
-    def __init__(self, catalog_data=None, settings=None):
+    def __init__(self, settings):
         self.settings = settings
         # Initialize with default structure
         self.data = {"greenhouses": [], "devices": [], "services": []}
@@ -15,20 +15,30 @@ class Catalog_Navigator:
 
         try:
             response = requests.get(f'{self.settings["catalogURL"]}/greenhouses')
-            response.raise_for_status()
             fetched_data = response.json()
-            print(f"Fetched data from {self.settings['catalogURL']}: {fetched_data}")
-             # Only update if the fetched data has the expected structure
+            # print(f"Fetched data from {self.settings['catalogURL']}: {fetched_data}")
+                # Only update if the fetched data has the expected structure
             self.data=fetched_data
             print("Catalog data loaded successfully from REST API.")
         except Exception as e:
             print(f"Error loading catalog: {e}")
-            # Keep the default structure
+             #Keep the default structure
 
 
     def get_catalog(self):
         """Return the catalog data."""
-        return self.data     
+        try:
+            response = requests.get(f'{self.settings["catalogURL"]}/greenhouses')
+            fetched_data = response.json()
+            # print(f"Fetched data from {self.settings['catalogURL']}: {fetched_data}")
+                # Only update if the fetched data has the expected structure
+            self.data=fetched_data
+            print("Catalog data loaded successfully from REST API.")
+        except Exception as e:
+            print(f"Error loading catalog: {e}")
+                #Keep the default structure
+        return self.data  
+   
   
     # Search for a topic by its name, areaid and ghID
     def searchByTopic(self, greenhouse_id, area_id, topic_key):
@@ -233,57 +243,34 @@ class CatalogAPI(object):
     
     # Handle PUT requests for updating an actuation
 
-    def UpdateActuation(self, greenhouseID, areaID, ventilation=None):
-        try:
-            # 1. Get the entire catalog
-            response = requests.get(f'{self.catalogURL}')
-            response.raise_for_status()
-            catalog_data = response.json()
+    def UpdateActuation(self, greenhouseID, areaID, ventilation):
+        #try:
+        # 1. Get the entire catalog
+        c = Catalog_Navigator(self.settings)
+        catalog = c.get_catalog()
+
+        # 3. Update the pump value
+        catalog["greenhouses"][greenhouseID-1]["areas"][areaID-1]["ventilation"] = ventilation
+        
+        # 5. Make the PUT request to update the area
+        for greenhouse in catalog["greenhouses"]:
+            update = requests.put("http://localhost:8082/greenhouse", data=json.dumps(greenhouse))
+            print(f"Update status code: {update.status_code}")
+            if update.status_code == 200:
+                print("Catalog updated successfully")
+            else:
+                print("Failed to update catalog")
+        
+        print(f"Ventilation actuation updated to {ventilation} in greenhouse {greenhouseID}, area {areaID}")
+        return {
+            "message": "Actuation updated successfully",
+            "updated_area": areaID
+        }
             
-            # 2. Use Catalog_Navigator to find and update the area
-            navigator = Catalog_Navigator(catalog_data)
-            
-            # Find the greenhouse
-            greenhouse = None
-            for gh in navigator.data["greenhouses"]:
-                if gh["greenhouseID"] == greenhouseID:
-                    greenhouse = gh
-                    break
-            
-            if greenhouse is None:
-                return {"message": f"Greenhouse {greenhouseID} not found"}
-            
-            # Find the area
-            area = None
-            for a in greenhouse["areas"]:
-                if a["ID"] == areaID:
-                    area = a
-                    break
-            
-            if area is None:
-                return {"message": f"Area {areaID} not found in greenhouse {greenhouseID}"}
-            
-            # 3. Update the ventilation value
-            if ventilation is not None:
-                area["ventilation"] = ventilation
-            
-            # 4. Prepare the payload (entire area with updated values)
-            update_payload = area
-            
-            # 5. Make the PUT request to update the area
-            response = requests.put(f'{self.catalogURL}/actuation',json=update_payload)
-            response.raise_for_status()
-            
-            print(f"ventilation actuation updated to {ventilation} in greenhouse {greenhouseID}, area {areaID}")
-            return {
-                "message": "Actuation updated successfully",
-                "updated_area": area
-            }
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Error updating actuation: {e}")
-            return {"message": f"Failed to update actuation: {e}"}
-    
+        # except requests.exceptions.RequestException as e:
+        #     print(f"Error updating actuation: {e}")
+        #     return {"message": f"Failed to update actuation: {e}"}
+
 
     
     

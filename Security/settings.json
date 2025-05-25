@@ -1,11 +1,15 @@
 {
-    "catalogURL": "http://catalog:80",
+    "catalogURL": "http://localhost:8082/",
     "brokerIP": "mqtt.eclipseprojects.io",
     "brokerPort": 1883,
-    "mqttTopics" : "+/+/motion",
     "serviceInfo": {
-        "ID": 6,
+        "ID": 73,
         "serviceName": "Security",
         "last_updated": ""
+    },
+    "DeviceInfo": {
+        "ID": 54,
+        "deviceName": "motionSensor",
+        "deviceType": "controller"
     }
 }
