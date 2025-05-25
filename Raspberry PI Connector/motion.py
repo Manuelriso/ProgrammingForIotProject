@@ -37,13 +37,13 @@ class MyMQTT:
         self._paho_mqtt.disconnect()
 
 if __name__ == '__main__':
-    c = Catalog_Navigator()
+    c = Catalog_Navigator(settings=json.load(open('settings.json')))
     catalog = c.getCatalog()    
     pub = MyMQTT("20", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
 
     while True:
-        c = Catalog_Navigator()
+        # c = Catalog_Navigator()
         catalog = c.getCatalog()  
         print("Continue scan")
         pir.wait_for_motion() #these functions are blocking
