@@ -7,7 +7,7 @@ services:
     ports:
     - "80:80"
     volumes:
-    - ./Catalog/catalog.json:/app/Catalog/catalog.json
+    - ./Catalog/catalog.json:/app/catalog.json
 
   node-red:
     build: ./Node-RED
@@ -32,6 +32,8 @@ services:
     ports:
       - "1880:1880"
     restart: unless-stopped 
+    volumes:
+    - ./Node-REDdashboard:/data
 
   thingspeak_adaptor:
     build: ./ThingSpeak Adaptor  
@@ -56,3 +58,36 @@ services:
     links:
       - catalog 
       - thingspeak_adaptor  
+
+  lighting_control:
+    build: ./Lighting Control  
+    expose:
+      - "9091"
+    ports:
+      - "9091:9091" 
+    depends_on:
+      - catalog  
+    links:
+      - catalog 
+  
+  pump_control:
+    build: ./Pump Control 
+    expose:
+      - "9092"
+    ports:
+      - "9092:9092" 
+    depends_on:
+      - catalog  
+    links:
+      - catalog 
+
+  temperature_control:
+    build: ./Temperature Control 
+    expose:
+      - "9093"
+    ports:
+      - "9093:9093" 
+    depends_on:
+      - catalog  
+    links:
+      - catalog 

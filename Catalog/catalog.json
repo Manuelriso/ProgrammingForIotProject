@@ -51,7 +51,7 @@
                 {
                     "ID": 3,
                     "humidityThreshold": 80,
-                    "temperatureThreshold": 12,
+                    "temperatureThreshold": 6,
                     "luminosityThreshold": 60,
                     "plants": "ananas",
                     "temperatureDataTopic": "greenhouse1/area3/temperature",
@@ -104,43 +104,43 @@
             "ID": 6,
             "serviceName": "Security",
             "last_updated": "",
-            "last_update": 1747300091.4006588
+            "last_update": 1748250045.2700534
         },
         {
             "ID": 9,
             "serviceName": "ThreholdManagement",
             "last_updated": "",
-            "last_update": 1747295266.1427205
+            "last_update": 1748250051.5972912
         },
         {
             "ID": 3,
             "serviceName": "ThingspeakAdaptor",
             "last_updated": "",
-            "last_update": 1747218823.9269042
+            "last_update": 1748250084.8374736
         },
         {
             "ID": 10,
             "serviceName": "NodeRED",
             "last_updated": "",
-            "last_update": 1747295265.4392347
-        },
-        {
-            "ID": 73,
-            "serviceName": "pump",
-            "last_updated": "",
-            "last_update": 1747478834.372192
-        },
-        {
-            "ID": 64,
-            "serviceName": "Temp",
-            "last_updated": "",
-            "last_update": 1747463016.4259148
+            "last_update": 1748249984.6976562
         },
         {
             "ID": 34,
-            "serviceName": "light",
+            "serviceName": "Lighting Control",
             "last_updated": "",
-            "last_update": 1747466806.9173858
+            "last_update": 1748250046.530705
+        },
+        {
+            "ID": 64,
+            "serviceName": "Temperature Control",
+            "last_updated": "",
+            "last_update": 1748250046.4088712
+        },
+        {
+            "ID": 73,
+            "serviceName": "Pump Control",
+            "last_updated": "",
+            "last_update": 1748250046.4430184
         }
     ]
 }
