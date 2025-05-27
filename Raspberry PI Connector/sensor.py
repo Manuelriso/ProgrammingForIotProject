@@ -94,19 +94,6 @@ if __name__ == '__main__':
                     #        }
                     #    area["currentHumidity"] = dictHum["e"][0]["v"]
                     #    pub.myPublish(topicHum, dictHum) 
-                    # sense luminosity
-                    # topicLum = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "luminosityDataTopic")
-                    # dictLum = {
-                    #     "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/luminosity",
-                    #     "e": [{
-                    #             "n": "luminosity",
-                    #             "v": (generate_humidity()+5)/1.5, # just random percentage value
-                    #             "t": time.time(),
-                    #             "u": "percentage"
-                    #         }]
-                    # }
-                    # area["currentLuminosity"] = dictLum["e"][0]["v"] #update json
-                    # pub.myPublish(topicLum, dictLum) #publish to topic Luminosity
                     #else: 
                     topicTemp = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "temperatureDataTopic")
                     print(f"Topic for temperature: {topicTemp}")
@@ -155,21 +142,6 @@ if __name__ == '__main__':
                     #debug
                     print(f"Motion for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: {area['motionDetected']}")
                     pub.myPublish(topicMotion, generalMotion)
-
-                    # sense luminosity
-                    topicLum = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "luminosityDataTopic")
-                    dictLum = {
-                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/luminosity",
-                        "e": [{
-                                "n": "luminosity",
-                                "v": (generate_humidity()+5)/1.5, # just random percentage value
-                                "t": time.time(),
-                                "u": "percentage"
-                            }]
-                    }
-                    area["currentLuminosity"] = dictLum["e"][0]["v"] #update json
-                    pub.myPublish(topicLum, dictLum) #publish to topic Luminosity
-
                     
                     # now put request to the catalog
             for greenhouse in catalog["greenhouses"]:
