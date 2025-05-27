@@ -1,0 +1,10 @@
+{
+    "catalogURL": "http://catalog:80/",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "DeviceInfo": {
+        "ID": 73,
+        "deviceName": "LuminosityConnector",
+        "deviceType": "connector"
+    }
+}
