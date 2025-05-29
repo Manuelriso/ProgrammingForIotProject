@@ -51,7 +51,7 @@ if __name__ == '__main__':
     pub = MyMQTT("10", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     #save service info into CATALOG (post)
     settings.serviceInfo['last_update'] = time.time()
-    requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
+    requests.post(f'{settings.catalogURL}/service', data=json.dumps(settings.serviceInfo))
     pub.start()
     print(f"Catalog: {catalog}")
 
@@ -144,5 +144,5 @@ if __name__ == '__main__':
                     print("Failed to update catalog")
             #save service info into CATALOG (put)
             settings.serviceInfo['last_update'] = time.time()
-            requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))            
+            requests.put(f'{settings.catalogURL}/service', data=json.dumps(settings.serviceInfo))            
             time.sleep(15) #frequency of sensors (due to database update)
