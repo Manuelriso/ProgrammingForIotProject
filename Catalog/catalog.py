@@ -12,9 +12,6 @@ class CatalogREST(object):
         with open("catalog.json","r") as file:
             data=json.load(file)
                 
-            
-        if(len(uri)==1 and uri[0]=="devices"):
-            output["devices"]=data["devices"]
          
          
         #greenhouse1/numberOfAreas   
@@ -416,7 +413,7 @@ if __name__=="__main__":
             microservices=data["services"]
             current_time=time.time()
             
-            time_threshold=1000
+            time_threshold=300
             updatedServices=[]
             
             for service in microservices:

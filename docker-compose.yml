@@ -91,3 +91,14 @@ services:
       - catalog  
     links:
       - catalog 
+
+  other_device_connector:
+    build: ./Other Device Connector 
+    expose:
+      - "9094"
+    ports:
+      - "9094:9094" 
+    depends_on:
+      - catalog  
+    links:
+      - catalog 

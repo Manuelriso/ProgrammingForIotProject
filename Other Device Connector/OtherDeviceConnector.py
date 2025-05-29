@@ -45,17 +45,18 @@ if __name__ == '__main__':
     catalog = c.get_catalog()
     pub = MyMQTT("47", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
-    print(f"Catalog: {catalog}")
+    #print(f"Catalog: {catalog}")
     settings = json.load(open('settings.json'))
     catalogURL = settings['catalogURL']
+    serviceInfo=settings["serviceInfo"]
     #save service info into CATALOG (post)
-    settings.serviceInfo['last_update'] = time.time()
-    requests.post(f'{settings.catalogURL}/service', data=json.dumps(settings.serviceInfo))
+    serviceInfo['last_update'] = time.time()
+    requests.post(f'{catalogURL}/service', data=json.dumps(serviceInfo))
 
     while True:
             catalog = c.get_catalog()
             # debug
-            print(f"Catalog: {catalog}, brongioli.")
+            #print(f"Catalog: {catalog}, brongioli.")
             for greenhouse in catalog["greenhouses"]: # iterate over greenhouses
                 for area in greenhouse["areas"]:
                     # sense luminosity
@@ -71,6 +72,7 @@ if __name__ == '__main__':
                     }
                     area["currentLuminosity"] = dictLum["e"][0]["v"] #update json
                     pub.myPublish(topicLum, dictLum) #publish to topic Luminosity
+                    print(f"Luminosity publish on {topicLum}--{dictLum}")
 
                     
                     # now put request to the catalog
@@ -82,6 +84,6 @@ if __name__ == '__main__':
                 else:
                     print("Failed to update catalog")
             #save service info into CATALOG (put)
-            settings.serviceInfo['last_update'] = time.time()
-            requests.put(f'{settings.catalogURL}/service', data=json.dumps(settings.serviceInfo))                  
+            serviceInfo['last_update'] = time.time()
+            requests.put(f'{catalogURL}/service', data=json.dumps(serviceInfo))                  
             time.sleep(15) #frequency of sensors (due to database update)

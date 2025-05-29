@@ -1,4 +1,5 @@
 {
+    "catalogURL": "http://catalog:80/",
     "greenhouses": [
         {
             "greenhouseID": 1,
@@ -8,9 +9,9 @@
             "areas": [
                 {
                     "ID": 1,
-                    "humidityThreshold": 80,
-                    "temperatureThreshold": 21,
-                    "luminosityThreshold": 60,
+                    "humidityThreshold": 81,
+                    "temperatureThreshold": 20,
+                    "luminosityThreshold": 61,
                     "plants": "tomatoes",
                     "temperatureDataTopic": "greenhouse1/area1/temperature",
                     "humidityDataTopic": "greenhouse1/area1/humidity",
@@ -19,7 +20,7 @@
                     "motionDetected": 0,
                     "currentTemperature": 17.7,
                     "currentHumidity": 63.5,
-                    "currentLuminosity": 0,
+                    "currentLuminosity": 43.9,
                     "pumpActuation": "greenhouse1/area1/actuation/pump",
                     "lightActuation": "greenhouse1/area1/actuation/light",
                     "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
@@ -40,7 +41,7 @@
                     "motionDetected": 0,
                     "currentTemperature": 0.0,
                     "currentHumidity": 0,
-                    "currentLuminosity": 0,
+                    "currentLuminosity": 41.7,
                     "pumpActuation": "greenhouse1/area2/actuation/pump",
                     "lightActuation": "greenhouse1/area2/actuation/light",
                     "ventilationActuation": "greenhouse1/area2/actuation/ventilation",
@@ -51,7 +52,7 @@
                 {
                     "ID": 3,
                     "humidityThreshold": 80,
-                    "temperatureThreshold": 6,
+                    "temperatureThreshold": 5,
                     "luminosityThreshold": 60,
                     "plants": "ananas",
                     "temperatureDataTopic": "greenhouse1/area3/temperature",
@@ -61,7 +62,7 @@
                     "motionDetected": 0,
                     "currentTemperature": 0.0,
                     "currentHumidity": 0,
-                    "currentLuminosity": 0,
+                    "currentLuminosity": 49.8,
                     "pumpActuation": "greenhouse1/area3/actuation/pump",
                     "lightActuation": "greenhouse1/area3/actuation/light",
                     "ventilationActuation": "greenhouse1/area3/actuation/ventilation",
@@ -79,8 +80,8 @@
             "areas": [
                 {
                     "ID": 1,
-                    "humidityThreshold": 80,
-                    "temperatureThreshold": 25,
+                    "humidityThreshold": 81,
+                    "temperatureThreshold": 24,
                     "luminosityThreshold": 27,
                     "plants": "Mandioca",
                     "temperatureDataTopic": "greenhouse4/area1/temperature",
@@ -93,11 +94,61 @@
                     "ventilationActuation": "greenhouse4/area1/actuation/ventilation",
                     "pump": 0,
                     "light": "off",
-                    "ventilation": 0
+                    "ventilation": 0,
+                    "currentLuminosity": 43.0
                 }
             ]
         }
     ],
     "devices": [],
-    "services": []
+    "services": [
+        {
+            "ID": 40,
+            "serviceName": "OtherDeviceConnector",
+            "last_updated": "",
+            "last_update": 1748521796.6230016
+        },
+        {
+            "ID": 10,
+            "serviceName": "NodeRED",
+            "last_updated": "",
+            "last_update": 1748521653.0758061
+        },
+        {
+            "ID": 73,
+            "serviceName": "Pump Control",
+            "last_updated": "",
+            "last_update": 1748521653.638838
+        },
+        {
+            "ID": 64,
+            "serviceName": "Temperature Control",
+            "last_updated": "",
+            "last_update": 1748521653.7178016
+        },
+        {
+            "ID": 3,
+            "serviceName": "ThingspeakAdaptor",
+            "last_updated": "",
+            "last_update": 1748521791.4970737
+        },
+        {
+            "ID": 6,
+            "serviceName": "Security",
+            "last_updated": "",
+            "last_update": 1748521791.3024614
+        },
+        {
+            "ID": 9,
+            "serviceName": "ThreholdManagement",
+            "last_updated": "",
+            "last_update": 1748521654.36124
+        },
+        {
+            "ID": 34,
+            "serviceName": "Lighting Control",
+            "last_updated": "",
+            "last_update": 1748521750.716858
+        }
+    ]
 }
