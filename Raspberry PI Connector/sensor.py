@@ -49,6 +49,9 @@ if __name__ == '__main__':
     c = Catalog_Navigator(settings=json.load(open('settings.json')))
     catalog = c.get_catalog()
     pub = MyMQTT("10", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
+    #save service info into CATALOG (post)
+    settings.serviceInfo['last_update'] = time.time()
+    requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     pub.start()
     print(f"Catalog: {catalog}")
 
@@ -139,5 +142,7 @@ if __name__ == '__main__':
                     print("Catalog updated successfully")
                 else:
                     print("Failed to update catalog")
-                
+            #save service info into CATALOG (put)
+            settings.serviceInfo['last_update'] = time.time()
+            requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))            
             time.sleep(15) #frequency of sensors (due to database update)
