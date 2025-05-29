@@ -44,7 +44,7 @@ if __name__ == '__main__':
     settings = json.load(open('settings.json'))
     #post update services
     settings.serviceInfo['last_update'] = time.time()
-    requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
+    requests.post(f'{settings.catalogURL}/service', data=json.dumps(settings.serviceInfo))
 
     while True:
         # c = Catalog_Navigator()
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         time.sleep(10) #wait 10 seconds led on after motion
         #put update service each 10 sec
         settings.serviceInfo['last_update'] = time.time()
-        requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
+        requests.put(f'{settings.catalogURL}/service', data=json.dumps(settings.serviceInfo))
         pir.wait_for_no_motion() #these functions are blocking
         print("Motion stopped")
                 
