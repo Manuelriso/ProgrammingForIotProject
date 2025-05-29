@@ -99,48 +99,5 @@
         }
     ],
     "devices": [],
-    "services": [
-        {
-            "ID": 6,
-            "serviceName": "Security",
-            "last_updated": "",
-            "last_update": 1748250045.2700534
-        },
-        {
-            "ID": 9,
-            "serviceName": "ThreholdManagement",
-            "last_updated": "",
-            "last_update": 1748250051.5972912
-        },
-        {
-            "ID": 3,
-            "serviceName": "ThingspeakAdaptor",
-            "last_updated": "",
-            "last_update": 1748250084.8374736
-        },
-        {
-            "ID": 10,
-            "serviceName": "NodeRED",
-            "last_updated": "",
-            "last_update": 1748249984.6976562
-        },
-        {
-            "ID": 34,
-            "serviceName": "Lighting Control",
-            "last_updated": "",
-            "last_update": 1748250046.530705
-        },
-        {
-            "ID": 64,
-            "serviceName": "Temperature Control",
-            "last_updated": "",
-            "last_update": 1748250046.4088712
-        },
-        {
-            "ID": 73,
-            "serviceName": "Pump Control",
-            "last_updated": "",
-            "last_update": 1748250046.4430184
-        }
-    ]
+    "services": []
 }

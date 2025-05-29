@@ -1,6 +1,7 @@
 import cherrypy
 import json
 import requests
+import time
 
 class CatalogREST(object):
     exposed=True
@@ -405,6 +406,30 @@ if __name__=="__main__":
     #cherrypy.config.update({'server.socket_port': 8080})
     cherrypy.tree.mount(catalogClient, '/', conf)
     cherrypy.engine.start()
+    cycle = True
+    
+    #Control of the last updated microservices
+    while cycle:
+        time.sleep(10)
+        with open("catalog.json","r") as file:
+            data=json.load(file)
+            microservices=data["services"]
+            current_time=time.time()
+            
+            time_threshold=1000
+            updatedServices=[]
+            
+            for service in microservices:
+                lastUpdate=service["last_update"]
+                if current_time-lastUpdate<time_threshold:
+                    updatedServices.append(service)
+                    
+            
+            data["services"]=updatedServices                   
+            
+            #riscrittura sul file
+            with open("catalog.json","w") as file:
+                json.dump(data,file,indent=4)
     cherrypy.engine.block()
     cherrypy.engine.exit()
-        
+    

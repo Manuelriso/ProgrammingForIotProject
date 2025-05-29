@@ -46,6 +46,8 @@ if __name__ == '__main__':
     pub = MyMQTT("47", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
     print(f"Catalog: {catalog}")
+    settings = json.load(open('settings.json'))
+    catalogURL = settings['catalogURL']
 
     while True:
             catalog = c.get_catalog()
@@ -59,7 +61,7 @@ if __name__ == '__main__':
                         "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/luminosity",
                         "e": [{
                                 "n": "luminosity",
-                                "v": (generate_luminosity(), # just random percentage value
+                                "v": generate_luminosity(), # just random percentage value
                                 "t": time.time(),
                                 "u": "percentage"
                             }]
@@ -70,7 +72,7 @@ if __name__ == '__main__':
                     
                     # now put request to the catalog
             for greenhouse in catalog["greenhouses"]:
-                update = requests.put("http://localhost:8082/greenhouse", data=json.dumps(greenhouse))
+                update = requests.put(f"{catalogURL}/greenhouse", data=json.dumps(greenhouse))
                 print(f"Update status code: {update.status_code}")
                 if update.status_code == 200:
                     print("Catalog updated successfully")

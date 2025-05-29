@@ -41,6 +41,8 @@ if __name__ == '__main__':
     catalog = c.getCatalog()    
     pub = MyMQTT("20", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
+    settings = json.load(open('settings.json'))
+    catalogURL = settings['catalogURL']
 
     while True:
         # c = Catalog_Navigator()
@@ -61,7 +63,7 @@ if __name__ == '__main__':
         pub.myPublish("greenhouse1/area1/motion", MqttMotion)
         #put
         for greenhouse in catalog["greenhouses"]:
-            update = requests.put("http://localhost:8082/greenhouse", data=json.dumps(greenhouse))
+            update = requests.put(f"{catalogURL}/greenhouse", data=json.dumps(greenhouse))
             print(f"Update status code: {update.status_code}")
             if update.status_code == 200:
                 print("Catalog updated successfully")
@@ -83,7 +85,7 @@ if __name__ == '__main__':
         pub.myPublish("greenhouse1/area1/motion", MqttMotion)
         #put
         for greenhouse in catalog["greenhouses"]:
-            update = requests.put("http://localhost:8082/greenhouse", data=json.dumps(greenhouse))
+            update = requests.put(f"{catalogURL}/greenhouse", data=json.dumps(greenhouse))
             print(f"Update status code: {update.status_code}")
             if update.status_code == 200:
                 print("Catalog updated successfully")
