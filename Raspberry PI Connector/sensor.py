@@ -18,10 +18,6 @@ def generate_humidity(base_humidity=60.0, variation=10.0):
     """Simulate a humidity value around a base percentage."""
     return round(random.uniform(base_humidity - variation, base_humidity + variation), 1)
 
-def generate_binary():
-    """Generate a random binary value (0 or 1)."""
-    return random.randint(0, 1)
-
 class MyMQTT:
     def __init__(self, clientID, broker, port):
         self.broker = broker
@@ -129,18 +125,10 @@ if __name__ == '__main__':
                 
                     # sense motion
                     topicMotion = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "motionTopic")
-                    generalMotion = {
-                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/motion",
-                        "e": [{
-                               "n": "motion",
-                               "v": generate_binary(), # if allerts are a problem, just put zeros here
-                               "t": time.time(),
-                                "u": "boolean"
-                            }]
-                    }
+                    generalMotion = { "motion" : "on" }                    
                     area["motionDetected"] = generalMotion["e"][0]["v"]
                     #debug
-                    print(f"Motion for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: {area['motionDetected']}")
+                    print(f"Motion for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: on")
                     pub.myPublish(topicMotion, generalMotion)
                     
                     # now put request to the catalog
