@@ -6,5 +6,10 @@
         "ID": 10,
         "deviceName": "RaspberryPIConnector",
         "deviceType": "connector"
+    },
+    "serviceInfo": {
+        "ID": 30,
+        "serviceName": "RaspberryPIConnector",
+        "last_updated": ""
     }
 }
