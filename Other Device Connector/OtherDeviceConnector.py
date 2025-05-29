@@ -48,6 +48,9 @@ if __name__ == '__main__':
     print(f"Catalog: {catalog}")
     settings = json.load(open('settings.json'))
     catalogURL = settings['catalogURL']
+    #save service info into CATALOG (post)
+    settings.serviceInfo['last_update'] = time.time()
+    requests.post(f'{settings.catalogURL}/service', data=json.dumps(settings.serviceInfo))
 
     while True:
             catalog = c.get_catalog()
@@ -78,5 +81,7 @@ if __name__ == '__main__':
                     print("Catalog updated successfully")
                 else:
                     print("Failed to update catalog")
-                
+            #save service info into CATALOG (put)
+            settings.serviceInfo['last_update'] = time.time()
+            requests.put(f'{settings.catalogURL}/service', data=json.dumps(settings.serviceInfo))                  
             time.sleep(15) #frequency of sensors (due to database update)
