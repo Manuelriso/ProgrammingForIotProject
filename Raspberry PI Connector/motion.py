@@ -50,45 +50,9 @@ if __name__ == '__main__':
         print("Continue scan")
         pir.wait_for_motion() #these functions are blocking
         print("Motion detected") 
-        MqttMotion = {
-                    "bn": f"greenhouse1/area1/motion",
-                    "e": [{
-                            "n": "motion",
-                            "v": 1,
-                            "t": time.time(),
-                            "u": "boolean"
-                        }]
-        }
-        catalog["greenhouses"][0]["areas"][0]["motionDetected"] = 1
+        MqttMotion = { "motion" : "on" }
         pub.myPublish("greenhouse1/area1/motion", MqttMotion)
-        #put
-        for greenhouse in catalog["greenhouses"]:
-            update = requests.put(f"{catalogURL}/greenhouse", data=json.dumps(greenhouse))
-            print(f"Update status code: {update.status_code}")
-            if update.status_code == 200:
-                print("Catalog updated successfully")
-            else:
-                print("Failed to update catalog")
         time.sleep(10) #wait 10 seconds led on after motion
         pir.wait_for_no_motion() #these functions are blocking
         print("Motion stopped")
-        MqttMotion = {
-                    "bn": f"greenhouse1/area1",
-                    "e": [{
-                            "n": "motion",
-                            "v": 0,
-                            "t": time.time(),
-                            "u": "boolean"
-                        }]
-        }
-        catalog["greenhouses"][0]["areas"][0]["motionDetected"] = 0
-        pub.myPublish("greenhouse1/area1/motion", MqttMotion)
-        #put
-        for greenhouse in catalog["greenhouses"]:
-            update = requests.put(f"{catalogURL}/greenhouse", data=json.dumps(greenhouse))
-            print(f"Update status code: {update.status_code}")
-            if update.status_code == 200:
-                print("Catalog updated successfully")
-            else:
-                print("Failed to update catalog")
                 
