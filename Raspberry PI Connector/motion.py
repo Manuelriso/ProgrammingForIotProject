@@ -42,7 +42,9 @@ if __name__ == '__main__':
     pub = MyMQTT("20", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
     pub.start()
     settings = json.load(open('settings.json'))
-    catalogURL = settings['catalogURL']
+    #post update services
+    settings.serviceInfo['last_update'] = time.time()
+    requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
 
     while True:
         # c = Catalog_Navigator()
@@ -53,6 +55,9 @@ if __name__ == '__main__':
         MqttMotion = { "motion" : "on" }
         pub.myPublish("greenhouse1/area1/motion", MqttMotion)
         time.sleep(10) #wait 10 seconds led on after motion
+        #put update service each 10 sec
+        settings.serviceInfo['last_update'] = time.time()
+        requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
         pir.wait_for_no_motion() #these functions are blocking
         print("Motion stopped")
                 
