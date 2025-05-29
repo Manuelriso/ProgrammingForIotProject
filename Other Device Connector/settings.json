@@ -6,5 +6,10 @@
         "ID": 73,
         "deviceName": "LuminosityConnector",
         "deviceType": "connector"
+    },
+    "serviceInfo": {
+        "ID": 40,
+        "serviceName": "OtherDeviceConnector",
+        "last_updated": ""
     }
 }
