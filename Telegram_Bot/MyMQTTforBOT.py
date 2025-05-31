@@ -44,7 +44,7 @@ class MyMQTT:
             print("Error decoding JSON payload:", payload_str)
             return
         if self.notifier and hasattr(self.notifier, 'notify'):
-            self.notifier.notify(msg.topic, payload)
+            self.notifier.notify(msg.topic, payload)  ##deleted msg.topic 
         else:
             print("Notifier is not set or doesn't have a notify method.")
 

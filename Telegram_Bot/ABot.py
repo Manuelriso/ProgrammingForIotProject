@@ -60,7 +60,7 @@ areas_keyboard = InlineKeyboardMarkup([
 
 ######################### AUXILIARY FUNCTIONS #########################
 ### Verify if the greenhouse ID exists in the database
-import requests
+
 
 async def check_gh_id_exists(catalog_url, greenhouse_id) -> bool:
     try:
@@ -341,12 +341,24 @@ def format_alert_message(alert_dict,already_tried):
         f"🏡 *Invernadero:* {alert_dict['gh_id']}\n"
         f"📍 *Área:* {alert_dict['area_id']}\n"
         f"🔔 *Tipo de alerta:* {alert_dict['alerttype'].capitalize()}\n"
-        f"📊 *Valor:* {alert_dict.get('value', 'N/A')} {alert_dict.get('unit', '')}\n" #####TOGLIERE
+        # f"📊 *Valor:* {alert_dict.get('value', 'N/A')} {alert_dict.get('unit', '')}\n" #####TOGLIERE
         f"🕒 *Fecha y hora:* {alert_dict['timestamp']}\n"
     )
     if already_tried == True:
         msg += "\n⚠️ Hubo una alerta que se perdió. Por favor contacta soporte."
     return msg
+
+def get_ids(info):
+    # Esperamos que 'bn' sea algo como: "greenhouse1/area1/motion"
+    parts = info.split("/")
+    if len(parts) >= 3:
+        gh_id = parts[0].replace("greenhouse", "")  # greenhouse1 -> 1
+        area_id = parts[1].replace("area", "")  # area1 -> 1
+        return gh_id, area_id
+    else:
+        print(f"Unexpected format in topic: {info}")
+        return None, None  # O podés lanzar una excepción si querés validar
+
 
 pending_alert = None
 already_retried = False  # Marca si la alerta pendiente ya tuvo un reintento fallido.
@@ -420,7 +432,7 @@ class BotMain:
         #     print(f"Error setting up MQTT and AlertNotifier: {e}")
         #     return None, None
         
-        
+
     # async def _process_message_queue(self):
     #     while True:
     #         chat_id, text = await self.message_queue.get()
@@ -911,22 +923,43 @@ class BotMain:
             print(" gh in gh map created and subscriptions updated")
 
             del self.user_data[user_id]['new_gh_id']  # Remove the key from user_data
-            await update.message.reply_text(
+            messagee = (
                 f"✅ *Greenhouse Created Successfully!*\n"
                 f"🆔 *ID*: `{gh_id}`\n"
                 f"🌱 *First Area*: Plants of type: `{plant_type}`\n\n"
-                f"Your greenhouse is now ready. Use the Main Menu to manage it.",
-                reply_markup=back_to_MM,
-                parse_mode="Markdown"
+                f"Your greenhouse is now ready. Use the Main Menu to manage it."
             )
+            if update.message:
+                await update.message.reply_text(
+                    messagee,
+                    reply_markup=back_to_MM,
+                    parse_mode="Markdown"
+                )
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(
+                    messagee,
+                    reply_markup=back_to_MM,
+                    parse_mode="Markdown"
+                )
             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
             return MAIN_MENU
         else:
-            await update.message.reply_text(
+            errorrr = (
                 "🚨 Oops! Something went wrong while creating your greenhouse. Please try again.\n"
-                "If the issue persists, feel free to contact our support team for assistance. 🌱",
-                reply_markup=back_to_MM
+                "If the issue persists, feel free to contact our support team for assistance. 🌱"
             )
+            if update.message:
+                await update.message.reply_text(
+                    errorrr,
+                    reply_markup=back_to_MM,
+                    parse_mode="Markdown"
+                )
+            elif update.callback_query:
+                await update.callback_query.message.reply_text(
+                    errorrr,
+                    reply_markup=back_to_MM,
+                    parse_mode="Markdown"
+                )
             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
             return MAIN_MENU
 
@@ -1696,13 +1729,56 @@ class BotMain:
             print(f"Area {area_id} removed from greenhouse {gh_id}.")
             return True
 
+                    # asyncio.run_coroutine_threadsafe(
+                    #     self.notify_user(GH_ID, AREA_ID, destinatario, situation, timestamp, unit),
+                    #     self.application.loop
+                    # )
+                        # Llamar a notify_user con datos mínimos
+
+    async def update_motion_value(self, gh_id, area_id, value_received,timestamp): #update the LastMotionValue in the map after receiving a message from the broker
+        with self.greenhouse_map_lock:  # Lock for thread-safe access
+            last_value = self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"]
+            if last_value == value_received:
+                print("No hay novedad")
+                return False  # No update needed
+            # Update the motion value in the map
+            self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"] = value_received
+            self.greenhouse_user_map[gh_id]["areas"][area_id]["timestamp"] = timestamp
+            return True  # Update successful
+
+    async def aggiornamento_alerts(self, alert_queue):
+        alert_data = await alert_queue.get()
+        base_name = alert_data.get("bn", "")
+        events = alert_data.get("e", [])
+        GH_ID, AREA_ID = get_ids(base_name)
+        if not GH_ID or not AREA_ID:
+            return
+    
+        async with self.greenhouse_map_lock:
+            if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
+                print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map.")
+                return
+        for event in events:
+            situation = event.get("n")
+            timestamp = event.get("t")
+            if situation == "motion":
+                value_received = event.get("v") # A 1 or 0
+            updated = self.update_motion_value(GH_ID, AREA_ID, value_received,timestamp)
+            if not updated:
+            # If no update was needed, skip further processing
+                continue
 
     ################## ALERT CONSUMER FUNCTION ##################
     async def alert_consumer(self, application, alert_queue, user_states):
+
+        #Funcion de aggiornamiento de diccionario
+        await self.aggiornamento_alerts(alert_queue)
+
         global pending_alert, already_retried
         print("[✓] alert_consumer lanzado")
         while True:
             if pending_alert is None:
+                print ("vamos a esperar una alerta")
                 alert_data = await alert_queue.get()
                 print(f"[✓] Alerta recibida")
                 task_was_from_queue = True
@@ -1710,11 +1786,13 @@ class BotMain:
                 alert_data = pending_alert
                 task_was_from_queue = False
             try:
+                print("entramos el try")
                 chat_id = alert_data['chat_id']
                 text = format_alert_message(alert_data, already_retried)
                 state = user_states.get(chat_id)
 
                 if state in ["END", MAIN_MENU]:
+                    print("podriamos recibir alertas a usuarios")
                     try:
                         #await bot.application.bot.send_message(
                         await application.bot.send_message(
@@ -1756,8 +1834,6 @@ class BotMain:
 
             except Exception as e:
                 print(f"Error processing alert: {e}")
-
-
 
     def run(self):
         async def start_alert_task(application):

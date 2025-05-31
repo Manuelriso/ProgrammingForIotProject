@@ -76,17 +76,18 @@ class AlertNotifier:
     #                 "u": "boolean"
     #             }]
     # }
-    async def notify(self, payload):
+    def notify(self, msg, payload):
         base_name = payload.get("bn", "")
+        print(f" msg: {msg}, datatype of msg: {type(msg)}, datatype of payload: {type(payload)}")
         events = payload.get("e", [])
         GH_ID, AREA_ID = self.get_ids(base_name)
-        if not GH_ID or not AREA_ID:
-            return
-        # async with greenhouse_map_lock:
-            # Ensure the greenhouse and area exist in the map
-        if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
-            print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map.")
-            return
+        # if not GH_ID or not AREA_ID:
+        #     return
+        # # async with greenhouse_map_lock:
+        #     # Ensure the greenhouse and area exist in the map
+        # if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
+        #     print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map.")
+        #     return
 
         for event in events:
             situation = event.get("n")
@@ -94,18 +95,10 @@ class AlertNotifier:
             unit = event.get("u")
             if situation == "motion":
                 value_received = event.get("v") # A 1 or 0
-                updated = await self.update_motion_value(GH_ID, AREA_ID, value_received,timestamp)
-                if not updated:
-                    # If no update was needed, skip further processing
-                    continue
                 print(f"Received motion event: {situation} with value {value_received} for GH_ID: {GH_ID}, AREA_ID: {AREA_ID}, timestamp: {timestamp}, unit: {unit}")
                 if value_received == 1: # and it already wasn't == last value
-                    destinatario = self.greenhouse_user_map[GH_ID]["user"]
-                    # asyncio.run_coroutine_threadsafe(
-                    #     self.notify_user(GH_ID, AREA_ID, destinatario, situation, timestamp, unit),
-                    #     self.application.loop
-                    # )
-                        # Llamar a notify_user con datos mínimos
+                    destinatario = self.get_user_from_id(GH_ID)
+                    print("about to acces the notify__user method")
                     self.notify_user(
                         gh_id=GH_ID,
                         area_id=AREA_ID,
@@ -118,18 +111,8 @@ class AlertNotifier:
                 print(f"Unexpected event type: {situation} in topic {base_name}")
                 continue
 
-    async def update_motion_value(self, gh_id, area_id, value_received,timestamp): #update the LastMotionValue in the map after receiving a message from the broker
-        async with self.greenhouse_map_lock:  # Lock for thread-safe access
-            last_value = self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"]
-            if last_value == value_received:
-                print("No hay novedad")
-                return False  # No update needed
-            # Update the motion value in the map
-            self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"] = value_received
-            self.greenhouse_user_map[gh_id]["areas"][area_id]["timestamp"] = timestamp
-            return True  # Update successful
-
     def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit): #Sends the alert to the queue of the bot
+        print("Something happened, notifying user...")
         if not self.enqueue_method:
             raise ValueError("Enqueue method must be set before using AlertNotifier") 
         self.enqueue_method({
