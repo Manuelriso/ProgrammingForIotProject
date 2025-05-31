@@ -202,7 +202,7 @@ async def delete_area(catalog_url, greenhouse_id, area_id) -> bool:
 async def list_areas(catalog_url, greenhouse_id) -> list:
         try:
             response = requests.get(f"{catalog_url}greenhouse{greenhouse_id}/areas")
-            print(f"URL: {catalog_url}greenhouse{greenhouse_id}/areas")  # Debug URL
+            #print(f"URL: {catalog_url}greenhouse{greenhouse_id}/areas")  # Debug URL
             #print(f"Server response: {response.text}")  # Additional debug
             if response.status_code == 200:
                 data = response.json()  # Get the response body
@@ -351,66 +351,6 @@ def format_alert_message(alert_dict,already_tried):
 pending_alert = None
 already_retried = False  # Marca si la alerta pendiente ya tuvo un reintento fallido.
 
-
-################## ALERT CONSUMER FUNCTION ##################
-async def alert_consumer(application, alert_queue, user_states):
-    global pending_alert, already_retried
-    print("[✓] alert_consumer lanzado")
-    while True:
-        if pending_alert is None:
-            alert_data = await alert_queue.get()
-            task_was_from_queue = True
-        else:
-            alert_data = pending_alert
-            task_was_from_queue = False
-        try:
-            chat_id = alert_data['chat_id']
-            text = format_alert_message(alert_data, already_retried)
-            state = user_states.get(chat_id)
-
-            if state in ["END", MAIN_MENU]:
-                try:
-                    #await bot.application.bot.send_message(
-                    await application.bot.send_message(
-                        chat_id=chat_id,
-                        text=text,
-                        parse_mode='Markdown'
-                    )
-                    pending_alert = None
-                    already_retried = False
-                    if task_was_from_queue:
-                        alert_queue.task_done()
-
-                except Exception as e:
-                    print(f"Error enviando alerta a {chat_id}: {e}")
-                    if already_retried:
-                        print("Ya intenté reenviar esta alerta una vez, la descarto.")
-                        pending_alert = None
-                        already_retried = False
-                        if task_was_from_queue:
-                            alert_queue.task_done()
-                    else:
-                        print("Reintentando en 5 segundos...")
-                        already_retried = True
-                        pending_alert = alert_data
-                        await asyncio.sleep(5)
-
-            elif state is None:
-                print(f"Estado desconocido para alerta: {alert_data}. La descarto.")
-                if task_was_from_queue:
-                    alert_queue.task_done()
-                pending_alert = None
-                already_retried = False
-
-            else:
-                pending_alert = alert_data
-                await asyncio.sleep(5)
-
-        except Exception as e:
-            print(f"Error processing alert: {e}")
-
-
-
 ############################# CLASSES #############################
 class BotMain:
     def __init__(self, config):
@@ -438,10 +378,15 @@ class BotMain:
 
         self.greenhouse_user_map = {}  # Maps greenhouse IDs to user IDs
         self.greenhouse_user_map_lock = asyncio.Lock()  # Lock for thread-safe access
-
+        print("pre setup en el coso central 446")
         # Setup de MQTT + Notificador (ver función abajo)
         self.mqtt_client, self.alert_notifier = self.setup_mqtt_and_notifier()
-        self.application.bot_data['alert_notifier'] = self.alert_notifier # Store the notifier in bot_data for easy access
+        print("mqtt_client:", self.mqtt_client)
+        print("alert_notifier:", self.alert_notifier)
+        print("post setup en el coso central 446")
+
+        # self.application.bot_data['alert_notifier'] = self.alert_notifier # Store the notifier in bot_data for easy access
+        
         # Initialize greenhouse_user_map
         self.initialize_greenhouse_user_map()
 
@@ -453,24 +398,28 @@ class BotMain:
             # Iniciar worker que procesa la queue
 
     def setup_mqtt_and_notifier(self):
-        try:
-            mqtt_client = MyMQTTforBOT("TelBotMQTTClient", self.mqtt_broker, self.broker_port) #instance the MyMQTT
-            ############ This can be modified if I modify the AlertNotifier class with new parameters, as catalog_url and default_thresholds
-            alert_notifier = AlertNotifier(
-                mqtt_client=mqtt_client,
+        # try:
+            print("Initializing MQTT client...")
+            self.mqtt_client = MyMQTTforBOT.MyMQTT("TelBotMQTTClient", self.mqtt_broker, self.broker_port)
+            print("MQTT client initialized.")
+
+            print("Initializing AlertNotifier...")
+            self.alert_notifier = AlertNotifier(
+                mqtt_client=self.mqtt_client,
                 catalog_url=self.catalog_url,
                 greenhouse_user_map=self.greenhouse_user_map,
-                greenhouse_map_lock=self.greenhouse_map_lock) # Instance the notifier
-            alert_notifier.enqueue_method = self.enqueue_alert_message
-            #alert_notifier.application.loop = asyncio.get_event_loop() ####NO ENTIENDO ESTO AUN ##CHECK CHECK
+                greenhouse_map_lock=self.greenhouse_map_lock)
+            print("AlertNotifier initialized.")
 
-            ###########
-            mqtt_client.notifier = alert_notifier #pass the resposnible of notification to the MyMQTT communications instance
-            mqtt_client.start() # Start the MQTT client to listen for messages
-            return mqtt_client, alert_notifier
-        except Exception as e:
-            print(f"Error setting up MQTT and AlertNotifier: {e}")
-            return None, None
+            self.alert_notifier.enqueue_method = self.enqueue_alert_message
+            self.mqtt_client.notifier = self.alert_notifier
+            self.mqtt_client.start()
+            print("MQTT client started.")
+            return self.mqtt_client, self.alert_notifier
+        # except Exception as e:
+        #     print(f"Error setting up MQTT and AlertNotifier: {e}")
+        #     return None, None
+        
         
     # async def _process_message_queue(self):
     #     while True:
@@ -850,11 +799,12 @@ class BotMain:
 
             # If creating a new greenhouse and area for the first time
             if self.user_data[user_id].get('new_gh_id') is not None: #so add a new greenhouse with area
-                # print(">> Creating the first greenhouse and area after thresholds")
+                print(">> Creating the first greenhouse and area after thresholds")
                 return await self.handle_create_first_a(update, context)
             # If creating a new area in an existing greenhouse
             elif self.user_data[user_id].get('gh_to_manage') is not None: # so add a new area
-                await self.add_area_confirm(update, context)
+                print(">> Creating a new area in an existing greenhouse after thresholds")
+                return await self.add_area_confirm(update, context)
             else:
                 print(">> Internal error: issues between return functions")
         else:
@@ -919,9 +869,8 @@ class BotMain:
             # del user_data[user_id]['light_threshold']
             # #NOT NEEDED IF THE BACK TO MAIN MENU DELETES THE ENTIRE user_data
 
-            #Update the greenhouse_user_map and subscribe to the new topics
-            async with self.greenhouse_map_lock:
-                    await self.add_area_to_map(greenhouse_id, new_id)
+
+            await self.add_area_to_map(greenhouse_id, new_id)
             self.alert_notifier.update_subscriptions("create", greenhouse_id, new_id)
             print(" gh map updated with new area and subscriptions updated")
 
@@ -939,7 +888,7 @@ class BotMain:
             return FINAL_STAGE
 
     async def handle_create_first_a(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        # print(">> Entró a handle_create_first_a")
+        print(">> Entró a handle_create_first_a")
         catalog_url = context.bot_data['catalog_url']
         user_id = update.effective_user.id
         gh_id = self.user_data[user_id]['new_gh_id']
@@ -953,9 +902,11 @@ class BotMain:
         success = await create_greenhouse_and_area(catalog_url, user_id, gh_id, plant_type, temperature_threshold, humidity_threshold, light_threshold)
         
         if success:
+            print(">> Greenhouse and area created successfully line 959")
             #Update the greenhouse_user_map and subscribe to the new topics
-            async with self.greenhouse_map_lock:
-                    await self.create_greenhouse_map(gh_id, 1, user_id) #1 is the first area
+            print("about to create the greenhouse map 962")
+            await self.create_greenhouse_map(gh_id, 1, user_id) #1 is the first area
+            print ("agter creating 965")
             self.alert_notifier.update_subscriptions("create", gh_id, 1) #"motion"
             print(" gh in gh map created and subscriptions updated")
 
@@ -1093,9 +1044,9 @@ class BotMain:
         if decision == 'confirm_delete_gh':
             # print("Entered confirm_delete_gh decision")
             if await delete_entire_greenhouse(catalog_url, greenhouse_to_delete):             
-                #Update the greenhouse_user_map and unsubscribe from the topics
-                async with self.greenhouse_map_lock:
-                        await self.delete_greenhouse_from_map(greenhouse_to_delete)
+
+                await self.delete_greenhouse_from_map(greenhouse_to_delete)
+                print (">> Greenhouse deleted from the map")
                 self.alert_notifier.update_subscriptions("delete", greenhouse_to_delete) #"motion"
                 print(" gh in gh map deleted and subscriptions updated")
 
@@ -1307,8 +1258,7 @@ class BotMain:
 
             if await create_area(catalog_url, greenhouse_id, new_id, plant_type, temperature_threshold, humidity_threshold, light_threshold):
                 #Update the greenhouse_user_map and subscribe to the new topics
-                async with self.greenhouse_map_lock:
-                        await self.add_area_to_map(greenhouse_id, new_id)
+                await self.add_area_to_map(greenhouse_id, new_id)
                 self.alert_notifier.update_subscriptions("create", greenhouse_id, new_id) #"motion"
                 print(" area in gh map added and subscriptions updated")
 
@@ -1372,8 +1322,7 @@ class BotMain:
         if decision == 'confirm_delete_area':
             if await delete_area(catalog_url, greenhouse_id, area_X):
                 #Update the greenhouse_user_map and subscribe to the new topics
-                async with self.greenhouse_map_lock:
-                        await self.delete_area_from_map(greenhouse_id, area_X)
+                await self.delete_area_from_map(greenhouse_id, area_X)
                 self.alert_notifier.update_subscriptions("delete", greenhouse_id, area_X) #"motion"
                 print(" area in gh map deleted and subscriptions updated")
 
@@ -1417,8 +1366,8 @@ class BotMain:
             if await delete_entire_greenhouse(catalog_url, greenhouse_id):
 
                 #Update the greenhouse_user_map and unsubscribe from the topics
-                async with self.greenhouse_map_lock:
-                        await self.delete_greenhouse_from_map(greenhouse_id)
+                await self.delete_greenhouse_from_map(greenhouse_id)
+                print (">> Greenhouse deleted from the map 1429")
                 self.alert_notifier.update_subscriptions("delete", greenhouse_id) #"motion"
                 print(" area in gh map deleted and subscriptions updated")
 
@@ -1748,15 +1697,77 @@ class BotMain:
             return True
 
 
+    ################## ALERT CONSUMER FUNCTION ##################
+    async def alert_consumer(self, application, alert_queue, user_states):
+        global pending_alert, already_retried
+        print("[✓] alert_consumer lanzado")
+        while True:
+            if pending_alert is None:
+                alert_data = await alert_queue.get()
+                print(f"[✓] Alerta recibida")
+                task_was_from_queue = True
+            else:
+                alert_data = pending_alert
+                task_was_from_queue = False
+            try:
+                chat_id = alert_data['chat_id']
+                text = format_alert_message(alert_data, already_retried)
+                state = user_states.get(chat_id)
+
+                if state in ["END", MAIN_MENU]:
+                    try:
+                        #await bot.application.bot.send_message(
+                        await application.bot.send_message(
+                            chat_id=chat_id,
+                            text=text,
+                            parse_mode='Markdown'
+                        )
+                        print("[✓] Alerta enviada a", chat_id)
+                        pending_alert = None
+                        already_retried = False
+                        if task_was_from_queue:
+                            alert_queue.task_done()
+                        await asyncio.sleep(1)
+
+                    except Exception as e:
+                        print(f"Error enviando alerta a {chat_id}: {e}")
+                        if already_retried:
+                            print("Ya intenté reenviar esta alerta una vez, la descarto.")
+                            pending_alert = None
+                            already_retried = False
+                            if task_was_from_queue:
+                                alert_queue.task_done()
+                        else:
+                            print("Reintentando en 5 segundos...")
+                            already_retried = True
+                            pending_alert = alert_data
+                            await asyncio.sleep(5)
+
+                elif state is None:
+                    print(f"Estado desconocido para alerta: {alert_data}. La descarto.")
+                    if task_was_from_queue:
+                        alert_queue.task_done()
+                    pending_alert = None
+                    already_retried = False
+
+                else:
+                    pending_alert = alert_data
+                    await asyncio.sleep(5)
+
+            except Exception as e:
+                print(f"Error processing alert: {e}")
+
+
 
     def run(self):
         async def start_alert_task(application):
             application.create_task(
-                alert_consumer(application, self.alert_queue, self.user_states)
+                self.alert_consumer(application, self.alert_queue, self.user_states)
             )
         self.application.post_init = start_alert_task
         # asyncio.create_task(alert_consumer(self.application.bot, self.alert_queue, self.user_states))
         self.application.run_polling()
+        # self.application.post_init = start_alert_task
  
 if __name__ == "__main__":
     config = load_config()

@@ -6,10 +6,11 @@ from requests.exceptions import RequestException
 ############################# ALERT NOTIFIER #######################
 class AlertNotifier:
 ########################### INITIALIZATION ######################
-    def __init__(self, mqtt_client: MyMQTT, catalog_url, greenhouse_map_lock):
+    def __init__(self, mqtt_client: MyMQTT, catalog_url, greenhouse_user_map, greenhouse_map_lock):
 
         # self.botapp = bot
         self.mqtt = mqtt_client
+        self.greenhouse_user_map = greenhouse_user_map 
         self.greenhouse_map_lock = greenhouse_map_lock 
         self.subscribed_topics = set()
         self.catalog_url = catalog_url
@@ -59,6 +60,7 @@ class AlertNotifier:
             # Obtener lista completa del catálogo y suscribirse
             topics = self.build_topics_list_from_catalog()
             self.subscribe_to_multiple(topics)
+        print(f"Updating subscriptions: {action}, greenhouse_id: {greenhouse_id}, area_id: {area_id}")
     
     def build_topic(self, greenhouse_id, area_id,tematic):
         return f"greenhouse{greenhouse_id}/area{area_id}/{tematic}"
@@ -96,7 +98,7 @@ class AlertNotifier:
                 if not updated:
                     # If no update was needed, skip further processing
                     continue
-                
+                print(f"Received motion event: {situation} with value {value_received} for GH_ID: {GH_ID}, AREA_ID: {AREA_ID}, timestamp: {timestamp}, unit: {unit}")
                 if value_received == 1: # and it already wasn't == last value
                     destinatario = self.greenhouse_user_map[GH_ID]["user"]
                     # asyncio.run_coroutine_threadsafe(
@@ -138,6 +140,7 @@ class AlertNotifier:
             "timestamp": timestamp,
             "unit": unit
         })
+        print("Enqueued alert")
 
 ############################ AUXILIARY METHODS AND FUNCTIONS ######################
     def get_ids(self, info):
