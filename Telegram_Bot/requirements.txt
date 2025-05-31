@@ -1,3 +1,4 @@
-pip install python-telegram-bot==22.3 #CONTROL THIS
-
-pip install "python-telegram-bot[job-queue]"
+python-telegram-bot==22.1
+paho-mqtt
+requests
+python-telegram-bot[job-queue]==22.1
