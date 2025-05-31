@@ -63,7 +63,7 @@ if __name__ == '__main__':
             # c = Catalog_Navigator(settings=json.load(open('settings.json')))
             catalog = c.get_catalog()
             # debug
-            print(f"Catalog: {catalog}, brongioli.")
+            #print(f"Catalog: {catalog}, brongioli.")
             for greenhouse in catalog["greenhouses"]: # iterate over greenhouses
                 for area in greenhouse["areas"]:
                     # Comment if not using the board (only ID 1)
@@ -132,7 +132,6 @@ if __name__ == '__main__':
                     # sense motion
                     topicMotion = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "motionTopic")
                     generalMotion = { "motion" : "on" }                    
-                    area["motionDetected"] = generalMotion["e"][0]["v"]
                     #debug
                     print(f"Motion for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: on")
                     pub.myPublish(topicMotion, generalMotion)

@@ -1,6 +1,6 @@
 {
     "catalogURL": "http://catalog:80",
-    "thingspeakURL" : "http://thingspeak_adaptor:9090",
+    "thingspeakURL" : "http://catalog:9090",
     "brokerIP": "mqtt.eclipseprojects.io",
     "brokerPort": 1883,
     "serviceInfo": {

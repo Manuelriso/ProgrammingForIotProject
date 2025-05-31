@@ -46,7 +46,9 @@ class ThresholdManagement:
                 
                 #I get all data about temperature,humidity and luminosity from the ThingSpeakAdaptor
                 responseTemperature=requests.get(f'{self.thingSpeakURL}/greenhouse{greenhouseID}/area{areaID}/temperature')
+                time.sleep(2)
                 responseHumidity=requests.get(f'{self.thingSpeakURL}/greenhouse{greenhouseID}/area{areaID}/humidity')
+                time.sleep(2)
                 responseLuminosity=requests.get(f'{self.thingSpeakURL}/greenhouse{greenhouseID}/area{areaID}/luminosity')
                 temperatureData=responseTemperature.json()
                 humidityData=responseHumidity.json()

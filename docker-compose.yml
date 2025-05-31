@@ -102,3 +102,14 @@ services:
       - catalog  
     links:
       - catalog 
+
+  raspberry_device_connector:
+    build: ./Raspberry PI Connector 
+    expose:
+      - "9095"
+    ports:
+      - "9095:9095" 
+    depends_on:
+      - catalog  
+    links:
+      - catalog 

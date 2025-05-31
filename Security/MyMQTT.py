@@ -18,7 +18,7 @@ class MyMQTT:
     def myOnMessageRecieved(self, paho_mqtt, user_data, msg):
         self.notifier.notify(msg.topic, msg.payload)
 
-    def mypublish (self, topic,msg):
+    def myPublish (self, topic,msg):
         self._paho_mqtt.publish(topic, json.dumps(msg), 2)
 
     def mysubscribe(self, topic):
