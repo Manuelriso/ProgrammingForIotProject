@@ -251,8 +251,14 @@ class CatalogAPI(object):
         catalog = c.get_catalog()
 
         # 3. Update the pump value
-        catalog["greenhouses"][greenhouseID-1]["areas"][areaID-1]["pump"] = pump
-        
+        for greenhouse in catalog["greenhouses"]:
+            if greenhouse["greenhouseID"] == greenhouseID:
+                # Search for the correct area by ID
+                for area in greenhouse["areas"]:
+                    if area["ID"] == areaID:
+                        # Update the pump value
+                        area["pump"] = pump   
+                             
         # 5. Make the PUT request to update the area
         for greenhouse in catalog["greenhouses"]:
             update = requests.put(f"{self.catalogURL}/greenhouse", data=json.dumps(greenhouse))
