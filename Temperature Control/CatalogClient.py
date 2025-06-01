@@ -192,7 +192,7 @@ class Catalog_Navigator:
                     area.get("temperatureDataTopic"),
                     area.get("humidityDataTopic"),
                     area.get("luminosityDataTopic"),
-                    area.get("motionTopic")
+                    #area.get("motionTopic")
                 ])
         return topics
     
@@ -254,7 +254,7 @@ class CatalogAPI(object):
         
         # 5. Make the PUT request to update the area
         for greenhouse in catalog["greenhouses"]:
-            update = requests.put(f"http://{self.catalogURL}/greenhouse", data=json.dumps(greenhouse))
+            update = requests.put(f"{self.catalogURL}/greenhouse", data=json.dumps(greenhouse))
             print(f"Update status code: {update.status_code}")
             if update.status_code == 200:
                 print("Catalog updated successfully")

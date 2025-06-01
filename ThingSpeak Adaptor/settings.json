@@ -1,5 +1,5 @@
 {
-    "catalogURL": "http://localhost:80",
+    "catalogURL": "http://catalog:80",
     "ThingspeakURL": "https://api.thingspeak.com/update?api_key=",
     "ChannelWriteAPIkeyTemperature": "Q8Y2C47GG5Q95117",
     "ChannelReadAPIKeyTemperature": "CXW8G70Y79I6DODX",

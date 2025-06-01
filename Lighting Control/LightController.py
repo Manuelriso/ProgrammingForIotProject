@@ -95,7 +95,7 @@ class LightController:
         #try:
             # Parse topic and payload
         parsed_payoload= json.loads(payload)
-        parsed_topic = parsed_payoload["bn"]
+        parsed_topic = parsed_payoload['bn']
         topic_parts = parsed_topic.split('/')
         print(f"Received topic: {parsed_topic}")
         print(f"Received payload: {parsed_payoload}")

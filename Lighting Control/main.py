@@ -12,7 +12,6 @@ if __name__ == "__main__":
     catalog_navigator = Catalog_Navigator(settings=settings)  # Pass settings here
     catalog_api = CatalogAPI(catalog_navigator, settings)
     pump_controller = LightController(settings)
-    
     # Register the service
     catalog_api.registerService()
     
