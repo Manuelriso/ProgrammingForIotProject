@@ -4,7 +4,7 @@
         {
             "greenhouseID": 1,
             "telegram_ID": 1513626438,
-            "numberOfAreas": 3,
+            "numberOfAreas": 4,
             "creation_date": "09-07-1816",
             "areas": [
                 {
@@ -66,6 +66,27 @@
                     "pumpActuation": "greenhouse1/area3/actuation/pump",
                     "lightActuation": "greenhouse1/area3/actuation/light",
                     "ventilationActuation": "greenhouse1/area3/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                },
+                {
+                    "ID": 4,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Ptvv",
+                    "temperatureDataTopic": "greenhouse1/area4/temperature",
+                    "humidityDataTopic": "greenhouse1/area4/humidity",
+                    "luminosityDataTopic": "greenhouse1/area4/luminosity",
+                    "motionTopic": "greenhouse1/area4/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse1/area4/actuation/pump",
+                    "lightActuation": "greenhouse1/area4/actuation/light",
+                    "ventilationActuation": "greenhouse1/area4/actuation/ventilation",
                     "pump": 0,
                     "light": "off",
                     "ventilation": 0

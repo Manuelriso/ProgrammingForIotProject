@@ -7,11 +7,7 @@ from requests.exceptions import RequestException
 class AlertNotifier:
 ########################### INITIALIZATION ######################
     def __init__(self, mqtt_client: MyMQTT, catalog_url):
-
-        # self.botapp = bot
         self.mqtt = mqtt_client
-        # self.greenhouse_user_map = greenhouse_user_map 
-        # self.greenhouse_map_lock = greenhouse_map_lock 
         self.subscribed_topics = set()
         self.catalog_url = catalog_url
         if not self.catalog_url.endswith('/'):
@@ -43,24 +39,24 @@ class AlertNotifier:
     # Method to be used by the bot to update subscriptions based on user actions
     def update_subscriptions(self, action, greenhouse_id=None, area_id=None, tematic="motion"):
         if action == 'create':
-                topic = self.build_topic(greenhouse_id, area_id, tematic)
-                self.subscribe_to_topic(topic)
+            topic = self.build_topic(greenhouse_id, area_id, tematic)
+            self.subscribe_to_topic(topic)
         elif action == 'delete':
             if greenhouse_id and area_id:
                 topic = self.build_topic(greenhouse_id, area_id, tematic)
                 self.unsubscribe_from_topic(topic)
             elif greenhouse_id:
-                # Desuscribirse de todos los topics que empiecen con greenhouse_id
+                # Unsubscribe from all topics starting with greenhouse_id
                 topics = [t for t in self.subscribed_topics if t.startswith(f"greenhouse{greenhouse_id}/")]
                 for topic in topics:
                     self.unsubscribe_from_topic(topic)
         elif action == 'refresh':
-            # Desuscribirse de todo
+            # Unsubscribe from all topics
             self.unsubscribe_all()
-            # Obtener lista completa del catálogo y suscribirse
+            # Fetch the complete list from the catalog and subscribe
             topics = self.build_topics_list_from_catalog()
             self.subscribe_to_multiple(topics)
-        print(f"Updating subscriptions: {action}, greenhouse_id: {greenhouse_id}, area_id: {area_id}")
+        print(f"Updating subscriptions: action={action}, greenhouse_id={greenhouse_id}, area_id={area_id}")
     
     def build_topic(self, greenhouse_id, area_id,tematic):
         return f"greenhouse{greenhouse_id}/area{area_id}/{tematic}"
@@ -77,9 +73,7 @@ class AlertNotifier:
     #             }]
     # }
     def notify(self, msg, payload):
-        # print(f"Received msg: {msg}, payload: {payload}, 80")
         base_name = payload.get("bn", "")
-        # print(f" msg: {msg}, datatype of msg: {type(msg)}, datatype of payload: {type(payload)}")
         events = payload.get("e", [])
         GH_ID, AREA_ID = self.get_ids(base_name)
 
@@ -89,23 +83,23 @@ class AlertNotifier:
             unit = event.get("u")
             if situation == "motion":
                 value_received = event.get("v") # A 1 or 0
-                # print(f"AlertNotifier: Received motion event: {situation} with value {value_received} for GH_ID: {GH_ID}, AREA_ID: {AREA_ID}, timestamp: {timestamp}, unit: {unit}")
-                if value_received == 1: # and it already wasn't == last value
-                    destinatario = self.get_user_from_id(GH_ID)
-                    print("about to acces the notify__user method")
-                    self.notify_user(
-                        gh_id=GH_ID,
-                        area_id=AREA_ID,
-                        user_affected=destinatario,
-                        alerttype=situation,
-                        timestamp=timestamp,
-                        unit=unit
-                    )
+                # if value_received == 1: # and it already wasn't == last value
+                destinatario = self.get_user_from_id(GH_ID)
+                print("about to acces the notify__user method")
+                self.notify_user(
+                    gh_id=GH_ID,
+                    area_id=AREA_ID,
+                    user_affected=destinatario,
+                    alerttype=situation,
+                    timestamp=timestamp,
+                    unit=unit,
+                    value_received=value_received
+                )
             else: 
                 print(f"Unexpected event type: {situation} in topic {base_name}")
                 continue
 
-    def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit): #Sends the alert to the queue of the bot
+    def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit, value_received): #Sends the alert to the queue of the bot
         print("Something happened, notifying user...")
         if not self.enqueue_method:
             raise ValueError("Enqueue method must be set before using AlertNotifier") 
@@ -114,14 +108,14 @@ class AlertNotifier:
             "bn": f"greenhouse{gh_id}/area{area_id}/motion",
             "e": [{
                 "n": alerttype,
-                "v": 1,
+                "v": value_received,  # 1 or 0
                 "t": timestamp,
                 "u": unit
             }]
         })
         print("Enqueued alert")
 
-############################ AUXILIARY METHODS AND FUNCTIONS ######################
+############################ AUXILIARY METHODS ######################
     def get_ids(self, info):
         # Esperamos que 'bn' sea algo como: "greenhouse1/area1/motion"
         parts = info.split("/")
@@ -131,7 +125,7 @@ class AlertNotifier:
             return gh_id, area_id
         else:
             print(f"Unexpected format in topic: {info}")
-            return None, None  # O podés lanzar una excepción si querés validar
+            return None, None 
     
     def get_user_from_id(self, gh_id):
         try:
