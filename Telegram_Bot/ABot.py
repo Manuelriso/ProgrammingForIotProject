@@ -595,17 +595,18 @@ class BotMain:
             await query.answer()
             await query.edit_message_reply_markup(reply_markup=None) # Remove the previous buttons from that message
             # Send a new message with text and new buttons
-            await query.message.reply_text(
+            message = await query.message.reply_text(
                 " 👋 Welcome to the Main Menu! 🌱\n\n"
                 "What would you like to do next? Please select an option below:",
                 reply_markup=main_menu_keyboard
             )
         else:
-            await update.message.reply_text(
+            message = await update.message.reply_text(
                 "👋  Welcome back to the Main Menu! 🌱\n\n"
                 "What would you like to do next? Please select an option below:",
                 reply_markup=main_menu_keyboard
             )
+        self.user_data[user_id]["last_bot_msg"] = message
         self.user_states[user_id] = MAIN_MENU
         return MAIN_MENU
 
