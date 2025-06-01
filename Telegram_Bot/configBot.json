@@ -7,5 +7,10 @@
         "temperature": { "min": 5, "max": 35, "unit": "°C" , "suggested": 21 },
         "humidity": { "min": 45, "max": 95, "unit": "%H" , "suggested": 80 },
         "light": { "min": 15, "max": 80, "unit": "% of 80000lux" , "suggested": 60 }
-      }
+      },
+      "serviceInfo": {
+        "ID": 69,
+        "serviceName": "TelegramBot",
+        "last_updated": ""
+    }
 }

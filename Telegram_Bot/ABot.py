@@ -6,6 +6,7 @@ from requests.exceptions import RequestException
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from datetime import datetime
+import time
 from functools import partial
 import asyncio
 import MyMQTTforBOT
@@ -345,8 +346,13 @@ def get_ids(info):
     else:
         print(f"Unexpected format in topic: {info}")
         return None, None  # O podés lanzar una excepción si querés validar
-    
-############################# BOT MAIN CLASS WITH METHODS #############################
+
+############################# 🌟 BOT MAIN CLASS WITH METHODS 🌟 #############################
+############################# 🚀 BOT MAIN CLASS WITH METHODS 🚀 #############################
+############################# 🌱 BOT MAIN CLASS WITH METHODS 🌱 #############################
+############################# 🌈 BOT MAIN CLASS WITH METHODS 🌈 #############################
+############################# 💡 BOT MAIN CLASS WITH METHODS 💡 #############################
+############################# 🎉 BOT MAIN CLASS WITH METHODS 🎉 #############################
 class BotMain:
     def __init__(self, config):
         self.token = config['telegram_token']
@@ -354,6 +360,8 @@ class BotMain:
         self.default_thresholds = config['default_thresholds']
         self.mqtt_broker = config['brokerIP']
         self.broker_port = config['port']
+        self.serviceInfo = config['serviceInfo']
+        self.actualTime = time.time()
 
         # Telegram application setup
         self.application = Application.builder().token(self.token).build()
@@ -383,6 +391,24 @@ class BotMain:
   
         # Add ConversationHandler
         self.application.add_handler(self._build_conversation_handler())
+        # Register the service in the catalog
+        self.registerService()
+
+
+    def registerService(self):
+        self.serviceInfo['last_update'] = self.actualTime
+        requests.post(f'{self.catalog_url}service', data=json.dumps(self.serviceInfo))
+    
+    async def update_registration_service(self):
+        """Periodically updates the bot's registration in the catalog service."""
+        while True:
+            try:
+                await asyncio.sleep(30)
+                self.serviceInfo['last_update'] = time.time()
+                requests.put(f'{self.catalog_url}service', data=json.dumps(self.serviceInfo))
+                await asyncio.sleep(30)  # Update every 60 seconds
+            except Exception as e:
+                print(f"[ERROR] Failed to update registration: {e}")
 
     def setup_mqtt_and_notifier(self):
         try:
@@ -1880,8 +1906,11 @@ class BotMain:
                 self.alert_producer(self.alert_queue)
             )
             application.create_task(
-            self.alert_consumer(application, self.user_states)
-        )
+                self.alert_consumer(application, self.user_states)
+            )
+            application.create_task(
+                self.update_registration_service()
+            )
         self.application.post_init = start_alert_task
         self.application.run_polling()
  

@@ -464,5 +464,12 @@
         }
     ],
     "devices": [],
-    "services": []
+    "services": [
+        {
+            "ID": 9,
+            "serviceName": "TelegramBot",
+            "last_updated": "",
+            "last_update": 1748793506.365512
+        }
+    ]
 }
