@@ -17,10 +17,10 @@
                     "humidityDataTopic": "greenhouse1/area1/humidity",
                     "luminosityDataTopic": "greenhouse1/area1/luminosity",
                     "motionTopic": "greenhouse1/area1/motion",
-                    "motionDetected": 30,
-                    "currentTemperature": 17.7,
-                    "currentHumidity": 68.2,
-                    "currentLuminosity": 46.8,
+                    "motionDetected": 37,
+                    "currentTemperature": 16.0,
+                    "currentHumidity": 52.0,
+                    "currentLuminosity": 66.4,
                     "pumpActuation": "greenhouse1/area1/actuation/pump",
                     "lightActuation": "greenhouse1/area1/actuation/light",
                     "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
@@ -38,10 +38,10 @@
                     "humidityDataTopic": "greenhouse1/area2/humidity",
                     "luminosityDataTopic": "greenhouse1/area2/luminosity",
                     "motionTopic": "greenhouse1/area2/motion",
-                    "motionDetected": 30,
-                    "currentTemperature": 26.2,
-                    "currentHumidity": 59.2,
-                    "currentLuminosity": 60.2,
+                    "motionDetected": 37,
+                    "currentTemperature": 12.0,
+                    "currentHumidity": 50.5,
+                    "currentLuminosity": 57.1,
                     "pumpActuation": "greenhouse1/area2/actuation/pump",
                     "lightActuation": "greenhouse1/area2/actuation/light",
                     "ventilationActuation": "greenhouse1/area2/actuation/ventilation",
@@ -59,10 +59,10 @@
                     "humidityDataTopic": "greenhouse1/area3/humidity",
                     "luminosityDataTopic": "greenhouse1/area3/luminosity",
                     "motionTopic": "greenhouse1/area3/motion",
-                    "motionDetected": 30,
-                    "currentTemperature": 26.3,
-                    "currentHumidity": 50.9,
-                    "currentLuminosity": 48.4,
+                    "motionDetected": 37,
+                    "currentTemperature": 25.8,
+                    "currentHumidity": 56.0,
+                    "currentLuminosity": 47.9,
                     "pumpActuation": "greenhouse1/area3/actuation/pump",
                     "lightActuation": "greenhouse1/area3/actuation/light",
                     "ventilationActuation": "greenhouse1/area3/actuation/ventilation",
@@ -88,16 +88,16 @@
                     "humidityDataTopic": "greenhouse4/area1/humidity",
                     "luminosityDataTopic": "greenhouse4/area1/luminosity",
                     "motionTopic": "greenhouse4/area1/motion",
-                    "motionDetected": 30,
+                    "motionDetected": 37,
                     "pumpActuation": "greenhouse4/area1/actuation/pump",
                     "lightActuation": "greenhouse4/area1/actuation/light",
                     "ventilationActuation": "greenhouse4/area1/actuation/ventilation",
                     "pump": 0,
                     "light": "off",
                     "ventilation": 0,
-                    "currentLuminosity": 61.5,
-                    "currentTemperature": 12.8,
-                    "currentHumidity": 51.7
+                    "currentLuminosity": 48.8,
+                    "currentTemperature": 17.0,
+                    "currentHumidity": 61.3
                 }
             ]
         }
@@ -105,10 +105,52 @@
     "devices": [],
     "services": [
         {
-            "ID": 3,
-            "serviceName": "ThingspeakAdaptor",
+            "ID": 9,
+            "serviceName": "ThreholdManagement",
             "last_updated": "",
-            "last_update": 1748709512.0359657
+            "last_update": 1748711136.9500732
+        },
+        {
+            "ID": 64,
+            "serviceName": "Temperature Control",
+            "last_updated": "",
+            "last_update": 1748711136.203069
+        },
+        {
+            "ID": 6,
+            "serviceName": "Security",
+            "last_updated": "",
+            "last_update": 1748711154.0100539
+        },
+        {
+            "ID": 10,
+            "serviceName": "NodeRED",
+            "last_updated": "",
+            "last_update": 1748711135.6589522
+        },
+        {
+            "ID": 30,
+            "serviceName": "RaspberryPIConnector",
+            "last_updated": "",
+            "last_update": 1748711164.8274555
+        },
+        {
+            "ID": 34,
+            "serviceName": "Lighting Control",
+            "last_updated": "",
+            "last_update": 1748711136.0653126
+        },
+        {
+            "ID": 40,
+            "serviceName": "OtherDeviceConnector",
+            "last_updated": "",
+            "last_update": 1748711165.0032463
+        },
+        {
+            "ID": 73,
+            "serviceName": "Pump Control",
+            "last_updated": "",
+            "last_update": 1748711135.500368
         }
     ]
 }
