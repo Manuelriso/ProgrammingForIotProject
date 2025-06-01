@@ -44,7 +44,7 @@ class MyMQTT:
             print("Error decoding JSON payload:", payload_str)
             return
         if self.notifier and hasattr(self.notifier, 'notify'):
-            self.notifier.notify(msg.topic, payload)  ##deleted msg.topic 
+            self.notifier.notify(msg.topic, payload) 
         else:
             print("Notifier is not set or doesn't have a notify method.")
 
@@ -96,6 +96,7 @@ class MyMQTT:
         ####
 
     def subscribe_multiple(self, topics, batch_size=10): ####
+        topics = list(topics)
         # Split topics into batches to avoid overwhelming the broker
         for i in range(0, len(topics), batch_size):
             batch = topics[i:i + batch_size]

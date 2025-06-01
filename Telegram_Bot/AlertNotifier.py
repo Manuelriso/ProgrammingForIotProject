@@ -6,12 +6,12 @@ from requests.exceptions import RequestException
 ############################# ALERT NOTIFIER #######################
 class AlertNotifier:
 ########################### INITIALIZATION ######################
-    def __init__(self, mqtt_client: MyMQTT, catalog_url, greenhouse_user_map, greenhouse_map_lock):
+    def __init__(self, mqtt_client: MyMQTT, catalog_url):
 
         # self.botapp = bot
         self.mqtt = mqtt_client
-        self.greenhouse_user_map = greenhouse_user_map 
-        self.greenhouse_map_lock = greenhouse_map_lock 
+        # self.greenhouse_user_map = greenhouse_user_map 
+        # self.greenhouse_map_lock = greenhouse_map_lock 
         self.subscribed_topics = set()
         self.catalog_url = catalog_url
         if not self.catalog_url.endswith('/'):
@@ -77,17 +77,11 @@ class AlertNotifier:
     #             }]
     # }
     def notify(self, msg, payload):
+        # print(f"Received msg: {msg}, payload: {payload}, 80")
         base_name = payload.get("bn", "")
-        print(f" msg: {msg}, datatype of msg: {type(msg)}, datatype of payload: {type(payload)}")
+        # print(f" msg: {msg}, datatype of msg: {type(msg)}, datatype of payload: {type(payload)}")
         events = payload.get("e", [])
         GH_ID, AREA_ID = self.get_ids(base_name)
-        # if not GH_ID or not AREA_ID:
-        #     return
-        # # async with greenhouse_map_lock:
-        #     # Ensure the greenhouse and area exist in the map
-        # if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
-        #     print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map.")
-        #     return
 
         for event in events:
             situation = event.get("n")
@@ -95,7 +89,7 @@ class AlertNotifier:
             unit = event.get("u")
             if situation == "motion":
                 value_received = event.get("v") # A 1 or 0
-                print(f"Received motion event: {situation} with value {value_received} for GH_ID: {GH_ID}, AREA_ID: {AREA_ID}, timestamp: {timestamp}, unit: {unit}")
+                # print(f"AlertNotifier: Received motion event: {situation} with value {value_received} for GH_ID: {GH_ID}, AREA_ID: {AREA_ID}, timestamp: {timestamp}, unit: {unit}")
                 if value_received == 1: # and it already wasn't == last value
                     destinatario = self.get_user_from_id(GH_ID)
                     print("about to acces the notify__user method")
@@ -117,11 +111,13 @@ class AlertNotifier:
             raise ValueError("Enqueue method must be set before using AlertNotifier") 
         self.enqueue_method({
             "chat_id": user_affected,
-            "gh_id": gh_id,
-            "area_id": area_id,
-            "alerttype": alerttype,
-            "timestamp": timestamp,
-            "unit": unit
+            "bn": f"greenhouse{gh_id}/area{area_id}/motion",
+            "e": [{
+                "n": alerttype,
+                "v": 1,
+                "t": timestamp,
+                "u": unit
+            }]
         })
         print("Enqueued alert")
 
@@ -159,12 +155,6 @@ class AlertNotifier:
                 for area in greenhouse.get("areas", []):
                     area_id = area.get("ID")
                     motion_topic = area.get("motionTopic")
-                    # topics.update({
-                    #     # f"greenhouse{greenhouse['greenhouseID']}_area{area['ID']}_temperature": area.get("temperatureDataTopic"),
-                    #     # f"greenhouse{greenhouse['greenhouseID']}_area{area['ID']}_humidity": area.get("humidityDataTopic"),
-                    #     # f"greenhouse{greenhouse['greenhouseID']}_area{area['ID']}_luminosity": area.get("luminosityDataTopic"),
-                    #     f"greenhouse{greenhouse['greenhouseID']}_area{area['ID']}_motion": area.get("motionTopic"),
-                    #     })
                     if gh_id and area_id and motion_topic:
                         topics.add(motion_topic)
             return list(topics) # .values() no
