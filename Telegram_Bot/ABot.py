@@ -613,6 +613,7 @@ class BotMain:
     async def timeout_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
         print(f"[TIMEOUT] Closing session for user {user_id}")
+        await self.delete_last_keyboard(update, context) ####
         if user_id in self.user_data:
             del self.user_data[user_id]
 

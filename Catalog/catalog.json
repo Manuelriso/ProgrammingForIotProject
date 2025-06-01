@@ -4,7 +4,7 @@
         {
             "greenhouseID": 1,
             "telegram_ID": 1513626438,
-            "numberOfAreas": 3,
+            "numberOfAreas": 4,
             "creation_date": "09-07-1816",
             "areas": [
                 {
@@ -69,6 +69,27 @@
                     "pump": 0,
                     "light": "off",
                     "ventilation": 0
+                },
+                {
+                    "ID": 4,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Ptvv",
+                    "temperatureDataTopic": "greenhouse1/area4/temperature",
+                    "humidityDataTopic": "greenhouse1/area4/humidity",
+                    "luminosityDataTopic": "greenhouse1/area4/luminosity",
+                    "motionTopic": "greenhouse1/area4/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse1/area4/actuation/pump",
+                    "lightActuation": "greenhouse1/area4/actuation/light",
+                    "ventilationActuation": "greenhouse1/area4/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
                 }
             ]
         },
@@ -100,15 +121,348 @@
                     "currentHumidity": 51.7
                 }
             ]
+        },
+        {
+            "greenhouseID": 2,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 55,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 68,
+                    "plants": "Pizza",
+                    "temperatureDataTopic": "greenhouse2/area1/temperature",
+                    "humidityDataTopic": "greenhouse2/area1/humidity",
+                    "luminosityDataTopic": "greenhouse2/area1/luminosity",
+                    "motionTopic": "greenhouse2/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse2/area1/actuation/pump",
+                    "lightActuation": "greenhouse2/area1/actuation/light",
+                    "ventilationActuation": "greenhouse2/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 6,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 67,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Pepino",
+                    "temperatureDataTopic": "greenhouse6/area1/temperature",
+                    "humidityDataTopic": "greenhouse6/area1/humidity",
+                    "luminosityDataTopic": "greenhouse6/area1/luminosity",
+                    "motionTopic": "greenhouse6/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse6/area1/actuation/pump",
+                    "lightActuation": "greenhouse6/area1/actuation/light",
+                    "ventilationActuation": "greenhouse6/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 3,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 67,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Pepino",
+                    "temperatureDataTopic": "greenhouse3/area1/temperature",
+                    "humidityDataTopic": "greenhouse3/area1/humidity",
+                    "luminosityDataTopic": "greenhouse3/area1/luminosity",
+                    "motionTopic": "greenhouse3/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse3/area1/actuation/pump",
+                    "lightActuation": "greenhouse3/area1/actuation/light",
+                    "ventilationActuation": "greenhouse3/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 0,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 56,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Pepino",
+                    "temperatureDataTopic": "greenhouse0/area1/temperature",
+                    "humidityDataTopic": "greenhouse0/area1/humidity",
+                    "luminosityDataTopic": "greenhouse0/area1/luminosity",
+                    "motionTopic": "greenhouse0/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse0/area1/actuation/pump",
+                    "lightActuation": "greenhouse0/area1/actuation/light",
+                    "ventilationActuation": "greenhouse0/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 5,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 76,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Pepinp",
+                    "temperatureDataTopic": "greenhouse5/area1/temperature",
+                    "humidityDataTopic": "greenhouse5/area1/humidity",
+                    "luminosityDataTopic": "greenhouse5/area1/luminosity",
+                    "motionTopic": "greenhouse5/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse5/area1/actuation/pump",
+                    "lightActuation": "greenhouse5/area1/actuation/light",
+                    "ventilationActuation": "greenhouse5/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 9,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Primo",
+                    "temperatureDataTopic": "greenhouse9/area1/temperature",
+                    "humidityDataTopic": "greenhouse9/area1/humidity",
+                    "luminosityDataTopic": "greenhouse9/area1/luminosity",
+                    "motionTopic": "greenhouse9/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse9/area1/actuation/pump",
+                    "lightActuation": "greenhouse9/area1/actuation/light",
+                    "ventilationActuation": "greenhouse9/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 98,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Whshshjzhs",
+                    "temperatureDataTopic": "greenhouse98/area1/temperature",
+                    "humidityDataTopic": "greenhouse98/area1/humidity",
+                    "luminosityDataTopic": "greenhouse98/area1/luminosity",
+                    "motionTopic": "greenhouse98/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse98/area1/actuation/pump",
+                    "lightActuation": "greenhouse98/area1/actuation/light",
+                    "ventilationActuation": "greenhouse98/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 66,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 77,
+                    "plants": "Tlvy",
+                    "temperatureDataTopic": "greenhouse66/area1/temperature",
+                    "humidityDataTopic": "greenhouse66/area1/humidity",
+                    "luminosityDataTopic": "greenhouse66/area1/luminosity",
+                    "motionTopic": "greenhouse66/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse66/area1/actuation/pump",
+                    "lightActuation": "greenhouse66/area1/actuation/light",
+                    "ventilationActuation": "greenhouse66/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 89,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "31-05-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 60,
+                    "plants": "Hdhrhd",
+                    "temperatureDataTopic": "greenhouse89/area1/temperature",
+                    "humidityDataTopic": "greenhouse89/area1/humidity",
+                    "luminosityDataTopic": "greenhouse89/area1/luminosity",
+                    "motionTopic": "greenhouse89/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse89/area1/actuation/pump",
+                    "lightActuation": "greenhouse89/area1/actuation/light",
+                    "ventilationActuation": "greenhouse89/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 57,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 1,
+            "creation_date": "01-06-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 67,
+                    "plants": "Ohjokb",
+                    "temperatureDataTopic": "greenhouse57/area1/temperature",
+                    "humidityDataTopic": "greenhouse57/area1/humidity",
+                    "luminosityDataTopic": "greenhouse57/area1/luminosity",
+                    "motionTopic": "greenhouse57/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse57/area1/actuation/pump",
+                    "lightActuation": "greenhouse57/area1/actuation/light",
+                    "ventilationActuation": "greenhouse57/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
+            "greenhouseID": 67,
+            "telegram_ID": 1513626438,
+            "numberOfAreas": 2,
+            "creation_date": "01-06-2025",
+            "areas": [
+                {
+                    "ID": 1,
+                    "humidityThreshold": 90,
+                    "temperatureThreshold": 21,
+                    "luminosityThreshold": 67,
+                    "plants": "Phvn",
+                    "temperatureDataTopic": "greenhouse67/area1/temperature",
+                    "humidityDataTopic": "greenhouse67/area1/humidity",
+                    "luminosityDataTopic": "greenhouse67/area1/luminosity",
+                    "motionTopic": "greenhouse67/area1/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse67/area1/actuation/pump",
+                    "lightActuation": "greenhouse67/area1/actuation/light",
+                    "ventilationActuation": "greenhouse67/area1/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                },
+                {
+                    "ID": 2,
+                    "humidityThreshold": 80,
+                    "temperatureThreshold": 34,
+                    "luminosityThreshold": 60,
+                    "plants": "Bsoidx",
+                    "temperatureDataTopic": "greenhouse67/area2/temperature",
+                    "humidityDataTopic": "greenhouse67/area2/humidity",
+                    "luminosityDataTopic": "greenhouse67/area2/luminosity",
+                    "motionTopic": "greenhouse67/area2/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": "Unknown",
+                    "currentHumidity": "Unknown",
+                    "currentLuminosity": "Unknown",
+                    "pumpActuation": "greenhouse67/area2/actuation/pump",
+                    "lightActuation": "greenhouse67/area2/actuation/light",
+                    "ventilationActuation": "greenhouse67/area2/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
         }
     ],
     "devices": [],
-    "services": [
-        {
-            "ID": 3,
-            "serviceName": "ThingspeakAdaptor",
-            "last_updated": "",
-            "last_update": 1748709512.0359657
-        }
-    ]
+    "services": []
 }
