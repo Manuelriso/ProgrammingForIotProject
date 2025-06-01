@@ -90,22 +90,23 @@ class AlertNotifier:
             if situation == "motion":
                 value_received = event.get("v") # A 1 or 0
                 # print(f"AlertNotifier: Received motion event: {situation} with value {value_received} for GH_ID: {GH_ID}, AREA_ID: {AREA_ID}, timestamp: {timestamp}, unit: {unit}")
-                if value_received == 1: # and it already wasn't == last value
-                    destinatario = self.get_user_from_id(GH_ID)
-                    print("about to acces the notify__user method")
-                    self.notify_user(
-                        gh_id=GH_ID,
-                        area_id=AREA_ID,
-                        user_affected=destinatario,
-                        alerttype=situation,
-                        timestamp=timestamp,
-                        unit=unit
-                    )
+                # if value_received == 1: # and it already wasn't == last value
+                destinatario = self.get_user_from_id(GH_ID)
+                print("about to acces the notify__user method")
+                self.notify_user(
+                    gh_id=GH_ID,
+                    area_id=AREA_ID,
+                    user_affected=destinatario,
+                    alerttype=situation,
+                    timestamp=timestamp,
+                    unit=unit,
+                    value_received=value_received
+                )
             else: 
                 print(f"Unexpected event type: {situation} in topic {base_name}")
                 continue
 
-    def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit): #Sends the alert to the queue of the bot
+    def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit, value_received): #Sends the alert to the queue of the bot
         print("Something happened, notifying user...")
         if not self.enqueue_method:
             raise ValueError("Enqueue method must be set before using AlertNotifier") 
@@ -114,7 +115,7 @@ class AlertNotifier:
             "bn": f"greenhouse{gh_id}/area{area_id}/motion",
             "e": [{
                 "n": alerttype,
-                "v": 1,
+                "v": value_received,  # 1 or 0
                 "t": timestamp,
                 "u": unit
             }]

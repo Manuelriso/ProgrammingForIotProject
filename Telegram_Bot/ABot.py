@@ -321,17 +321,19 @@ async def check_actuator_state(catalog_url, greenhouse_id, area_processing, actu
 
 
 def normalize_state_to_int(value):
-    if isinstance(value, str):
-        value = value.strip().lower()
-        if value == "on":
-            return 1
-        if value == "off":
-            return 0
-        if value == "1":
-            return 1
-        if value == "0":
-            return 0
-    return int(value)
+    print(f"[normalize_state_to_int] Valor recibido: {value} ({type(value)})")
+    try:
+        if isinstance(value, str):
+            value = value.strip().lower()
+            if value in ("on", "1"):
+                return 1
+            if value in ("off", "0"):
+                return 0
+            return int(float(value))
+        return int(value)
+    except (ValueError, TypeError) as e:
+        print(f"[!] Error al normalizar valor: {value} - {e}")
+        raise
 
 def normalize_state_to_str(value):
     if str(value) == "1":
@@ -397,21 +399,20 @@ class BotMain:
         self.application.bot_data['default_thresholds'] = self.default_thresholds
 
         #Initialization of variables and dictionaries
-        # Diccionario temporal por usuario y por sesión para gestionar procesos
+        # Diccionario temporal por usuario y por sesión para gestionar procesos de chat
         self.user_data = {}
         # Cola global de alertas
         self.alert_queue = asyncio.Queue(maxsize=100)
         # Diccionario para regular momentos de envío de alertas
         self.user_states = {}
-        # Map to receive the Alerts that is handled by the AlertNotifier (and the bot)
+        # Map to receive the Alerts and storage the values, that is handled by the AlertNotifier (and the bot)
         self.greenhouse_user_map = {}
         self.greenhouse_map_lock = asyncio.Lock()
-        # Dictionaries for pending alerts
+        # Dictionaries for pending alerts and variable to process the last alert
         self.pending_alerts = {}
         self.already_retried = {}  
+        self.alert_data = None 
 
-        self.greenhouse_user_map = {}  # Maps greenhouse IDs to user IDs
-        self.greenhouse_user_map_lock = asyncio.Lock()  # Lock for thread-safe access
         print("pre setup en el coso central 446")
 
         # Initialize greenhouse_user_map
@@ -1759,27 +1760,27 @@ class BotMain:
             print(f"Area {area_id} removed from greenhouse {gh_id}.")
             return True
 
-                    # asyncio.run_coroutine_threadsafe(
-                    #     self.notify_user(GH_ID, AREA_ID, destinatario, situation, timestamp, unit),
-                    #     self.application.loop
-                    # )
-                        # Llamar a notify_user con datos mínimos
-    
     async def alert_producer(self, alert_queue): #Distributes from the general queue to the pending_alerts user-specific dictionary
         while True:
             try:
                 print("[✓] Waiting for an alert in the queue...")
                 print(f"[DEBUG] Queue size before get: {alert_queue.qsize()}")
+                print(f"[DEBUG] Alert data size before processing: {len(str(self.alert_data))} characters")
                 self.alert_data = await alert_queue.get()
-                print(f"[✓] Alert received: YUPI")
+                print(f"[✓] Alert received: {self.alert_data}")
                 print(f"[DEBUG] Queue size after get: {alert_queue.qsize()}")
+                print(f"[DEBUG] Alert data size: {len(str(self.alert_data))} characters")
+                print("")
+                
 
-                changed  = await self.update_dictionary(self.alert_data, alert_queue) 
+                print("pre update_dictionary")
+                problem  = await self.update_dictionary(self.alert_data) 
+                print ("post update_dictionary")
 
                 if self.alert_data:
                     chat_id = self.alert_data.get("chat_id")
                     if chat_id:
-                        if changed:
+                        if problem == True:
                             self.pending_alerts.setdefault(chat_id, []).append(self.alert_data)
                             print(f"[✓] New alert added to pending for {chat_id}")
                         else:
@@ -1798,6 +1799,39 @@ class BotMain:
             except Exception as e:
                 print(f"[ERROR] Exception in alert_producer: {e}")
 
+    async def update_dictionary(self, alert_data):    
+        base_name = alert_data.get("bn", "")
+        event = alert_data.get("e", [{}])[0]  # Consider only the first event in the SenML format
+        GH_ID, AREA_ID = get_ids(base_name)
+        # print(f"[DEBUG] base_name: {base_name} -> GH_ID: {GH_ID}, AREA_ID: {AREA_ID}")
+        print("update dictionary, the GH_ID is: ", GH_ID, " and AREA_ID is: ", AREA_ID)
+        if not GH_ID or not AREA_ID:
+            return False
+
+        async with self.greenhouse_map_lock:
+            if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
+                print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map. This should not happen. Line 1771") 
+                return False
+
+        situation = event.get("n")
+        print("situation is: ", situation)
+        timestamp = event.get("t")
+        value_received = None
+        if situation == "motion":
+            value_received = event.get("v")  # 1 o 0
+            print("A esta altura el value_received es : ", value_received)
+            changed, value = await self.update_motion_value(GH_ID, AREA_ID, value_received, timestamp)
+            print(f"[DEBUG] changed: {changed} for GH_ID: {GH_ID}, AREA_ID: {AREA_ID}, value_received: {value_received} and value: {value}")
+            if changed == True and value == 1:
+                print("[✓] Motion detected, 1826")
+                return True  # there was a change,  AND it changed from 0 to 1, send data. Not from 1 to 0.
+            else:
+                print("No update needed for this alert.")
+                return False
+        else:
+            print("no situation motion")
+            return False #####
+        
     async def update_motion_value(self, gh_id, area_id, value_received,timestamp): #update the LastMotionValue in the map after receiving a message from the broker
         print("Entraste en update motion value")
         async with self.greenhouse_map_lock:  # Lock for thread-safe access
@@ -1809,102 +1843,134 @@ class BotMain:
             try:
                 last_value_int = normalize_state_to_int(last_value)
                 value_received_int = normalize_state_to_int(value_received)
+                print("Se normalizaron los valores")
+                if value_received_int == 0:
+                    print(f"[DEBUG] Se recibió un 0 correctamente desde el simulador. value_received_int: {value_received_int} (type: {type(value_received_int)}), value_received: {value_received} (type: {type(value_received)})")
             except Exception as e:
                 print(f"Error al convertir valores a int: {e}")
                 return False, None
             # Update the motion value in the map
             self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"] = value_received_int
             self.greenhouse_user_map[gh_id]["areas"][area_id]["timestamp"] = timestamp
-            
+            print("se actualizaron los dicsss")
             if int(last_value_int) == int(value_received_int):
                 print("No hay novedad")
-                return False, None  # No update needed
+                return False, None  # Only updated the dictionary, No need for sending an alert
             print("finalizado  update_mtion_value")
             return True, value_received_int  # Update successful, value changed, and the value.
 
 
-    async def update_dictionary(self, alert_data, alert_queue):    
-        base_name = alert_data.get("bn", "")
-        event = alert_data.get("e", [{}])[0]  # Consider only the first event in the SenML format
-        GH_ID, AREA_ID = get_ids(base_name)
-        # print(f"[DEBUG] base_name: {base_name} -> GH_ID: {GH_ID}, AREA_ID: {AREA_ID}")
-        
-        if not GH_ID or not AREA_ID:
-            return False
-
-        async with self.greenhouse_map_lock:
-            if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
-                print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map. This should not happen. Line 1771") 
-                return False
-
-        situation = event.get("n")
-        timestamp = event.get("t")
-        value_received = None
-        if situation == "motion":
-            value_received = event.get("v")  # 1 o 0
-            updated = await self.update_motion_value(GH_ID, AREA_ID, value_received, timestamp)
-            # print(f"[DEBUG] updated: {updated} for GH_ID: {GH_ID}, AREA_ID: {AREA_ID}, value_received: {value_received}")
-            if updated[0] == True and updated[1] == 1:
-                return True  # there was a change,  AND it changed from 0 to 1, send data. Not from 1 to 0.
-            else:
-                print("No update needed for this alert.")
-                alert_queue.task_done()
-                return False
-        else:
-            print("no situation motion")
-            alert_queue.task_done() ####
-            return False #####
-
 
     ################## ALERT CONSUMER FUNCTION ##################
+    # async def alert_consumer(self, application, user_states):
+    #     print("[✓] alert_consumer launched")
+    #     self.pending_alerts = {}        # {chat_id: [alert1, alert2, ...]}
+    #     self.retry_flags = {}           # {chat_id: True/False}
+
+    #     while True:
+    #         try:
+    #             # print("Running the alert_consumer loop")
+    #             # 1. Attempt to send pending alerts for each user
+    #             for chat_id in list(self.pending_alerts.keys() and self.pending_alerts[chat_id]):
+    #                 print(f"[DEBUG] Revisando alertas pendientes para {chat_id}")
+    #                 print(f"[DEBUG] Estado actual del usuario: {user_states.get(chat_id)}")
+    #                 print(f"[DEBUG] Cantidad de alertas pendientes: {len(self.pending_alerts[chat_id])}")
+                    
+    #                 state = self.user_states.get(chat_id)
+    #                 if state in ["END", MAIN_MENU]:
+    #                     while self.pending_alerts[chat_id]:
+    #                         alert_info = self.pending_alerts[chat_id][0]
+    #                         text = format_alert_message(alert_info, self.retry_flags.get(chat_id, False))
+
+    #                         try:
+    #                             await application.bot.send_message(
+    #                                 chat_id=chat_id,
+    #                                 text=text,
+    #                                 parse_mode='Markdown'
+    #                             )
+    #                             print(f"[✓] Alert sent to {chat_id}")
+    #                             self.pending_alerts[chat_id].pop(0)
+    #                             print(f"[DEBUG] Cantidad de alertas pendientes: {len(self.pending_alerts[chat_id])} despues de un pop")
+    #                             self.retry_flags[chat_id] = False
+
+    #                         except Exception as e:
+    #                             print(f"Error sending alert to {chat_id}: {e}")
+    #                             if self.retry_flags.get(chat_id, False):
+    #                                 print(f"[✗] Second attempt failed for {chat_id}, discarding alert.")
+    #                                 self.pending_alerts[chat_id].pop(0)
+    #                                 self.retry_flags[chat_id] = False
+    #                             else:
+    #                                 print(f"[!] Retrying alert for {chat_id} in 5 seconds...")
+    #                                 self.retry_flags[chat_id] = True
+    #                                 await asyncio.sleep(5)
+
+    #                 else:
+    #                     print(f"[...] User {chat_id} is not in END or MAIN_MENU state. Waiting.")
+    #             if not self.pending_alerts[chat_id]:
+    #                 print ("[DEBUG] No pending alerts for {chat_id}, skipping line 1899.")
+    #                 await asyncio.sleep(3)
+    #         except Exception as e:
+    #             print(f"[ERROR] alert_consumer general error: {e}")
+
+
     async def alert_consumer(self, application, user_states):
         print("[✓] alert_consumer launched")
-        self.pending_alerts = {}        # {chat_id: [alert1, alert2, ...]}
         self.retry_flags = {}           # {chat_id: True/False}
+
+        async def process_alerts(chat_id):
+            """Procesa alertas para un usuario específico."""
+            while self.pending_alerts.get(chat_id):
+                print(f"[DEBUG] Procesando todas? alertas para {chat_id}")
+                alert_info = self.pending_alerts[chat_id][0]
+                text = format_alert_message(alert_info, self.retry_flags.get(chat_id, False))
+
+                try:
+                    await application.bot.send_message(
+                        chat_id=chat_id,
+                        text=text,
+                        parse_mode='Markdown'
+                    )
+                    print(f"[✓] Alert sent to {chat_id}")
+                    self.pending_alerts[chat_id].pop(0)
+                    print(f"[DEBUG] Cantidad de alertas pendientes: {len(self.pending_alerts[chat_id])} despues de un pop")
+                    self.retry_flags[chat_id] = False
+
+                    if not self.pending_alerts[chat_id]:
+                        print(f"[✓] Todas las alertas procesadas para {chat_id}, limpiando.")
+                        del self.pending_alerts[chat_id]
+
+                except Exception as e:
+                    print(f"Error sending alert to {chat_id}: {e}")
+                    if self.retry_flags.get(chat_id, False):
+                        print(f"[✗] Second attempt failed for {chat_id}, discarding alert.")
+                        self.pending_alerts[chat_id].pop(0)
+                        self.retry_flags[chat_id] = False
+                    else:
+                        print(f"[!] Retrying alert for {chat_id} in 5 seconds...")
+                        self.retry_flags[chat_id] = True
+                        await asyncio.sleep(5)
 
         while True:
             try:
-                # print("Running the alert_consumer loop")
-                # 1. Attempt to send pending alerts for each user
+                # Crear tareas para procesar alertas pendientes de cada usuario
+                tasks = []
                 for chat_id in list(self.pending_alerts.keys()):
-                    print(f"[DEBUG] Revisando alertas pendientes para {chat_id}")
-                    print(f"[DEBUG] Estado actual del usuario: {user_states.get(chat_id)}")
-                    print(f"[DEBUG] Cantidad de alertas pendientes: {len(self.pending_alerts[chat_id])}")
+                    if self.pending_alerts[chat_id]:  # Solo procesar si hay alertas pendientes
+                        state = user_states.get(chat_id)
+                        if state in ["END", MAIN_MENU]:
+                            print(f"[DEBUG] Usuario {chat_id} está en estado {state}, mostrando alertas.")
+                            tasks.append(asyncio.create_task(process_alerts(chat_id)))
+                        else:
+                            print(f"[DEBUG] Usuario {chat_id} está en estado {state}, no se muestran alertas aún.")
+            
+                # Esperar a que todas las tareas terminen
+                if tasks:
+                    results = await asyncio.gather(*tasks, return_exceptions=True)
+                    for result in results:
+                        if isinstance(result, Exception):
+                            print(f"[ERROR] Error en una tarea: {result}")
 
-                    if not self.pending_alerts[chat_id]:
-                        print ("[DEBUG] No pending alerts for {chat_id}, skipping line 1852.")
-                        continue  # No pending alerts
-                    
-                    state = self.user_states.get(chat_id)
-                    if state in ["END", MAIN_MENU]:
-                        while self.pending_alerts[chat_id]:
-                            alert_data = self.pending_alerts[chat_id][0]
-                            text = format_alert_message(alert_data, self.retry_flags.get(chat_id, False))
-
-                            try:
-                                await application.bot.send_message(
-                                    chat_id=chat_id,
-                                    text=text,
-                                    parse_mode='Markdown'
-                                )
-                                print(f"[✓] Alert sent to {chat_id}")
-                                self.pending_alerts[chat_id].pop(0)
-                                print(f"[DEBUG] Cantidad de alertas pendientes: {len(self.pending_alerts[chat_id])} despues de un pop")
-                                self.retry_flags[chat_id] = False
-
-                            except Exception as e:
-                                print(f"Error sending alert to {chat_id}: {e}")
-                                if self.retry_flags.get(chat_id, False):
-                                    print(f"[✗] Second attempt failed for {chat_id}, discarding alert.")
-                                    self.pending_alerts[chat_id].pop(0)
-                                    self.retry_flags[chat_id] = False
-                                else:
-                                    print(f"[!] Retrying alert for {chat_id} in 5 seconds...")
-                                    self.retry_flags[chat_id] = True
-                                    await asyncio.sleep(5)
-
-                    else:
-                        print(f"[...] User {chat_id} is not in END or MAIN_MENU state. Waiting.")
+                # Esperar un tiempo antes de revisar nuevamente
                 await asyncio.sleep(3)
             except Exception as e:
                 print(f"[ERROR] alert_consumer general error: {e}")
