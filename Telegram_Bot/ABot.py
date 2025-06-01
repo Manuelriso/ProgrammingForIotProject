@@ -574,13 +574,13 @@ class BotMain:
             "👋 Thank you for using our Greenhouse Management Bot! 🌱\n\n"
             "We hope you had a great experience managing your greenhouses and areas. If you have any feedback or need assistance, "
             "feel free to reach out to our support team or upgrade your plan. 💬\n\n"
-            "Take care and see you next time! 🚀"
+            f"Take care of you, we take care of your plants.😊🌿🌞 See you next time! 🚀"
         )
         if update.message:
             await update.message.reply_text(bye_msg)
         elif update.callback_query:
             await update.callback_query.answer()
-            await update.callback_query.edit_message_text(bye_msg)
+            await update.callback_query.edit_message_text(bye_msg, parse_mode="Markdown")
         self.user_states[user_id] = "END"
         return ConversationHandler.END
 
