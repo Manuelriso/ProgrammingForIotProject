@@ -551,13 +551,14 @@ class BotMain:
 
         await update.message.reply_text(f'*GREENHOUSE ALLA TERRONE*', reply_markup=ReplyKeyboardRemove(), parse_mode="Markdown")
         # Reply keyboard in the text area
-        await update.message.reply_text(
+        message = await update.message.reply_text(
             f"🌟 Welcome to the Greenhouse Management Bot! 🌱\n\n"
             f"Your unique ID is: `{user_id}`.\n"
             f"Please select an option from the menu below to get started:",
             reply_markup=main_menu_keyboard,
             parse_mode="Markdown"
         )
+        self.user_data[user_id]["last_bot_msg"] = message
         self.user_data[user_id]['their_greenhouses'] = await self.check_gh_ownership(user_id, context.bot_data['catalog_url'])
         # await flush_alerts(user_id, context.application)
         self.user_states[user_id] = MAIN_MENU
