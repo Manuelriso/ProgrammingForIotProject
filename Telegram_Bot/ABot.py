@@ -3,7 +3,7 @@ import json
 import re
 import requests
 from requests.exceptions import RequestException
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, CallbackQueryHandler
 from datetime import datetime
 import time
@@ -345,7 +345,7 @@ def get_ids(info):
         return int(gh_id), int(area_id)
     else:
         print(f"Unexpected format in topic: {info}")
-        return None, None  # O podés lanzar una excepción si querés validar
+        return None, None
 
 ############################# 🌟 BOT MAIN CLASS WITH METHODS 🌟 #############################
 ############################# 🚀 BOT MAIN CLASS WITH METHODS 🚀 #############################
@@ -393,7 +393,6 @@ class BotMain:
         self.application.add_handler(self._build_conversation_handler())
         # Register the service in the catalog
         self.registerService()
-
 
     def registerService(self):
         self.serviceInfo['last_update'] = self.actualTime
@@ -548,7 +547,7 @@ class BotMain:
             conversation_timeout=180 # Timeout: 3 minutes
         )
 
-    ### Delete last keyboard (robust)
+    ### Delete last keyboard
     async def delete_last_keyboard(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
 
@@ -575,8 +574,7 @@ class BotMain:
         self.user_data[user_id] = {}
         self.alert_notifier.update_subscriptions("refresh") #"motion"
 
-        await update.message.reply_text(f'*GREENHOUSE ALLA TERRONE*', reply_markup=ReplyKeyboardRemove(), parse_mode="Markdown")
-        # Reply keyboard in the text area
+        await update.message.reply_text(f'*GREENHOUSE ALLA TERRONE*', parse_mode="Markdown")
         message = await update.message.reply_text(
             f"🌟 Welcome to the Greenhouse Management Bot! 🌱\n\n"
             f"Your unique ID is: `{user_id}`.\n"
@@ -586,7 +584,6 @@ class BotMain:
         )
         self.user_data[user_id]["last_bot_msg"] = message
         self.user_data[user_id]['their_greenhouses'] = await self.check_gh_ownership(user_id, context.bot_data['catalog_url'])
-        # await flush_alerts(user_id, context.application)
         self.user_states[user_id] = MAIN_MENU
         return MAIN_MENU
 
@@ -613,14 +610,14 @@ class BotMain:
 
     async def handle_back_to_main_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         user_id = update.effective_user.id
-        # await self.delete_last_keyboard(update, context)
+        await self.delete_last_keyboard(update, context)
         if user_id in self.user_data:
             self.user_data[user_id] = {}
 
         query = update.callback_query
         if query:
             await query.answer()
-            await query.edit_message_reply_markup(reply_markup=None) # Remove the previous buttons from that message
+            # await query.edit_message_reply_markup(reply_markup=None) # Remove the previous buttons from that message
             # Send a new message with text and new buttons
             message = await query.message.reply_text(
                 " 👋 Welcome to the Main Menu! 🌱\n\n"
