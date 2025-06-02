@@ -1,5 +1,5 @@
 # set the kernel to use
-FROM python:3.8-alpine
+FROM python:3.10-alpine
 # copy all the files in the container
 COPY . .
 # install the needed requirements

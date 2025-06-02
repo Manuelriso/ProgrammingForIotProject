@@ -1,6 +1,6 @@
 {
     "telegram_token": "7703194233:AAFuyj34cSV2nX699SLWQ_KiA7SBgARy4Dw",
-    "catalog_url": "http://localhost:80/",
+    "catalog_url": "http://catalog:80/",
     "port": 1883,
     "brokerIP": "mqtt.eclipseprojects.io",
     "default_thresholds": {
