@@ -345,7 +345,7 @@ def get_ids(info):
         return int(gh_id), int(area_id)
     else:
         print(f"Unexpected format in topic: {info}")
-        return None, None
+        return None, None 
 
 ############################# 🌟 BOT MAIN CLASS WITH METHODS 🌟 #############################
 ############################# 🚀 BOT MAIN CLASS WITH METHODS 🚀 #############################
@@ -393,6 +393,7 @@ class BotMain:
         self.application.add_handler(self._build_conversation_handler())
         # Register the service in the catalog
         self.registerService()
+
 
     def registerService(self):
         self.serviceInfo['last_update'] = self.actualTime
