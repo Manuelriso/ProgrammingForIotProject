@@ -26,7 +26,7 @@
                     "lightActuation": "greenhouse1/area1/actuation/light",
                     "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
                     "pump": 1,
-                    "light": "off",
+                    "light": "on",
                     "ventilation": 1
                 },
                 {
@@ -148,16 +148,10 @@
     "devices": [],
     "services": [
         {
-            "ID": 30,
-            "serviceName": "RaspberryPIConnector",
-            "last_updated": "",
-            "last_update": 1749039014.5896595
-        },
-        {
             "ID": 69,
             "serviceName": "Telegram Bot",
             "last_updated": "",
-            "last_update": 1749038911.3594828
+            "last_update": 1749052140.1154351
         }
     ]
 }

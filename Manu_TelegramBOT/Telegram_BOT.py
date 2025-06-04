@@ -192,7 +192,28 @@ class TelegramBOT:
             keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
             self.bot.sendMessage(chat_ID, text="Select a greenhouse to delete:", reply_markup=keyboard)
         
+        elif message=="/viewcurrentdata":
+            response=requests.get(f'{self.catalogURL}/greenhouses')
+            if response.status_code == 200:
+                greenhouses = response.json()
+            else:
+                self.bot.sendMessage(chat_ID, text="Server error!!")
             
+            IDlist=[]
+            for greenhouse in greenhouses["greenhouses"]:
+                IDlist.append(greenhouse["greenhouseID"])
+            
+            
+            keyboard_buttons = []
+            for greenhouse in greenhouses["greenhouses"]:
+                gh_id = greenhouse["greenhouseID"]
+                button = InlineKeyboardButton(text=f"🏠 Greenhouse {gh_id}", callback_data=f"view_greenhouse_{gh_id}")
+                keyboard_buttons.append([button])  # ogni bottone su una riga diversa
+
+            keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+            self.bot.sendMessage(chat_ID, text="Select a greenhouse to see current data:", reply_markup=keyboard)
+        
+        
         elif message=="/deletearea":
             response=requests.get(f'{self.catalogURL}/greenhouses')
             if response.status_code == 200:
@@ -214,6 +235,26 @@ class TelegramBOT:
             keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
             self.bot.sendMessage(chat_ID, text="Select the greenhouse:", reply_markup=keyboard)
         
+        elif message=="/sendactuation":
+            response=requests.get(f'{self.catalogURL}/greenhouses')
+            if response.status_code == 200:
+                greenhouses = response.json()
+            else:
+                self.bot.sendMessage(chat_ID, text="Server error!!")
+            
+            IDlist=[]
+            for greenhouse in greenhouses["greenhouses"]:
+                IDlist.append(greenhouse["greenhouseID"])
+            
+            
+            keyboard_buttons = []
+            for greenhouse in greenhouses["greenhouses"]:
+                gh_id = greenhouse["greenhouseID"]
+                button = InlineKeyboardButton(text=f"🏠 Greenhouse {gh_id}", callback_data=f"sendactuation_{gh_id}")
+                keyboard_buttons.append([button])  # ogni bottone su una riga diversa
+
+            keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+            self.bot.sendMessage(chat_ID, text="Select the greenhouse to send an actuation:", reply_markup=keyboard)
         
         elif message=="/addarea":
             response=requests.get(f'{self.catalogURL}/greenhouses')
@@ -284,6 +325,138 @@ class TelegramBOT:
             else:
                 self.bot.sendMessage(from_id, f"❌ Failed to retrieve Greenhouse {gh_id} information.")
         
+                
+        elif query_data.startswith("view_greenhouse_"):
+            gh_id = int(query_data.replace("view_greenhouse_", ""))
+            response = requests.get(f'{self.catalogURL}/greenhouses/{gh_id}')
+            if response.status_code == 200:
+                greenhouse = response.json()
+                areas = greenhouse["areas"]
+                if not areas:
+                    self.bot.sendMessage(from_id, f"❌ No areas found in Greenhouse {gh_id}.")
+                    return
+
+                keyboard_buttons = []
+                for area in areas:
+                    area_id = area["ID"]
+                    button = InlineKeyboardButton(
+                        text=f"Area {area_id}",
+                        callback_data=f"view_area_{gh_id}_{area_id}"
+                    )
+                    keyboard_buttons.append([button])
+
+                keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+                self.bot.sendMessage(from_id, text=f"🌱 Select an area in Greenhouse {gh_id} to view current data:", reply_markup=keyboard)
+            else:
+                self.bot.sendMessage(from_id, f"❌ Failed to retrieve Greenhouse {gh_id} information.")
+                
+
+        elif query_data.startswith("sendactuation_"):
+            gh_id = int(query_data.replace("sendactuation_", ""))
+            response = requests.get(f'{self.catalogURL}/greenhouses/{gh_id}')
+            if response.status_code == 200:
+                greenhouse = response.json()
+                areas = greenhouse["areas"]
+                if not areas:
+                    self.bot.sendMessage(from_id, f"❌ No areas found in Greenhouse {gh_id}.")
+                    return
+
+                keyboard_buttons = []
+                for area in areas:
+                    area_id = area["ID"]
+                    button = InlineKeyboardButton(
+                        text=f"Area {area_id}",
+                        callback_data=f"areaactuation_{gh_id}_{area_id}"
+                    )
+                    keyboard_buttons.append([button])
+
+                keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
+                self.bot.sendMessage(from_id, text=f"🌱 Select an area in Greenhouse {gh_id} to send an actuation:", reply_markup=keyboard)
+            else:
+                self.bot.sendMessage(from_id, f"❌ Failed to retrieve Greenhouse {gh_id} information.")
+        
+        
+        elif query_data.startswith("areaactuation_"):
+            _, gh_id, area_id = query_data.split("_")
+            response = requests.get(f'{self.catalogURL}/greenhouse{gh_id}/areas/{area_id}')
+            area=response.json()
+            if response.status_code == 200:
+                actuation_buttons = [
+                    [InlineKeyboardButton(text="💡 Toggle Light", callback_data=f"toggle_light_{gh_id}_{area_id}")],
+                    [InlineKeyboardButton(text="💧 Activate Pump", callback_data=f"activate_pump_{gh_id}_{area_id}")],
+                    [InlineKeyboardButton(text="🌬️ Start Ventilation", callback_data=f"start_ventilation_{gh_id}_{area_id}")]
+                ]
+                keyboard = InlineKeyboardMarkup(inline_keyboard=actuation_buttons)
+                self.bot.sendMessage(from_id, text="🔘 Select an actuation command:", reply_markup=keyboard)
+            else:
+                self.bot.sendMessage(from_id, f"❌ Failed to get current data.")
+        
+        
+                
+        elif query_data.startswith("toggle_light_"):
+            ok,_, gh_id, area_id = query_data.split("_")
+            response = requests.get(f'{self.catalogURL}/greenhouse{gh_id}/areas/{area_id}')
+            area=response.json()
+            if response.status_code == 200:
+                if(area["light"]=="off"):
+                    area["light"]="on"
+                    response = requests.put(f'{self.catalogURL}/greenhouse{gh_id}/area',data=json.dumps(area))
+                    if response.status_code==200:
+                        self.bot.sendMessage(from_id, f"✅ Light activated.")
+                    else:
+                        self.bot.sendMessage(from_id, f"❌ Error in the connection.")
+                else:
+                     self.bot.sendMessage(from_id, f"❌ The light is already ON.")   
+            else:
+                self.bot.sendMessage(from_id, f"❌ Failed to get current data.")
+                
+        
+        elif query_data.startswith("activate_pump_"):
+            ok,_, gh_id, area_id = query_data.split("_")
+            response = requests.get(f'{self.catalogURL}/greenhouse{gh_id}/areas/{area_id}')
+            area=response.json()
+            if response.status_code == 200:
+                if(area["pump"]==0):
+                    area["pump"]=1
+                    response = requests.put(f'{self.catalogURL}/greenhouse{gh_id}/area',data=json.dumps(area))
+                    if response.status_code==200:
+                        self.bot.sendMessage(from_id, f"✅ Pump activated.")
+                    else:
+                        self.bot.sendMessage(from_id, f"❌ Error in the connection.")
+                else:
+                     self.bot.sendMessage(from_id, f"❌ The pump is already ON.")   
+            else:
+                self.bot.sendMessage(from_id, f"❌ Failed to get current data.")
+                
+        
+        elif query_data.startswith("start_ventilation_"):
+            ok,_, gh_id, area_id = query_data.split("_")
+            response = requests.get(f'{self.catalogURL}/greenhouse{gh_id}/areas/{area_id}')
+            area=response.json()
+            if response.status_code == 200:
+                if(area["ventilation"]==0):
+                    area["ventilation"]=1
+                    response = requests.put(f'{self.catalogURL}/greenhouse{gh_id}/area',data=json.dumps(area))
+                    if response.status_code==200:
+                        self.bot.sendMessage(from_id, f"✅ Ventilation activated.")
+                    else:
+                        self.bot.sendMessage(from_id, f"❌ Error in the connection.")
+                else:
+                     self.bot.sendMessage(from_id, f"❌ The ventilation is already ON.")   
+            else:
+                self.bot.sendMessage(from_id, f"❌ Failed to get current data.")
+        
+        
+        
+        elif query_data.startswith("view_area_"):
+            ok,_, gh_id, area_id = query_data.split("_")
+            response = requests.get(f'{self.catalogURL}/greenhouse{gh_id}/areas/{area_id}')
+            area=response.json()
+            if response.status_code == 200:
+                self.bot.sendMessage(from_id, f"✅ Area {area_id} from Greenhouse {gh_id} current data:\nTEMPERATURE: {area['currentTemperature']}\nHUMIDITY: {area['currentHumidity']}\nLUMINOSITY: {area['currentLuminosity']}\nMOTION DETECTED: {area['motionDetected']}.")
+            else:
+                self.bot.sendMessage(from_id, f"❌ Failed to get current data.")
+                
         
         elif query_data.startswith("confirmdeletearea_"):
             _, gh_id, area_id = query_data.split("_")
