@@ -49,7 +49,10 @@ class TelegramBOT:
             state = self.user_states[chat_ID]
             
             if state["action"] == "insert_area":
-                    area_id = int(message) 
+                    area_id = int(message)
+                    if(area_id<0):
+                         self.bot.sendMessage(chat_ID, "⚠️ Invalid input.")
+                         return
                     #check of the existence of the area
                     response=requests.get(f'{self.catalogURL}/greenhouses/{state["greenhouse_id"]}')
                     responseComplete=response.json()
@@ -100,8 +103,12 @@ class TelegramBOT:
                     del self.user_states[chat_ID]
                     return
             
+            
             if state["action"] == "select_greenhouse":
                     gh_id = int(message) 
+                    if(gh_id<0):
+                        self.bot.sendMessage(chat_ID, "⚠️ Invalid input.")
+                        return
                     #check of the existence of the grennhouse
                     response=requests.get(f'{self.catalogURL}/greenhouses')
                     responseComplete=response.json()
@@ -123,7 +130,9 @@ class TelegramBOT:
             
             if state["action"] == "insert_area_in_the_greenhouse":
                     area_id = int(message) 
-    
+                    if(area_id<0):
+                         self.bot.sendMessage(chat_ID, "⚠️ Invalid input.")
+                         return
                     self.standardArea["ID"] = area_id
                     del self.user_states[chat_ID]
                     gh_id = state["greenhouse_id"]
@@ -296,10 +305,12 @@ class TelegramBOT:
     def on_callback_query(self, msg):
         query_id, from_id, query_data = telepot.glance(msg, flavor='callback_query')
         print(f"I sended a callback with {query_data}")
+        
         if query_data.startswith("delete_"):
             gh_id = query_data.replace("delete_", "")
             requests.delete(f'{self.catalogURL}/greenhouse/{gh_id}')
             self.bot.sendMessage(from_id, f"✅ Greenhouse {gh_id} deleted.")
+        
         
         elif query_data.startswith("deletearea_"):
             gh_id = query_data.replace("deletearea_", "")
@@ -507,15 +518,16 @@ class TelegramBOT:
         #in areaID only the ID of the area, same for the greenhouse
         areaID=int(area.replace("area", ""))
         greenhouseID=int(greenhouse.replace("greenhouse", ""))
-          
-        alert_text = f"🚨🚨🚨 Motion detected!\nGreenhouse: {greenhouseID}, Area: {areaID}.\nTopic: {topic} 🚨🚨🚨"
-        for chat_id in self.user_states.keys():
-            self.bot.sendMessage(chat_id, alert_text)
+        if(greenhouseID==1 and areaID==1): 
+            alert_text = f"🚨🚨🚨 Motion detected!\nGreenhouse: {greenhouseID}, Area: {areaID}.\nTopic: {topic} 🚨🚨🚨"
+            for chat_id in self.user_states.keys():
+                self.bot.sendMessage(chat_id, alert_text)
         
         
 
 if __name__ == "__main__":
     settings = json.load(open('settings.json'))
+    time.sleep(1)
     telegram = TelegramBOT(settings)
     telegram.registerService()
     
@@ -536,7 +548,7 @@ if __name__ == "__main__":
         while True:
             time.sleep(2)
             counter += 1
-            if counter == 20:
+            if counter == 17:
                 telegram.updateService()
                 counter = 0
     except KeyboardInterrupt:

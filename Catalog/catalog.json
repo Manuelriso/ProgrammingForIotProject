@@ -1,5 +1,5 @@
 {
-    "catalogURL": "http://localhost:80/",
+    "catalogURL": "http://catalog:80/",
     "telegram_id": "8111865634:AAGC-7rjMeBdlm1Lmuzn5BypUzxzfPjZKiI",
     "greenhouses": [
         {
@@ -10,9 +10,9 @@
             "areas": [
                 {
                     "ID": 1,
-                    "humidityThreshold": 96,
+                    "humidityThreshold": 97,
                     "temperatureThreshold": 20,
-                    "luminosityThreshold": 73,
+                    "luminosityThreshold": 74,
                     "plants": "tomatoes",
                     "temperatureDataTopic": "greenhouse1/area1/temperature",
                     "humidityDataTopic": "greenhouse1/area1/humidity",
@@ -21,7 +21,7 @@
                     "motionDetected": 128,
                     "currentTemperature": 24.4,
                     "currentHumidity": 69.3,
-                    "currentLuminosity": 65.6,
+                    "currentLuminosity": 71.1,
                     "pumpActuation": "greenhouse1/area1/actuation/pump",
                     "lightActuation": "greenhouse1/area1/actuation/light",
                     "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
@@ -31,7 +31,7 @@
                 },
                 {
                     "ID": 2,
-                    "humidityThreshold": 94,
+                    "humidityThreshold": 95,
                     "temperatureThreshold": 20,
                     "luminosityThreshold": 59,
                     "plants": "ananas",
@@ -39,106 +39,114 @@
                     "humidityDataTopic": "greenhouse1/area2/humidity",
                     "luminosityDataTopic": "greenhouse1/area2/luminosity",
                     "motionTopic": "greenhouse1/area2/motion",
-                    "motionDetected": 121,
-                    "currentTemperature": 15.5,
-                    "currentHumidity": 58.3,
-                    "currentLuminosity": 78.9,
+                    "motionDetected": 128,
+                    "currentTemperature": 23.6,
+                    "currentHumidity": 64.7,
+                    "currentLuminosity": 48.3,
                     "pumpActuation": "greenhouse1/area2/actuation/pump",
                     "lightActuation": "greenhouse1/area2/actuation/light",
                     "ventilationActuation": "greenhouse1/area2/actuation/ventilation",
                     "pump": 1,
-                    "light": "off",
+                    "light": "on",
                     "ventilation": 1
                 },
                 {
                     "ID": 3,
-                    "humidityThreshold": 90,
+                    "humidityThreshold": 91,
                     "temperatureThreshold": 22,
-                    "luminosityThreshold": 57,
+                    "luminosityThreshold": 58,
                     "plants": "ananas",
                     "temperatureDataTopic": "greenhouse1/area3/temperature",
                     "humidityDataTopic": "greenhouse1/area3/humidity",
                     "luminosityDataTopic": "greenhouse1/area3/luminosity",
                     "motionTopic": "greenhouse1/area3/motion",
-                    "motionDetected": 113,
-                    "currentTemperature": 21.7,
-                    "currentHumidity": 65.3,
-                    "currentLuminosity": 74.2,
+                    "motionDetected": 119,
+                    "currentTemperature": 20.0,
+                    "currentHumidity": 54.0,
+                    "currentLuminosity": 73.0,
                     "pumpActuation": "greenhouse1/area3/actuation/pump",
                     "lightActuation": "greenhouse1/area3/actuation/light",
                     "ventilationActuation": "greenhouse1/area3/actuation/ventilation",
-                    "pump": 0,
-                    "light": "on",
+                    "pump": 1,
+                    "light": "off",
                     "ventilation": 1
                 }
             ]
         },
         {
+            "greenhouseID": 6,
+            "telegram_ID": 1,
+            "numberOfAreas": 1,
+            "creation_date": "2025-06-04",
+            "areas": [
+                {
+                    "ID": -2,
+                    "humidityThreshold": 60,
+                    "temperatureThreshold": 60,
+                    "luminosityThreshold": 60,
+                    "plants": "-\u20ac+#",
+                    "temperatureDataTopic": "greenhouse6/area-2/temperature",
+                    "humidityDataTopic": "greenhouse6/area-2/humidity",
+                    "luminosityDataTopic": "greenhouse6/area-2/luminosity",
+                    "motionTopic": "greenhouse6/area-2/motion",
+                    "motionDetected": 0,
+                    "currentTemperature": 16.0,
+                    "currentHumidity": 53.1,
+                    "currentLuminosity": 63.5,
+                    "pumpActuation": "greenhouse6/area-2/actuation/pump",
+                    "lightActuation": "greenhouse6/area-2/actuation/light",
+                    "ventilationActuation": "greenhouse6/area-2/actuation/ventilation",
+                    "pump": 0,
+                    "light": "off",
+                    "ventilation": 0
+                }
+            ]
+        },
+        {
             "greenhouseID": 2,
-            "telegram_ID": 1513626438,
-            "numberOfAreas": 3,
-            "creation_date": "23-05-2025",
+            "telegram_ID": 1,
+            "numberOfAreas": 1,
+            "creation_date": "2025-06-04",
             "areas": [
                 {
                     "ID": 1,
-                    "humidityThreshold": 91,
-                    "temperatureThreshold": 32,
-                    "luminosityThreshold": 18,
-                    "plants": "Mandioca",
+                    "humidityThreshold": 60,
+                    "temperatureThreshold": 60,
+                    "luminosityThreshold": 60,
+                    "plants": "tomatoes",
                     "temperatureDataTopic": "greenhouse2/area1/temperature",
                     "humidityDataTopic": "greenhouse2/area1/humidity",
                     "luminosityDataTopic": "greenhouse2/area1/luminosity",
                     "motionTopic": "greenhouse2/area1/motion",
-                    "motionDetected": 95,
+                    "motionDetected": 0,
+                    "currentTemperature": 23.7,
+                    "currentHumidity": 61.4,
+                    "currentLuminosity": 54.8,
                     "pumpActuation": "greenhouse2/area1/actuation/pump",
                     "lightActuation": "greenhouse2/area1/actuation/light",
                     "ventilationActuation": "greenhouse2/area1/actuation/ventilation",
                     "pump": 1,
                     "light": "off",
-                    "ventilation": 0,
-                    "currentLuminosity": 50.9,
-                    "currentTemperature": 23.1,
-                    "currentHumidity": 51.3
-                },
-                {
-                    "ID": 31,
-                    "humidityThreshold": 60,
-                    "temperatureThreshold": 60,
-                    "luminosityThreshold": 60,
-                    "plants": "Sanseveria",
-                    "temperatureDataTopic": "greenhouse2/area31/temperature",
-                    "humidityDataTopic": "greenhouse2/area31/humidity",
-                    "luminosityDataTopic": "greenhouse2/area31/luminosity",
-                    "motionTopic": "greenhouse2/area31/motion",
-                    "motionDetected": 0,
-                    "currentTemperature": 16.1,
-                    "currentHumidity": 57.7,
-                    "currentLuminosity": 0,
-                    "pumpActuation": "greenhouse2/area31/actuation/pump",
-                    "lightActuation": "greenhouse2/area31/actuation/light",
-                    "ventilationActuation": "greenhouse2/area31/actuation/ventilation",
-                    "pump": 0,
-                    "light": "off",
                     "ventilation": 0
                 },
                 {
-                    "ID": 2,
+                    "ID": 1,
                     "humidityThreshold": 60,
                     "temperatureThreshold": 60,
                     "luminosityThreshold": 60,
-                    "plants": "beans",
-                    "temperatureDataTopic": "greenhouse2/area2/temperature",
-                    "humidityDataTopic": "greenhouse2/area2/humidity",
-                    "luminosityDataTopic": "greenhouse2/area2/luminosity",
-                    "motionTopic": "greenhouse2/area2/motion",
+                    "plants": "tomatoes",
+                    "temperatureDataTopic": "greenhouse2/area1/temperature",
+                    "humidityDataTopic": "greenhouse2/area1/humidity",
+                    "luminosityDataTopic": "greenhouse2/area1/luminosity",
+                    "motionTopic": "greenhouse2/area1/motion",
                     "motionDetected": 0,
-                    "currentTemperature": 22.4,
-                    "currentHumidity": 55.4,
-                    "currentLuminosity": 0,
-                    "pumpActuation": "greenhouse2/area2/actuation/pump",
-                    "lightActuation": "greenhouse2/area2/actuation/light",
-                    "ventilationActuation": "greenhouse2/area2/actuation/ventilation",
-                    "pump": 0,
+                    "currentTemperature": 19.9,
+                    "currentHumidity": 52.2,
+                    "currentLuminosity": 79.0,
+                    "pumpActuation": "greenhouse2/area1/actuation/pump",
+                    "lightActuation": "greenhouse2/area1/actuation/light",
+                    "ventilationActuation": "greenhouse2/area1/actuation/ventilation",
+                    "pump": 1,
                     "light": "off",
                     "ventilation": 0
                 }
@@ -148,10 +156,58 @@
     "devices": [],
     "services": [
         {
+            "ID": 6,
+            "serviceName": "Security",
+            "last_updated": "",
+            "last_update": 1749053215.097169
+        },
+        {
+            "ID": 10,
+            "serviceName": "NodeRED",
+            "last_updated": "",
+            "last_update": 1749053219.1141133
+        },
+        {
+            "ID": 73,
+            "serviceName": "Pump Control",
+            "last_updated": "",
+            "last_update": 1749053195.67771
+        },
+        {
+            "ID": 64,
+            "serviceName": "Temperature Control",
+            "last_updated": "",
+            "last_update": 1749053206.32568
+        },
+        {
+            "ID": 30,
+            "serviceName": "RaspberryPIConnector",
+            "last_updated": "",
+            "last_update": 1749053217.1581235
+        },
+        {
             "ID": 69,
             "serviceName": "Telegram Bot",
             "last_updated": "",
-            "last_update": 1749052140.1154351
+            "last_update": 1749053200.4209723
+        },
+        {
+            "ID": 3,
+            "serviceName": "ThingspeakAdaptor",
+            "last_updated": "",
+            "last_update": 1749053229.9578512
+        },
+        {
+            "ID": 9,
+            "serviceName": "ThreholdManagement",
+            "last_updated": "",
+            "last_update": 1749053063.4260917
+        },
+        {
+            "ID": 34,
+            "serviceName": "Lighting Control",
+            "last_updated": "",
+            "last_update": 1749053178.1751351
         }
     ]
 }
