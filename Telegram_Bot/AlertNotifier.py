@@ -2,6 +2,7 @@
 from MyMQTTforBOT import MyMQTT
 import requests
 from requests.exceptions import RequestException
+from sharedUtils import normalize_state_to_int
 
 ############################# ALERT NOTIFIER #######################
 class AlertNotifier:
@@ -72,32 +73,64 @@ class AlertNotifier:
     #                 "u": "boolean"
     #             }]
     # }
-    def notify(self, msg, payload):
-        base_name = payload.get("bn", "")
-        events = payload.get("e", [])
-        GH_ID, AREA_ID = self.get_ids(base_name)
+    # OR THIS:
+    # {"motion": "on"}
+    #
+    
+    def notify(self, msgtopic, payload):
+        try:
+            # Caso 1: Payload tipo SenML (light, temeperature, humidity, etc.)
+            if "bn" in payload and "e" in payload:
+                base_name = payload.get("bn", "")
+                events = payload.get("e", [])
+                gh_id, area_id = self.get_ids(base_name)
 
-        for event in events:
-            situation = event.get("n")
-            timestamp = event.get("t")
-            unit = event.get("u")
-            if situation == "motion":
-                value_received = event.get("v") # A 1 or 0
-                # if value_received == 1: # and it already wasn't == last value
-                destinatario = self.get_user_from_id(GH_ID)
-                print("about to acces the notify__user method")
+                for event in events:
+                    situation = event.get("n")
+                    timestamp = event.get("t")
+                    unit = event.get("u")
+                    if situation == "motion":
+                        value_received = event.get("v")
+                        destinatario = self.get_user_from_id(gh_id)
+                        print("about to access the notify_user method (SenML)")
+                        self.notify_user(
+                            gh_id=gh_id,
+                            area_id=area_id,
+                            user_affected=destinatario,
+                            alerttype=situation,
+                            timestamp=timestamp,
+                            unit=unit,
+                            value_received=value_received
+                        )
+                    else:
+                        print(f"Unexpected event type: {situation} in topic {base_name}")
+                return
+
+            # Caso 2: Payload simple tipo {"motion": "on"}
+            elif "motion" in payload:
+                gh_id, area_id = self.get_ids(msgtopic)
+                print("Processing simple payload", "gh_id:", gh_id, "area_id:", area_id)
+                if gh_id is None or area_id is None:
+                    print(f"[!] Invalid topic: {msgtopic}")
+                    return
+                value_raw = payload.get("motion")
+                value_received = normalize_state_to_int(value_raw)
+                destinatario = self.get_user_from_id(gh_id)
+                print("about to access the notify_user method (Simple payload)") ########
                 self.notify_user(
-                    gh_id=GH_ID,
-                    area_id=AREA_ID,
+                    gh_id=gh_id,
+                    area_id=area_id,
                     user_affected=destinatario,
-                    alerttype=situation,
-                    timestamp=timestamp,
-                    unit=unit,
+                    alerttype="motion",
+                    timestamp=None,
+                    unit=None,
                     value_received=value_received
                 )
-            else: 
-                print(f"Unexpected event type: {situation} in topic {base_name}")
-                continue
+                return
+            else:
+                print(f"[!] Unsupported payload format: {payload}, {payload.datatype}")
+        except Exception as e:
+            print(f"[!] Error in notify(): {e}")
 
     def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit, value_received): #Sends the alert to the queue of the bot
         print("Something happened, notifying user...")

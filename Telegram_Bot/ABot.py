@@ -11,6 +11,7 @@ from functools import partial
 import asyncio
 import MyMQTTforBOT
 from AlertNotifier import AlertNotifier
+from sharedUtils import *
 
 ######################### CONVERSATION STATES #########################
 # Conversation states
@@ -245,30 +246,6 @@ async def build_suggestion_keyboard(suggested_value: int, include_back: bool = T
 def escape_md_v2(text: str) -> str:
     return re.sub(r'([_*\[\]()~`>#+=|{}.!\\-])', r'\\\1', str(text))
 
-### Normalize values to integers
-def normalize_state_to_int(value):
-    try:
-        if isinstance(value, str):
-            value = value.strip().lower()
-            if value in ("on", "1"):
-                return 1
-            if value in ("off", "0"):
-                return 0
-            return int(float(value))
-        return int(value)
-    except (ValueError, TypeError) as e:
-        print(f"[!] Error normalizing the value: {value} - {e}")
-        raise
-
-### Normalize values to strings for display
-def normalize_state_to_str(value): 
-    value = str(value).strip().lower()
-    if value in ["1", "on", "true"]:
-        return "ON"
-    elif value in ["0", "off", "false"]:
-        return "OFF"
-    else:
-        return "OFF" #Just as prevention
 
 ############################### CONVERSATION FUNCTIONS ###############################    
 async def handle_storical_data_gh(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -450,7 +427,7 @@ class BotMain:
                         for area in greenhouse.get("areas", []):
                             area_id = int(area.get("ID"))
                             if area_id:
-                                self.greenhouse_user_map[gh_id]["areas"][area_id] = {"LastMotionValue": 0, "timestamp": None}
+                                self.greenhouse_user_map[gh_id]["areas"][area_id] = {"LastMotionValue": 0, "timestampMotion": None}
                 print("Greenhouse user map initialized successfully.")
             except (RequestException, ValueError) as e:
                 print(f"Error initializing greenhouse_user_map: {e}")
@@ -1711,9 +1688,9 @@ class BotMain:
                 # First time we see this greenhouse
                 self.greenhouse_user_map[gh_id] = {'user': current_user, 'areas': {}}
             # Initialize the area
-            self.greenhouse_user_map[gh_id]['areas'][area_id] = {
-                'last_motion': None,
-                'timestamp': None
+            self.greenhouse_user_map[gh_id]["areas"][area_id] = {
+                'LastMotionValue': None,
+                'timestampMotion': None
             }
 
     ## Adds a new area to the greenhouse map for the current user
@@ -1725,7 +1702,7 @@ class BotMain:
                 return False 
             # Add an area if it does not exist
             if area_id not in gh_entry['areas']:
-                gh_entry['areas'][area_id] = {'last_motion': None, 'timestamp': None}
+                gh_entry['areas'][area_id] = {'LastMotionValue': None, 'timestampMotion': None}
                 print(f"Area {area_id} added to greenhouse {gh_id}.")
                 return True
             else:
@@ -1791,108 +1768,134 @@ class BotMain:
 
     ## Alert Updater: Handles the alert_data and returns True if there's a new emergency/problem
     # so the alert producer puts it in the pending_alerts dictionary.
-    async def update_dictionary(self, alert_data):    
-        base_name = alert_data.get("bn", "")
+    async def update_dictionary(self, alert_data): 
+        topicbase = alert_data.get("bn", "")
         event = alert_data.get("e", [{}])[0]  # Consider only the first event in the SenML format.
-        GH_ID, AREA_ID = get_ids(base_name)
-        if not GH_ID or not AREA_ID:
-            return False
+        GH_ID, AREA_ID = get_ids(topicbase)
+        alertype = event.get("n", "")
+        # Caso 1: Alerta en formato SenML (MQTT traducido: con 'e') - Humidity, Temperature, Luminosity.
+        # if alertype in ["temperature", "humidity", "luminosity"]:   
+        #     GH_ID, AREA_ID = get_ids(topicbase)
+        #     if not GH_ID or not AREA_ID:
+        #         return False
 
-        async with self.greenhouse_map_lock:
-            if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
-                print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map. This should not happen.") 
-                return False
+        #     async with self.greenhouse_map_lock:
+        #         if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
+        #             print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map. This should not happen.") 
+        #             return False
 
-        situation = event.get("n")
-        timestamp = event.get("t")
-        value_received = None
-        if situation == "motion":
-            value_received = event.get("v")  # 1 o 0
-            changed, value = await self.update_motion_value(GH_ID, AREA_ID, value_received, timestamp)
-            if changed == True and value == 1:
-                return True  # there was a change,  AND it changed from 0 to 1, send data. Not from 1 to 0.
-            else:
-                print("No update needed for this last alert.")
-                return False
-        else:
-            print("Situation is not motion")
-            return False #####
+        #     situation = event.get("n")
+        #     timestamp = event.get("t")
+        #     value_received = None
+        #     if situation == "motion":
+        #         value_received = event.get("v")  # 1 o 0
+        #         changed, value = await self.update_alert_value(GH_ID, AREA_ID, value_received, timestamp)
+        #         if changed == True and value == 1:
+        #             return True  # there was a change,  AND it changed from 0 to 1, send data. Not from 1 to 0.
+        #         else:
+        #             print("No update needed for this last alert.")
+        #             return False
+        #     else:
+        #         print("Situation is not motion")
+        #         return False #####
+            # In the future updates, the extreme values of temperature, humidity, and luminosity will be added here.
+
+        # Case 2: Alert in simple format (ONLY: "motion":"on")
         
-    ## Update Motion Value: Updates the LastMotionValue in the map after receiving a message from the broker
-    # and returns True if the value changed from 0 to 1, False otherwise.
-    async def update_motion_value(self, gh_id, area_id, value_received,timestamp):
-        async with self.greenhouse_map_lock:
-            last_value = self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"]
-            if last_value is None or value_received is None:
-                print("[ERROR] One of the values is None.")
-                return False, None
+        if alertype == "motion":
+            value_raw = event.get("v")  # 1 or 0
+            if value_raw is None:
+                print("[MQTT] Missing value.")
+                return False
+            # Se aceptan todos los cambios sin verificar el último estado
             try:
-                last_value_int = normalize_state_to_int(last_value)
-                value_received_int = normalize_state_to_int(value_received)
+                value_int = normalize_state_to_int(value_raw)
             except Exception as e:
-                print(f"Error al convertir valores a int: {e}")
-                return False, None
-            # Update the motion value in the map
-            self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"] = value_received_int
-            self.greenhouse_user_map[gh_id]["areas"][area_id]["timestamp"] = timestamp
+                print(f"[MQTT] Error al convertir valor a int: {e}")
+                return False
 
-            if int(last_value_int) == int(value_received_int):
-                #"No change detected in motion value".
-                return False, None  # Only updated the dictionary, No need for sending an alert
-            return True, value_received_int  # Update successful, value changed, and the value.
+            async with self.greenhouse_map_lock:
+                self.greenhouse_user_map[GH_ID]["areas"][AREA_ID]["LastMotionValue"] = value_int
+                self.greenhouse_user_map[GH_ID]["areas"][AREA_ID]["timestampMotion"] = None  # No timestamp
+
+            print("Motion received and put in the map.")
+            return True
+        
+    ## Update Alert Value: Updates the LastValue in the map after receiving a message from the broker
+    # and returns True if the value changed from 0 to 1, False otherwise.
+    # async def update_alert_value(self, gh_id, area_id, value_received,timestamp):
+    #     async with self.greenhouse_map_lock:
+    #         last_value = self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"]
+    #         if last_value is None or value_received is None:
+    #             print("[ERROR] One of the values is None.")
+    #             return False, None
+    #         try:
+    #             last_value_int = normalize_state_to_int(last_value)
+    #             value_received_int = normalize_state_to_int(value_received)
+    #         except Exception as e:
+    #             print(f"Error al convertir valores a int: {e}")
+    #             return False, None
+    #         # Update the motion value in the map
+    #         self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"] = value_received_int
+    #         self.greenhouse_user_map[gh_id]["areas"][area_id]["timestampMotion"] = timestamp
+
+    #         if int(last_value_int) == int(value_received_int):
+    #             #"No change detected in motion value".
+    #             return False, None  # Only updated the dictionary, No need for sending an alert
+    #         return True, value_received_int  # Update successful, value changed, and the value.
 
     ## Alert Consumer: Processes the pending alerts for each user and sends them via Telegram
+    ## Alert Consumer: Processes the pending alerts for each user and sends them via Telegram
     async def alert_consumer(self, application, user_states):
-        self.retry_flags = {} 
+        self.retry_flags = {}
 
-        async def process_alerts(chat_id):
-            """Processes alerts for a specific user."""
-            while self.pending_alerts.get(chat_id):
-                alert_info = self.pending_alerts[chat_id][0]
-                text = format_alert_message(alert_info, self.retry_flags.get(chat_id, False))
-                try:
-                    await application.bot.send_message(
-                        chat_id=chat_id,
-                        text=text,
-                        parse_mode='Markdown'
-                    )
+        async def process_single_alert(chat_id):
+            ##Processes only one alert for a specific user
+            alert_info = self.pending_alerts[chat_id][0]
+            text = format_alert_message(alert_info, self.retry_flags.get(chat_id, False))
+            try:
+                await application.bot.send_message(
+                    chat_id=chat_id,
+                    text=text,
+                    parse_mode='Markdown'
+                )
+                self.pending_alerts[chat_id].pop(0)
+                self.retry_flags[chat_id] = False
+
+                if not self.pending_alerts[chat_id]:
+                    print(f"[✓] All alerts processed for {chat_id}, cleaning up.")
+                    del self.pending_alerts[chat_id]
+
+            except Exception as e:
+                print(f"Error sending alert to {chat_id}: {e}")
+                if self.retry_flags.get(chat_id, False):
+                    print(f"[✗] Second attempt failed for {chat_id}, discarding alert.")
                     self.pending_alerts[chat_id].pop(0)
                     self.retry_flags[chat_id] = False
+                else:
+                    print(f"[!] Retrying alert for {chat_id} in next cycle...")
+                    self.retry_flags[chat_id] = True
+                    # No sleep aquí, se reintentará en la siguiente iteración del loop principal
 
-                    if not self.pending_alerts[chat_id]:
-                        print(f"[✓] All alerts processed for {chat_id}, cleaning up.")
-                        del self.pending_alerts[chat_id]
-
-                except Exception as e:
-                    print(f"Error sending alert to {chat_id}: {e}")
-                    if self.retry_flags.get(chat_id, False):
-                        print(f"[✗] Second attempt failed for {chat_id}, discarding alert.")
-                        self.pending_alerts[chat_id].pop(0)
-                        self.retry_flags[chat_id] = False
-                    else:
-                        print(f"[!] Retrying alert for {chat_id} in 5 seconds...")
-                        self.retry_flags[chat_id] = True
-                        await asyncio.sleep(5)
         while True:
             try:
-                # Create tasks to process pending alerts for each user
                 tasks = []
                 for chat_id in list(self.pending_alerts.keys()):
-                    if self.pending_alerts[chat_id]:  # Only process if there are pending alerts
+                    if self.pending_alerts[chat_id]:  # Solo si hay alertas
                         state = user_states.get(chat_id)
                         if state in ["END", MAIN_MENU]:
-                            tasks.append(asyncio.create_task(process_alerts(chat_id)))
+                            tasks.append(asyncio.create_task(process_single_alert(chat_id)))
                         else:
                             print(f"User {chat_id} is in state {state}, alerts will not be displayed yet.")
-                # Wait for all tasks to complete
+
                 if tasks:
                     results = await asyncio.gather(*tasks, return_exceptions=True)
                     for result in results:
                         if isinstance(result, Exception):
                             print(f"[ERROR] Error in a task: {result}")
 
-                # Wait before checking again to not overload the bot
-                await asyncio.sleep(3)
+                await asyncio.sleep(1)  # más responsivo al bajar a 1 segundo
+
             except Exception as e:
                 print(f"[ERROR] General error in alert_consumer: {e}")
 

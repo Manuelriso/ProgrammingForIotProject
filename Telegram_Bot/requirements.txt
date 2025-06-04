@@ -1,4 +1,7 @@
 python-telegram-bot==22.1
-paho-mqtt
-requests
+paho-mqtt==1.6.1
+requests==2.32.3
 python-telegram-bot[job-queue]==22.1
+
+
+
