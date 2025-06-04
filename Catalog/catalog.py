@@ -242,6 +242,7 @@ class CatalogREST(object):
         if(len(uri)==2 and uri[1]=="area"):
             greenhouseRequested=int(uri[0].replace("greenhouse",""))
             area=json.loads(body)
+            print(str(area))
             
             with open("catalog.json","r") as file:
                     data=json.load(file)

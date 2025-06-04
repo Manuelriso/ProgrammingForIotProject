@@ -18,6 +18,11 @@ def generate_humidity(base_humidity=60.0, variation=10.0):
     """Simulate a humidity value around a base percentage."""
     return round(random.uniform(base_humidity - variation, base_humidity + variation), 1)
 
+
+def generate_binary(probability_of_one=0.5):
+    return 1 if random.random() < probability_of_one else 0
+
+
 class MyMQTT:
     def __init__(self, clientID, broker, port):
         self.broker = broker
@@ -34,6 +39,7 @@ class MyMQTT:
     
     def myPublish(self, topic, msg):
         # publish a message with a certain topic
+        print(f"topic-->{topic} and msg-->{msg}")
         self._paho_mqtt.publish(topic, json.dumps(msg), 2) # 2 is the qos
     
     def start(self):
@@ -56,95 +62,64 @@ if __name__ == '__main__':
     serviceInfo['last_update'] = time.time()
     requests.post(f'{catalogURL}/service', data=json.dumps(serviceInfo))
     pub.start()
-    print(f"Catalog: {catalog}")
+    #print(f"Catalog: {catalog}")
 
-    while True:
-            #get must return the updated value already, without reinitializing the catalog
-            # c = Catalog_Navigator(settings=json.load(open('settings.json')))
-            catalog = c.get_catalog()
-            # debug
-            #print(f"Catalog: {catalog}, brongioli.")
-            for greenhouse in catalog["greenhouses"]: # iterate over greenhouses
-                for area in greenhouse["areas"]:
-                    # Comment if not using the board (only ID 1)
-                    # the indentation must be modified also (''' near before if)
+while True:
+    # Prendi il catalogo aggiornato (senza reinizializzare)
+    catalog = c.get_catalog()
 
-                    # if area["ID"] == "1":
-                        #sense temperature
-                    #    topicTemp = c.searchByTopic(1, 1, "temperatureDataTopic")
-                    #    dictTemp = {
-                    #        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area["ID"]}/temperature",
-                    #        "e": [{
-                    #                "n": "temperature",
-                    #                "v": sensor.temperature,
-                    #                "t": time.time(),
-                    #                "u": "double"
-                    #            }]
-                    #        }
-                    #    area["currentTemperature"] = dictTemp["e"][0]["v"]
-                    #    pub.myPublish(topicTemp, dictTemp)
-                    #    #sense humidity
-                    #    topicHum = c.searchByTopic(1, 1, "humidityDataTopic")
-                    #    dictHum = {
-                    #        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area["ID"]}/humidity",
-                    #        "e": [{
-                    #                "n": "humidity",
-                    #                "v": sensor.humidity,
-                    #                "t": time.time(),
-                    #                "u": "percentage"
-                    #            }]
-                    #        }
-                    #    area["currentHumidity"] = dictHum["e"][0]["v"]
-                    #    pub.myPublish(topicHum, dictHum) 
-                    #else: 
-                    topicTemp = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "temperatureDataTopic")
-                    print(f"Topic for temperature: {topicTemp}")
-                    dictTemp = {
-                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/temperature",
-                        "e": [{
-                                "n": "temperature",
-                                "v": generate_temperature(),
-                                "t": time.time(),
-                                "u": "double"
-                            }]
-                    }
-                    area["currentTemperature"] = dictTemp["e"][0]["v"]
-                    #debug
-                    print(f"Temperature for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: {area['currentTemperature']}")
-                    pub.myPublish(topicTemp, dictTemp)
-                
-                    # sense humidity
-                    topicHum = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "humidityDataTopic")
-                    dictHum = {
-                        "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/humidity",
-                        "e": [{
-                                "n": "humidity",
-                                "v": generate_humidity(),
-                               "t": time.time(),
-                                "u": "percentage"
-                            }]
-                    }
-                    area["currentHumidity"] = dictHum["e"][0]["v"]
-                    #debug
-                    print(f"Humidity for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: {area['currentHumidity']}")
-                    pub.myPublish(topicHum, dictHum)
-                
-                    # sense motion
-                    topicMotion = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "motionTopic")
-                    generalMotion = { "motion" : "on" }                    
-                    #debug
-                    print(f"Motion for greenhouse{greenhouse['greenhouseID']} and area{area['ID']}: on")
-                    pub.myPublish(topicMotion, generalMotion)
-                    
-                    # now put request to the catalog
-            for greenhouse in catalog["greenhouses"]:
-                update = requests.put(f"{catalogURL}/greenhouse", data=json.dumps(greenhouse))
-                print(f"Update status code: {update.status_code}")
-                if update.status_code == 200:
-                    print("Catalog updated successfully")
-                else:
-                    print("Failed to update catalog")
-            #save service info into CATALOG (put)
-            serviceInfo['last_update'] = time.time()
-            requests.put(f'{catalogURL}/service', data=json.dumps(serviceInfo))            
-            time.sleep(15) #frequency of sensors (due to database update)
+    for greenhouse in catalog["greenhouses"]:  # Cicla su ogni serra
+        for area in greenhouse["areas"]:  # Cicla sulle aree della serra
+            if greenhouse["greenhouseID"] != 1 or area["ID"] != 1:
+
+                topicTemp = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "temperatureDataTopic")
+                print(f"Topic for temperature: {topicTemp}")
+
+                dictTemp = {
+                    "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/temperature",
+                    "e": [{
+                        "n": "temperature",
+                        "v": generate_temperature(),
+                        "t": time.time(),
+                        "u": "double"
+                    }]
+                }
+
+                area["currentTemperature"] = dictTemp["e"][0]["v"]
+                print(f"Temperature GH{greenhouse['greenhouseID']} Area{area['ID']}: {area['currentTemperature']}")
+                pub.myPublish(topicTemp, dictTemp)
+
+                topicHum = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "humidityDataTopic")
+                dictHum = {
+                    "bn": f"greenhouse{greenhouse['greenhouseID']}/area{area['ID']}/humidity",
+                    "e": [{
+                        "n": "humidity",
+                        "v": generate_humidity(),
+                        "t": time.time(),
+                        "u": "percentage"
+                    }]
+                }
+
+                area["currentHumidity"] = dictHum["e"][0]["v"]
+                print(f"Humidity GH{greenhouse['greenhouseID']} Area{area['ID']}: {area['currentHumidity']}")
+                pub.myPublish(topicHum, dictHum)
+
+                topicMotion = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "motionTopic")
+                binary = generate_binary()
+
+                generalMotion = { "motion": "on" } if binary == 1 else { "motion": "off" }
+                print(f"Motion GH{greenhouse['greenhouseID']} Area{area['ID']}: {binary}")
+                pub.myPublish(topicMotion, generalMotion)
+
+    for greenhouse in catalog["greenhouses"]:
+        update = requests.put(f"{catalogURL}/greenhouse", data=json.dumps(greenhouse))
+        print(f"Update status code: {update.status_code}")
+        if update.status_code == 200:
+            print("✅ Catalog updated successfully")
+        else:
+            print("❌ Failed to update catalog")
+
+    serviceInfo['last_update'] = time.time()
+    requests.put(f'{catalogURL}/service', data=json.dumps(serviceInfo))
+
+    time.sleep(15)  # Sleep per simulare letture periodiche

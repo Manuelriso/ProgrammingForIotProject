@@ -1,0 +1,41 @@
+{
+    "catalogURL": "http://catalog:80",
+    "telegram_id":"8111865634:AAGC-7rjMeBdlm1Lmuzn5BypUzxzfPjZKiI",
+    "brokerIP": "mqtt.eclipseprojects.io",
+    "brokerPort": 1883,
+    "mqttTopics" : "+/+/motion",
+    "serviceInfo": {
+        "ID": 69,
+        "serviceName": "Telegram Bot",
+        "last_updated": ""
+    },
+    "standardArea":{
+        "ID": 1,
+        "humidityThreshold": 60,
+        "temperatureThreshold": 60,
+        "luminosityThreshold": 60,
+        "plants": "None",
+        "temperatureDataTopic": "None",
+        "humidityDataTopic": "None",
+        "luminosityDataTopic": "None",
+        "motionTopic": "None",
+        "motionDetected": 0,
+        "currentTemperature": 0,
+        "currentHumidity": 0,
+        "currentLuminosity": 0,
+        "pumpActuation": "None",
+        "lightActuation": "None",
+        "ventilationActuation": "None",
+        "pump": 0,
+        "light": "off",
+        "ventilation": 0
+    },
+    
+    "standardGreenhouse":{
+        "greenhouseID": 1,
+        "telegram_ID": 1,
+        "numberOfAreas": 1,
+        "creation_date": "None",
+        "areas": []
+    }
+}

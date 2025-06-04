@@ -123,3 +123,14 @@ services:
       - catalog  
     links:
       - catalog 
+
+  manu_telegram_bot:
+    build: ./Manu_TelegramBot 
+    expose:
+      - "9097"
+    ports:
+      - "9097:9097" 
+    depends_on:
+      - catalog  
+    links:
+      - catalog 
