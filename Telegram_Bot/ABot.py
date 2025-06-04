@@ -1746,6 +1746,7 @@ class BotMain:
 
                 if self.alert_data:
                     chat_id = self.alert_data.get("chat_id")
+                    await asyncio.sleep(0.1)
                     if chat_id:
                         if problem == True:
                             self.pending_alerts.setdefault(chat_id, []).append(self.alert_data)

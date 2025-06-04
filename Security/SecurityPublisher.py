@@ -36,6 +36,6 @@ if __name__ == "__main__":
 
     while True:
         light_manager.publish("ciao")
-        time.sleep(10)
+        time.sleep(40)
 
     light_manager.stopSim()

@@ -113,16 +113,16 @@ services:
     links:
       - catalog 
 
-  #telegram_bot:
-    #build: ./Telegram_Bot 
-    #expose:
-      #- "9096"
-    #ports:
-      #- "9096:9096" 
-    #depends_on:
-      #- catalog  
-    #links:
-      #- catalog 
+  telegram_bot:
+    build: ./Telegram_Bot 
+    expose:
+      - "9096"
+    ports:
+      - "9096:9096" 
+    depends_on:
+      - catalog  
+    links:
+      - catalog 
 
   manu_telegram_bot:
     build: ./Manu_TelegramBot 

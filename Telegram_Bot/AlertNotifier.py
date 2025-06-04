@@ -3,6 +3,8 @@ from MyMQTTforBOT import MyMQTT
 import requests
 from requests.exceptions import RequestException
 from sharedUtils import normalize_state_to_int
+import json
+
 
 ############################# ALERT NOTIFIER #######################
 class AlertNotifier:
@@ -175,16 +177,26 @@ class AlertNotifier:
     def build_topics_list_from_catalog(self) -> dict:
         try:
             response = requests.get(f"{self.catalog_url}greenhouses", timeout=10)
-            all_greenhouses = response.json().get("greenhouses", [])
-            topics = set() #insted of list to avoid duplicates
-            for greenhouse in all_greenhouses:
-                gh_id = greenhouse.get("greenhouseID")
-                for area in greenhouse.get("areas", []):
-                    area_id = area.get("ID")
-                    motion_topic = area.get("motionTopic")
-                    if gh_id and area_id and motion_topic:
-                        topics.add(motion_topic)
-            return list(topics) # .values() no
+            print(f"Status Code: {response.status_code}")
+            print(f"Content-Type: {response.headers.get('Content-Type')}")
+            if response.status_code == 200:
+                try:
+                    all_greenhouses = response.json().get("greenhouses", [])
+                except ValueError:
+                    print("Warning: Unexpected Content-Type, attempting manual JSON parsing.")
+                    all_greenhouses = json.loads(response.text)
+                
+                topics = set() #insted of list to avoid duplicates
+                for greenhouse in all_greenhouses:
+                    gh_id = greenhouse.get("greenhouseID")
+                    for area in greenhouse.get("areas", []):
+                        area_id = area.get("ID")
+                        motion_topic = area.get("motionTopic")
+                        if gh_id and area_id and motion_topic:
+                            topics.add(motion_topic)
+                return list(topics) # .values() no
+            print(f"Error: Received status code {response.status_code}")
+            return {}
         except (RequestException, ValueError) as e:
             print(f"Error fetching topics: {e}")
             return {}
