@@ -25,3 +25,15 @@ def normalize_state_to_str(value):
         return "OFF"
     else:
         return "OFF" #Just as prevention
+    
+### Extract the greenhouse and area IDs from the topic name
+def get_ids(info):
+    # Info should be something like: "greenhouse1/area1/motion"
+    parts = info.split("/")
+    if len(parts) >= 3:
+        gh_id = parts[0].replace("greenhouse", "")  # greenhouse1 -> 1
+        area_id = parts[1].replace("area", "")  # area1 -> 1
+        return int(gh_id), int(area_id)
+    else:
+        print(f"Unexpected format in topic: {info}")
+        return None, None 
