@@ -97,10 +97,15 @@ class ThresholdManagement:
                             
                     print(f"{temperatureMean}")
                                           
+                
+                if(temperatureThreshold<45 and temperatureThreshold>0):   
+                    area["temperatureThreshold"]=temperatureThreshold 
                     
-                area["temperatureThreshold"]=temperatureThreshold 
-                area["humidityThreshold"]=humidityThreshold 
-                area["luminosityThreshold"]=luminosityThreshold 
+                if(humidityThreshold<100 and humidityThreshold>0):
+                    area["humidityThreshold"]=humidityThreshold
+                
+                if(luminosityThreshold<100 and luminosityThreshold>0): 
+                    area["luminosityThreshold"]=luminosityThreshold 
                 
                 requests.put(f'{self.catalogURL}/greenhouse{greenhouseID}/area', data=json.dumps(area))
                 print(f"I've sent an update to the catalog for the greenhouse {greenhouseID} and for the area {areaID}")

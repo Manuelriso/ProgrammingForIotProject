@@ -52,6 +52,7 @@ class TelegramBOT:
                     area_id = int(message)
                     if(area_id<0):
                          self.bot.sendMessage(chat_ID, "⚠️ Invalid input.")
+                         del self.user_states[chat_ID]
                          return
                     #check of the existence of the area
                     response=requests.get(f'{self.catalogURL}/greenhouses/{state["greenhouse_id"]}')
@@ -59,10 +60,12 @@ class TelegramBOT:
                     areas=responseComplete["areas"]
                     if(len(areas)==10):
                         self.bot.sendMessage(chat_ID, "ACHTUNG! ⚠️ Maximum area reached!!!!! ⚠️")
+                        del self.user_states[chat_ID]
                         return
                     for area in areas:
                         if area["ID"]==area_id:
                             self.bot.sendMessage(chat_ID, "⚠️ Invalid input. the ID is just present.")
+                            del self.user_states[chat_ID]
                             return
     
                     self.standardArea["ID"] = area_id
@@ -108,6 +111,7 @@ class TelegramBOT:
                     gh_id = int(message) 
                     if(gh_id<0):
                         self.bot.sendMessage(chat_ID, "⚠️ Invalid input.")
+                        del self.user_states[chat_ID]
                         return
                     #check of the existence of the grennhouse
                     response=requests.get(f'{self.catalogURL}/greenhouses')
@@ -116,6 +120,7 @@ class TelegramBOT:
                     for greenhouse in greenhouses:
                         if greenhouse["greenhouseID"]==gh_id:
                             self.bot.sendMessage(chat_ID, "⚠️ Invalid input. the ID is just present.")
+                            del self.user_states[chat_ID]
                             return
     
                     del self.user_states[chat_ID]
@@ -281,7 +286,7 @@ class TelegramBOT:
             for greenhouse in greenhouses["greenhouses"]:
                 gh_id = greenhouse["greenhouseID"]
                 button = InlineKeyboardButton(text=f"🏠 Greenhouse {gh_id}", callback_data=f"selectgreenhouse_{gh_id}")
-                keyboard_buttons.append([button])  # ogni bottone su una riga diversa
+                keyboard_buttons.append([button])
 
             keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
             self.bot.sendMessage(chat_ID, text="In which greenhouse do you want to add an area?:", reply_markup=keyboard)
@@ -410,6 +415,8 @@ class TelegramBOT:
             area=response.json()
             if response.status_code == 200:
                 if(area["light"]=="off"):
+                    alert={"alert":"on"}
+                    self.mqttClient.myPublish(f"greenhouse{gh_id}/area{area_id}/actuation/light",alert)
                     area["light"]="on"
                     response = requests.put(f'{self.catalogURL}/greenhouse{gh_id}/area',data=json.dumps(area))
                     if response.status_code==200:
@@ -428,6 +435,8 @@ class TelegramBOT:
             area=response.json()
             if response.status_code == 200:
                 if(area["pump"]==0):
+                    alert={"alert":1}
+                    self.mqttClient.myPublish(f"greenhouse{gh_id}/area{area_id}/actuation/pump",alert)
                     area["pump"]=1
                     response = requests.put(f'{self.catalogURL}/greenhouse{gh_id}/area',data=json.dumps(area))
                     if response.status_code==200:
@@ -446,6 +455,8 @@ class TelegramBOT:
             area=response.json()
             if response.status_code == 200:
                 if(area["ventilation"]==0):
+                    alert={"alert":1}
+                    self.mqttClient.myPublish(f"greenhouse{gh_id}/area{area_id}/actuation/ventilation",alert)
                     area["ventilation"]=1
                     response = requests.put(f'{self.catalogURL}/greenhouse{gh_id}/area',data=json.dumps(area))
                     if response.status_code==200:

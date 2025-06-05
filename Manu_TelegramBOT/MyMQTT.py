@@ -19,6 +19,7 @@ class MyMQTT:
         self.notifier.notify(msg.topic, msg.payload)
 
     def myPublish (self, topic,msg):
+        print(f"{topic}-->{msg}")
         self._paho_mqtt.publish(topic, json.dumps(msg), 2)
 
     def mysubscribe(self, topic):

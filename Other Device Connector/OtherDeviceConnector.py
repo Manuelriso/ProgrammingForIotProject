@@ -51,6 +51,7 @@ if __name__ == '__main__':
     serviceInfo=settings["serviceInfo"]
     #save service info into CATALOG (post)
     serviceInfo['last_update'] = time.time()
+    time.sleep(1)
     requests.post(f'{catalogURL}/service', data=json.dumps(serviceInfo))
 
     while True:

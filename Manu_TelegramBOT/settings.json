@@ -12,7 +12,7 @@
     "standardArea":{
         "ID": 1,
         "humidityThreshold": 60,
-        "temperatureThreshold": 60,
+        "temperatureThreshold": 22,
         "luminosityThreshold": 60,
         "plants": "None",
         "temperatureDataTopic": "None",
