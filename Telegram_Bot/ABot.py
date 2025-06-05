@@ -312,18 +312,6 @@ def format_alert_message(alert_dict, already_tried):
         msg += "\n⚠️ There was a missed alert. Please contact support."
     return msg
 
-### Extract the greenhouse and area IDs from the topic name
-def get_ids(info):
-    # 'bn' should be something like: "greenhouse1/area1/motion"
-    parts = info.split("/")
-    if len(parts) >= 3:
-        gh_id = parts[0].replace("greenhouse", "")  # greenhouse1 -> 1
-        area_id = parts[1].replace("area", "")  # area1 -> 1
-        return int(gh_id), int(area_id)
-    else:
-        print(f"Unexpected format in topic: {info}")
-        return None, None 
-
 ############################# 🌟 BOT MAIN CLASS WITH METHODS 🌟 #############################
 ############################# 🚀 BOT MAIN CLASS WITH METHODS 🚀 #############################
 ############################# 🌱 BOT MAIN CLASS WITH METHODS 🌱 #############################
@@ -1773,8 +1761,8 @@ class BotMain:
         topicbase = alert_data.get("bn", "")
         event = alert_data.get("e", [{}])[0]  # Consider only the first event in the SenML format.
         GH_ID, AREA_ID = get_ids(topicbase)
-        alertype = event.get("n", "")
-        # Caso 1: Alerta en formato SenML (MQTT traducido: con 'e') - Humidity, Temperature, Luminosity.
+        alerttype = event.get("n", "")
+        # Case 1: Alert in SenML format (MQTT with 'e') - Humidity, Temperature, Luminosity.
         # if alertype in ["temperature", "humidity", "luminosity"]:   
         #     GH_ID, AREA_ID = get_ids(topicbase)
         #     if not GH_ID or not AREA_ID:
@@ -1802,8 +1790,8 @@ class BotMain:
             # In the future updates, the extreme values of temperature, humidity, and luminosity will be added here.
 
         # Case 2: Alert in simple format (ONLY: "motion":"on")
-        
-        if alertype == "motion":
+
+        if alerttype == "motion":
             value_raw = event.get("v")  # 1 or 0
             if value_raw is None:
                 print("[MQTT] Missing value.")
@@ -1863,9 +1851,9 @@ class BotMain:
                 self.pending_alerts[chat_id].pop(0)
                 self.retry_flags[chat_id] = False
 
-                if not self.pending_alerts[chat_id]:
-                    print(f"[✓] All alerts processed for {chat_id}, cleaning up.")
-                    del self.pending_alerts[chat_id]
+                # if not self.pending_alerts[chat_id]: #THIS SHOULD BE COMMENTED
+                #     print(f"[✓] All alerts processed for {chat_id}, cleaning up.")
+                #     del self.pending_alerts[chat_id]
 
             except Exception as e:
                 print(f"Error sending alert to {chat_id}: {e}")
