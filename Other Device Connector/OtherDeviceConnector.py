@@ -86,4 +86,4 @@ if __name__ == '__main__':
             #save service info into CATALOG (put)
             serviceInfo['last_update'] = time.time()
             requests.put(f'{catalogURL}/service', data=json.dumps(serviceInfo))                  
-            time.sleep(15) #frequency of sensors (due to database update)
+            time.sleep(16) #frequency of sensors (due to database update)

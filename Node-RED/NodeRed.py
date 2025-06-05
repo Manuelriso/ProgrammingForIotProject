@@ -47,7 +47,7 @@ if __name__ == "__main__":
         while True:
             time.sleep(3)
             counter += 1
-            if counter == 20:
+            if counter == 25:
                 nodeRed.updateService()
                 counter = 0
     except KeyboardInterrupt:

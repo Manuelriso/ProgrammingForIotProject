@@ -122,4 +122,4 @@ while True:
     serviceInfo['last_update'] = time.time()
     requests.put(f'{catalogURL}/service', data=json.dumps(serviceInfo))
 
-    time.sleep(15)  # Sleep per simulare letture periodiche
+    time.sleep(20)  # Sleep per simulare letture periodiche

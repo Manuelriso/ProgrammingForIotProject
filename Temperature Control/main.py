@@ -42,8 +42,8 @@ if __name__ == "__main__":
             time.sleep(2)
             counter += 1
             
-            # Update every 60 seconds (30*2)
-            if counter >= 30:
+            # Update every 30 seconds (15*2)
+            if counter >= 15:
                 catalog_api.updateService()
                 pump_controller.update_subscriptions()
                 counter = 0

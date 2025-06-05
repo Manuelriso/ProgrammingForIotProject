@@ -81,7 +81,7 @@ if __name__ == "__main__":
         while True:
             time.sleep(2)
             counter += 1
-            if counter == 20:
+            if counter == 10:
                 security.updateService()
                 counter = 0
     except KeyboardInterrupt:
