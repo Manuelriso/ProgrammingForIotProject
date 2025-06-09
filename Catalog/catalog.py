@@ -2,7 +2,7 @@ import cherrypy
 import json
 import requests
 import time
-
+import portalocker
 class CatalogREST(object):
     exposed=True
     def GET(self,*uri,**params):
@@ -10,71 +10,73 @@ class CatalogREST(object):
         output={}
         
         with open("catalog.json","r") as file:
+            portalocker.lock(file, portalocker.LOCK_SH)
             data=json.load(file)
                 
          
          
-        #greenhouse1/numberOfAreas   
-        if(len(uri)==2 and uri[1]=="numberOfAreas"):
-            greenhouse=int(uri[0].replace("greenhouse",""))
-            AllGreenhouse=data["greenhouses"]
+            #greenhouse1/numberOfAreas   
+            if(len(uri)==2 and uri[1]=="numberOfAreas"):
+                greenhouse=int(uri[0].replace("greenhouse",""))
+                AllGreenhouse=data["greenhouses"]
+                
+                for registeredGreenHouse in AllGreenhouse:
+                    if(registeredGreenHouse["greenhouseID"]==greenhouse):
+                        output["numberOfAreas"]=registeredGreenHouse["numberOfAreas"]
             
-            for registeredGreenHouse in AllGreenhouse:
-                if(registeredGreenHouse["greenhouseID"]==greenhouse):
-                    output["numberOfAreas"]=registeredGreenHouse["numberOfAreas"]
-        
-        
-        if(len(uri)==1 and uri[0]=="services"):
-            output["services"]=data["services"]
             
-        
-        #greenhouse1/areas
-        if(len(uri)==2 and uri[1]=="areas"):
-            greenhouse=int(uri[0].replace("greenhouse",""))
-            AllGreenhouse=data["greenhouses"]
+            if(len(uri)==1 and uri[0]=="services"):
+                output["services"]=data["services"]
+                
             
-            found = False
-            for registeredGreenHouse in AllGreenhouse:
-                if(registeredGreenHouse["greenhouseID"]==greenhouse):
-                    output["areas"]=registeredGreenHouse["areas"]
-                    found = True
-                    break
-            if not found:
-                raise cherrypy.HTTPError(404, "Greenhouse non trovata")
+            #greenhouse1/areas
+            if(len(uri)==2 and uri[1]=="areas"):
+                greenhouse=int(uri[0].replace("greenhouse",""))
+                AllGreenhouse=data["greenhouses"]
+                
+                found = False
+                for registeredGreenHouse in AllGreenhouse:
+                    if(registeredGreenHouse["greenhouseID"]==greenhouse):
+                        output["areas"]=registeredGreenHouse["areas"]
+                        found = True
+                        break
+                if not found:
+                    raise cherrypy.HTTPError(404, "Greenhouse non trovata")
 
-        
-        
-        #greenhouses     
-        if(len(uri)==1 and uri[0]=="greenhouses"):
-            output["greenhouses"]=data["greenhouses"]
-            #print(str(output))
-         
-         
-        #greenhouse1/areas/1    
-        if(len(uri)==3 and uri[1]=="areas"):
-            requestedArea=int(uri[2])
-            greenhouse=int(uri[0].replace("greenhouse",""))
-            AllGreenhouse=data["greenhouses"]
             
-            for registeredGreenHouse in AllGreenhouse:
-                if(registeredGreenHouse["greenhouseID"]==greenhouse):
-                    areas=registeredGreenHouse["areas"]
-                    
-            for registeredArea in areas:
-                if(registeredArea["ID"]==requestedArea):
-                    output=registeredArea
-                    
-        
-        #greenhouses/1
-        if(len(uri)==2 and uri[0]=="greenhouses"):
-            requestedGreenHouses=int(uri[1])
-            greenhouses=data["greenhouses"]
-            for registeredGreenHouse in greenhouses:
-                if(registeredGreenHouse["greenhouseID"]==requestedGreenHouses):
-                    output=registeredGreenHouse
-        
-        cherrypy.response.status=200
-        return json.dumps(output)
+            
+            #greenhouses     
+            if(len(uri)==1 and uri[0]=="greenhouses"):
+                output["greenhouses"]=data["greenhouses"]
+                #print(str(output))
+            
+            
+            #greenhouse1/areas/1    
+            if(len(uri)==3 and uri[1]=="areas"):
+                requestedArea=int(uri[2])
+                greenhouse=int(uri[0].replace("greenhouse",""))
+                AllGreenhouse=data["greenhouses"]
+                
+                for registeredGreenHouse in AllGreenhouse:
+                    if(registeredGreenHouse["greenhouseID"]==greenhouse):
+                        areas=registeredGreenHouse["areas"]
+                        
+                for registeredArea in areas:
+                    if(registeredArea["ID"]==requestedArea):
+                        output=registeredArea
+                        
+            
+            #greenhouses/1
+            if(len(uri)==2 and uri[0]=="greenhouses"):
+                requestedGreenHouses=int(uri[1])
+                greenhouses=data["greenhouses"]
+                for registeredGreenHouse in greenhouses:
+                    if(registeredGreenHouse["greenhouseID"]==requestedGreenHouses):
+                        output=registeredGreenHouse
+            
+            cherrypy.response.status=200
+            portalocker.unlock(file) 
+            return json.dumps(output)
     
     
     
@@ -92,10 +94,15 @@ class CatalogREST(object):
             devices.append(device)
             data["devices"]=devices
             with open("catalog.json","w") as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
             
-            cherrypy.response.status=201   
-            return json.dumps(data)
+                cherrypy.response.status=201  
+                file.truncate()
+                portalocker.unlock(file) 
+                return json.dumps(data)
+            
+            
         
         if(len(uri)==1 and uri[0]=="service"):
             service=json.loads(body)
@@ -108,11 +115,14 @@ class CatalogREST(object):
             services.append(service)
             data["services"]=services
             with open("catalog.json","w") as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
             
             
-            cherrypy.response.status=201
-            return json.dumps(data)
+                cherrypy.response.status=201
+                file.truncate()
+                portalocker.unlock(file)
+                return json.dumps(data)
         
         
         #/greenhouse1/area
@@ -148,10 +158,13 @@ class CatalogREST(object):
             
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w") as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
             
-            cherrypy.response.status = 201
-            return json.dumps(data)
+                cherrypy.response.status = 201
+                file.truncate()
+                portalocker.unlock(file)
+                return json.dumps(data)
         
         #/greenhouse
         if(len(uri)==1 and uri[0]=="greenhouse"):
@@ -165,10 +178,13 @@ class CatalogREST(object):
             greenhouses.append(greenhouse)
             data["greenhouses"]=greenhouses
             with open("catalog.json","w") as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
             
-            cherrypy.response.status=201
-            return json.dumps(data)
+                cherrypy.response.status=201
+                file.truncate()
+                portalocker.unlock(file)
+                return json.dumps(data)
         
                 
     def PUT(self,*uri,**params):
@@ -189,10 +205,13 @@ class CatalogREST(object):
             
             data["devices"]=updatedDevices
             with open("catalog.json","w")as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
 
-            cherrypy.response.status=200 ##############
-            return json.dumps(data)
+                cherrypy.response.status=200 ##############
+                file.truncate()
+                portalocker.unlock(file)
+                return json.dumps(data)
                 
         
         if(len(uri)==1 and uri[0]=="service"):
@@ -212,10 +231,13 @@ class CatalogREST(object):
             
             data["services"]=updatedServices
             with open("catalog.json","w")as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
 
-            cherrypy.response.status=200 ##############
-            return json.dumps(data)
+                cherrypy.response.status=200 ##############
+                file.truncate()
+                portalocker.unlock(file)
+                return json.dumps(data)
         
         
         if(len(uri)==1 and uri[0]=="greenhouse"):
@@ -233,10 +255,13 @@ class CatalogREST(object):
             
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
 
-            cherrypy.response.status=200 ##############
-            return json.dumps(data)
+                cherrypy.response.status=200 ##############
+                file.truncate()
+                portalocker.unlock(file)
+                return json.dumps(data)
         
         #/greenhouse1/area
         if(len(uri)==2 and uri[1]=="area"):
@@ -273,10 +298,13 @@ class CatalogREST(object):
             
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
 
-            cherrypy.response.status=200 ##############
-            return json.dumps(data)
+                cherrypy.response.status=200 ##############
+                file.truncate()
+                portalocker.unlock(file)
+                return json.dumps(data)
          
         
         #Called by Security microservice every time there's an alert
@@ -317,10 +345,13 @@ class CatalogREST(object):
             
             data["greenhouses"]=updatedGreenhouses
             with open("catalog.json","w")as file:
+                portalocker.lock(file, portalocker.LOCK_EX)
                 json.dump(data,file,indent=4)
 
-            cherrypy.response.status=200 ##############
-            return json.dumps(data)
+                cherrypy.response.status=200 ##############
+                file.truncate()
+                portalocker.unlock(file)
+                return json.dumps(data)
         
         
     def DELETE(self,*uri,**params):
@@ -342,10 +373,13 @@ class CatalogREST(object):
                 
                 data["greenhouses"]=updatedGreenhouses
                 with open("catalog.json","w")as file:
+                    portalocker.lock(file, portalocker.LOCK_EX)
                     json.dump(data,file,indent=4)
                 
-                cherrypy.response.status= 204
-                return json.dumps(data)
+                    cherrypy.response.status= 204
+                    file.truncate()
+                    portalocker.unlock(file)
+                    return json.dumps(data)
             
             
             #greenhouse1/area/1 it deletes the area with ID=1 in the greenhouse 1
@@ -386,10 +420,13 @@ class CatalogREST(object):
                 
                 data["greenhouses"]=updatedGreenhouses
                 with open("catalog.json","w")as file:
+                    portalocker.lock(file, portalocker.LOCK_EX)
                     json.dump(data,file,indent=4)
                     
-                cherrypy.response.status = 204
-                return json.dumps(data)
+                    cherrypy.response.status = 204
+                    file.truncate()
+                    portalocker.unlock(file)
+                    return json.dumps(data)
 
 
 if __name__=="__main__":

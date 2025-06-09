@@ -49,57 +49,62 @@ class ThingspeakAdaptorRESTMQTT:
     #Topic=greenhouse1/area1/temperature
     def notify(self, topic, payload):
         #{'bn':f'SensorREST_MQTT_{self.deviceID}','e':[{'n':'humidity','v':'', 't':'','u':'%'}]}
-        message_decoded = json.loads(payload)
+        topic_parts = topic.split("/")
         
-        #Control on the right structure of the payload
-        if not isinstance(message_decoded, dict) or 'e' not in message_decoded:
-            return  
-    
-        if not isinstance(message_decoded['e'], list) or len(message_decoded['e']) == 0:
-            return  
-    
-        if not isinstance(message_decoded['e'][0], dict) or 'v' not in message_decoded['e'][0]:
-            return  
-        
-        
-        message_value = message_decoded['e'][0]['v']
-        decide_measurement = message_decoded['e'][0]['n']
-        
-        error=False
-        if decide_measurement=="temperature":
-            print("\n \n Temperature Message")
-            field_number=1
-            #I'm extracting the "area" of our garden, in order to change the right database.
-            area=topic.split("/")[1]
-            channel=area.replace("area", "")
-            #I extract the greenhouse
-            greenhouse=topic.split("/")[0]
-            greenhouseID=int(greenhouse.replace("greenhouse", ""))
+        if topic_parts[0].startswith("greenhouse"):
+
+            print(f"Payload received: {payload}")
             
-        elif decide_measurement=="humidity":
-            print("\n \n Humidity Message")
-            field_number=2
-            area=topic.split("/")[1]
-            channel=area.replace("area", "")
-            #I extract the greenhouse
-            greenhouse=topic.split("/")[0]
-            greenhouseID=int(greenhouse.replace("greenhouse", ""))
+            message_decoded = json.loads(payload)
+            #Control on the right structure of the payload
+            if not isinstance(message_decoded, dict) or 'e' not in message_decoded:
+                return  
+        
+            if not isinstance(message_decoded['e'], list) or len(message_decoded['e']) == 0:
+                return  
+        
+            if not isinstance(message_decoded['e'][0], dict) or 'v' not in message_decoded['e'][0]:
+                return  
             
-        elif decide_measurement=="luminosity":
-            print("\n \n Luminosity Message")
-            field_number=3
-            area=topic.split("/")[1]
-            channel=area.replace("area", "")
-            #I extract the greenhouse
-            greenhouse=topic.split("/")[0]
-            greenhouseID=int(greenhouse.replace("greenhouse", ""))
-        else: 
-            error=True
-        if error:
-            print("Error")
-        else:
-            print(message_decoded)
-            self.uploadThingspeak(field_number=field_number,field_value=message_value,channel=channel,greenhouseID=greenhouseID)
+
+            message_value = message_decoded['e'][0]['v']
+            decide_measurement = message_decoded['e'][0]['n']
+            
+            error=False
+            if decide_measurement=="temperature":
+                print("\n \n Temperature Message")
+                field_number=1
+                #I'm extracting the "area" of our garden, in order to change the right database.
+                area=topic.split("/")[1]
+                channel=area.replace("area", "")
+                #I extract the greenhouse
+                greenhouse=topic.split("/")[0]
+                greenhouseID=int(greenhouse.replace("greenhouse", ""))
+                
+            elif decide_measurement=="humidity":
+                print("\n \n Humidity Message")
+                field_number=2
+                area=topic.split("/")[1]
+                channel=area.replace("area", "")
+                #I extract the greenhouse
+                greenhouse=topic.split("/")[0]
+                greenhouseID=int(greenhouse.replace("greenhouse", ""))
+                
+            elif decide_measurement=="luminosity":
+                print("\n \n Luminosity Message")
+                field_number=3
+                area=topic.split("/")[1]
+                channel=area.replace("area", "")
+                #I extract the greenhouse
+                greenhouse=topic.split("/")[0]
+                greenhouseID=int(greenhouse.replace("greenhouse", ""))
+            else: 
+                error=True
+            if error:
+                print("Error")
+            else:
+                print(message_decoded)
+                self.uploadThingspeak(field_number=field_number,field_value=message_value,channel=channel,greenhouseID=greenhouseID)
 
     
     def uploadThingspeak(self, field_number, field_value,channel,greenhouseID):
@@ -119,6 +124,8 @@ class ThingspeakAdaptorRESTMQTT:
             print(response.text)
         else:
             print(f"I received the message on the greenhouse {greenhouseID}, but I can't store it in the database")
+            
+        print(f"I uploaded a value in the channel {channel}, fieldvalue={field_number} in the greenhouse {greenhouseID}")
     
     def GET(self,*uri, **params): #.../greenhouse1/area1/temperature
         if(len(uri)==3 and uri[2]=="temperature"):
