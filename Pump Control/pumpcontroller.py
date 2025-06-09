@@ -161,10 +161,10 @@ class PumpController:
 
         # Update catalog through API
         catalog_api = CatalogAPI(self.catalog_navigator, self.settings)
-        update_result = catalog_api.UpdateActuation(greenhouse_id, area_id, pump_value)
+        #update_result = catalog_api.UpdateActuation(greenhouse_id, area_id, pump_value)
         
-        if "error" in update_result.get("message", "").lower():
-            print(f"Failed to update catalog: {update_result['message']}")
+        #if "error" in update_result.get("message", "").lower():
+            #print(f"Failed to update catalog: {update_result['message']}")
 
         #except Exception as e:
             #print(f"Error in notify: {str(e)}")

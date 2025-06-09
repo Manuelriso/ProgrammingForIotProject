@@ -1,7 +1,11 @@
 {
-    "catalogURL": "http://catalog:80",
+    "catalogURL": "http://localhost:80",
     "brokerIP": "mqtt.eclipseprojects.io",
     "brokerPort": 1883,
+    "mqttTopics":[
+            "+/+/actuation/pump",
+            "+/+/actuation/ventilation"
+    ],
     "DeviceInfo": {
         "ID": 10,
         "deviceName": "RaspberryPIConnector",

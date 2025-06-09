@@ -10,9 +10,9 @@
             "areas": [
                 {
                     "ID": 1,
-                    "humidityThreshold": 99,
+                    "humidityThreshold": 70,
                     "temperatureThreshold": 20,
-                    "luminosityThreshold": 81,
+                    "luminosityThreshold": 83,
                     "plants": "tomatoes",
                     "temperatureDataTopic": "greenhouse1/area1/temperature",
                     "humidityDataTopic": "greenhouse1/area1/humidity",
@@ -21,34 +21,34 @@
                     "motionDetected": 142,
                     "currentTemperature": 24.4,
                     "currentHumidity": 69.3,
-                    "currentLuminosity": 74.2,
+                    "currentLuminosity": 74.9,
                     "pumpActuation": "greenhouse1/area1/actuation/pump",
                     "lightActuation": "greenhouse1/area1/actuation/light",
                     "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
-                    "pump": 0,
+                    "pump": 1,
                     "light": "on",
                     "ventilation": 0
                 },
                 {
                     "ID": 3,
-                    "humidityThreshold": 97,
+                    "humidityThreshold": 70,
                     "temperatureThreshold": 22,
-                    "luminosityThreshold": 64,
+                    "luminosityThreshold": 66,
                     "plants": "ananas",
                     "temperatureDataTopic": "greenhouse1/area3/temperature",
                     "humidityDataTopic": "greenhouse1/area3/humidity",
                     "luminosityDataTopic": "greenhouse1/area3/luminosity",
                     "motionTopic": "greenhouse1/area3/motion",
-                    "motionDetected": 138,
-                    "currentTemperature": 23.9,
-                    "currentHumidity": 65.1,
-                    "currentLuminosity": 53.4,
+                    "motionDetected": 150,
+                    "currentTemperature": 22.1,
+                    "currentHumidity": 64.6,
+                    "currentLuminosity": 73.6,
                     "pumpActuation": "greenhouse1/area3/actuation/pump",
                     "lightActuation": "greenhouse1/area3/actuation/light",
                     "ventilationActuation": "greenhouse1/area3/actuation/ventilation",
-                    "pump": 0,
+                    "pump": 1,
                     "light": "off",
-                    "ventilation": 0
+                    "ventilation": 1
                 },
                 {
                     "ID": 4,
@@ -60,16 +60,16 @@
                     "humidityDataTopic": "greenhouse1/area4/humidity",
                     "luminosityDataTopic": "greenhouse1/area4/luminosity",
                     "motionTopic": "greenhouse1/area4/motion",
-                    "motionDetected": 0,
-                    "currentTemperature": 0,
-                    "currentHumidity": 0,
-                    "currentLuminosity": 0,
+                    "motionDetected": 10,
+                    "currentTemperature": 27.0,
+                    "currentHumidity": 55.1,
+                    "currentLuminosity": 54.8,
                     "pumpActuation": "greenhouse1/area4/actuation/pump",
                     "lightActuation": "greenhouse1/area4/actuation/light",
                     "ventilationActuation": "greenhouse1/area4/actuation/ventilation",
-                    "pump": 0,
+                    "pump": 1,
                     "light": "off",
-                    "ventilation": 0
+                    "ventilation": 1
                 }
             ]
         },
@@ -89,33 +89,32 @@
                     "humidityDataTopic": "greenhouse2/area1/humidity",
                     "luminosityDataTopic": "greenhouse2/area1/luminosity",
                     "motionTopic": "greenhouse2/area1/motion",
-                    "motionDetected": 15,
-                    "currentTemperature": 23.0,
-                    "currentHumidity": 59.8,
-                    "currentLuminosity": 50.1,
+                    "motionDetected": 22,
+                    "currentTemperature": 15.0,
+                    "currentHumidity": 51.9,
+                    "currentLuminosity": 53.6,
                     "pumpActuation": "greenhouse2/area1/actuation/pump",
                     "lightActuation": "greenhouse2/area1/actuation/light",
                     "ventilationActuation": "greenhouse2/area1/actuation/ventilation",
-                    "pump": 0,
+                    "pump": 1,
                     "light": "on",
                     "ventilation": 0
                 }
             ]
         }
     ],
-    "devices": [],
     "services": [
         {
             "ID": 69,
             "serviceName": "Telegram Bot",
             "last_updated": "",
-            "last_update": 1749456177.5797257
+            "last_update": 1749465355.7790382
         },
         {
-            "ID": 40,
-            "serviceName": "OtherDeviceConnector",
+            "ID": 30,
+            "serviceName": "RaspberryPIConnector",
             "last_updated": "",
-            "last_update": 1749456203.3572607
+            "last_update": 1749465342.5790837
         }
     ]
 }
