@@ -415,11 +415,14 @@ class TelegramBOT:
             area=response.json()
             if response.status_code == 200:
                 if(area["light"]=="off"):
-                    alert={"alert":"on",
-                           "timestamp":time.time()}
+                    alert={"bn": f"greenhouse{gh_id}/area{area_id}",
+                            "e": [{
+                                "n": "pump",
+                                "v": "on",
+                                "t": time.time(),
+                                "u": "boolean"
+                            }]}
                     self.mqttClient.myPublish(f"greenhouse{gh_id}/area{area_id}/actuation/light",alert)
-                    area["light"]="on"
-                    response = requests.put(f'{self.catalogURL}/greenhouse{gh_id}/area',data=json.dumps(area))
                     if response.status_code==200:
                         self.bot.sendMessage(from_id, f"✅ Light activated.")
                     else:
@@ -532,7 +535,7 @@ class TelegramBOT:
         #in areaID only the ID of the area, same for the greenhouse
         areaID=int(area.replace("area", ""))
         greenhouseID=int(greenhouse.replace("greenhouse", ""))
-        if(greenhouseID==1 and areaID==1): 
+        if(greenhouseID!=1 or areaID!=1): 
             alert_text = f"🚨🚨🚨 Motion detected!\nGreenhouse: {greenhouseID}, Area: {areaID}.\nTopic: {topic} 🚨🚨🚨"
             for chat_id in self.user_states.keys():
                 self.bot.sendMessage(chat_id, alert_text)

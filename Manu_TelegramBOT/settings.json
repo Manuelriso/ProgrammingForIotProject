@@ -1,5 +1,5 @@
 {
-    "catalogURL": "http://catalog:80",
+    "catalogURL": "http://localhost:80",
     "telegram_id":"8111865634:AAGC-7rjMeBdlm1Lmuzn5BypUzxzfPjZKiI",
     "brokerIP": "mqtt.eclipseprojects.io",
     "brokerPort": 1883,

@@ -1,6 +1,7 @@
 {
-    "catalogURL": "http://catalog:80",
+    "catalogURL": "http://localhost:80",
     "brokerIP": "mqtt.eclipseprojects.io",
+    "mqttTopics":"+/+/actuation/light",
     "brokerPort": 1883,
     "DeviceInfo": {
         "ID": 73,

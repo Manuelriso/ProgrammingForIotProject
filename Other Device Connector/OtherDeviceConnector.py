@@ -4,55 +4,89 @@ import cherrypy
 import requests
 import random
 import json
+import uuid
 from CatalogClient import CatalogAPI, Catalog_Navigator
 # import board # Uncomment if using a DHT sensor
 # import adafruit_dht # Uncomment if using a DHT sensor
 import paho.mqtt.client as PahoMQTT
+from MyMQTT import *
 
 def generate_luminosity(base_humidity=60.0, variation=20.0):
     """Simulate a humidity value around a base percentage."""
     return round(random.uniform(base_humidity - variation, base_humidity + variation), 1)
 
-class MyMQTT:
-    def __init__(self, clientID, broker, port):
-        self.broker = broker
-        self.port = port
-        self.clientID = clientID
-        self._isSubscriber = False
-        # create an instance of paho.mqtt.client
-        self._paho_mqtt = PahoMQTT.Client(clientID, True)
-        # register the callback
-        self._paho_mqtt.on_connect = self.myOnConnect
+class OtherDeviceConnectorMQTT:
+    exposed = True
     
-    def myOnConnect(self, paho_mqtt, userdata, flags, rc):
-        print("Connected to %s with result code: %d" % (self.broker, rc))
+    def __init__(self, settings):
+        self.settings = settings
+        self.catalogURL = settings['catalogURL']
+        self.serviceInfo = settings['serviceInfo']
+        self.broker = settings["brokerIP"]
+        self.port = settings["brokerPort"]
+        self.topics = settings["mqttTopics"]  # Lista di topic
+        
+        self.mqttClient = MyMQTT(client_id=str(uuid.uuid1()), broker=self.broker, port=self.port, notifier=self)
+        self.mqttClient.start()   
+            
+        self.mqttClient.mysubscribe(self.topics)        
+        self.actualTime = time.time()
     
-    def myPublish(self, topic, msg):
-        # publish a message with a certain topic
-        self._paho_mqtt.publish(topic, json.dumps(msg), 2) # 2 is the qos
+    def registerService(self):
+        self.serviceInfo['last_update'] = self.actualTime
+        requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
-    def start(self):
-        # manage connection to broker
-        self._paho_mqtt.connect(self.broker, self.port)
-        self._paho_mqtt.loop_start()
-
+    def updateService(self):
+        self.serviceInfo['last_update'] = time.time()
+        requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
+    
     def stop(self):
-        self._paho_mqtt.loop_stop()
-        self._paho_mqtt.disconnect()
+        self.mqttClient.stop()
+    
+    def notify(self, topic, payload):
+        message_decoded = json.loads(payload)
+        message_value = message_decoded["e"][0]["v"]
+        
+        layers=topic.split("/")
+        greenhouse=layers[0]
+        area=layers[1]
+        
+        #in areaID only the ID of the area, same for the greenhouse
+        areaID=area.replace("area", "")
+        greenhouseID=greenhouse.replace("greenhouse", "")
+        
+        if(message_value=="on"):
+            response = requests.get(f'{self.catalogURL}/greenhouse{greenhouseID}/areas/{areaID}')
+            area=response.json()
+            if response.status_code == 200:
+                if(area["light"]=="off"):
+                    area["light"]="on"
+                    response = requests.put(f'{self.catalogURL}/greenhouse{greenhouseID}/area',data=json.dumps(area))
+                    if response.status_code == 200:
+                        print(f"I've inserted on in the light for the greenhouse {greenhouseID} area {areaID}")
+                        
+        elif(message_value=="off"):
+            response = requests.get(f'{self.catalogURL}/greenhouse{greenhouseID}/areas/{areaID}')
+            area=response.json()
+            if response.status_code == 200:
+                if(area["light"]=="on"):
+                    area["light"]="off"
+                    response = requests.put(f'{self.catalogURL}/greenhouse{greenhouseID}/area',data=json.dumps(area))
+                    if response.status_code == 200:
+                        print(f"I've inserted off in the light for the greenhouse {greenhouseID} area {areaID}")
 
 if __name__ == '__main__':
     c = Catalog_Navigator(settings=json.load(open('settings.json')))
     catalog = c.get_catalog()
-    pub = MyMQTT("47", "mqtt.eclipseprojects.io", 1883) #tobe modified according to settings
-    pub.start()
-    #print(f"Catalog: {catalog}")
     settings = json.load(open('settings.json'))
+    connector = OtherDeviceConnectorMQTT(settings)
+    #print(f"Catalog: {catalog}")
     catalogURL = settings['catalogURL']
     serviceInfo=settings["serviceInfo"]
     #save service info into CATALOG (post)
     serviceInfo['last_update'] = time.time()
     time.sleep(1)
-    requests.post(f'{catalogURL}/service', data=json.dumps(serviceInfo))
+    connector.registerService()
 
     while True:
             catalog = c.get_catalog()
@@ -72,7 +106,7 @@ if __name__ == '__main__':
                             }]
                     }
                     area["currentLuminosity"] = dictLum["e"][0]["v"] #update json
-                    pub.myPublish(topicLum, dictLum) #publish to topic Luminosity
+                    connector.mqttClient.myPublish(topicLum, dictLum) #publish to topic Luminosity
                     print(f"Luminosity publish on {topicLum}--{dictLum}")
 
                     
@@ -86,5 +120,5 @@ if __name__ == '__main__':
                     print("Failed to update catalog")
             #save service info into CATALOG (put)
             serviceInfo['last_update'] = time.time()
-            requests.put(f'{catalogURL}/service', data=json.dumps(serviceInfo))                  
+            connector.updateService()                  
             time.sleep(16) #frequency of sensors (due to database update)

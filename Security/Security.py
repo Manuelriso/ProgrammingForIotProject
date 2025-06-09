@@ -45,7 +45,7 @@ class SecurityRESTMQTT:
         
         #in areaID only the ID of the area, same for the greenhouse
         areaID=area.replace("area", "")
-        greenhouseID=greenhouse.replace("area", "")
+        greenhouseID=greenhouse.replace("greenhouse", "")
         value=layers[2]
         topic_to_publish=f"{greenhouse}/{area}/{value}/alert"
         
