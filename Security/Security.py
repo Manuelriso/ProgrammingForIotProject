@@ -51,6 +51,7 @@ class SecurityRESTMQTT:
         
         messageToSend={}
         messageToSend["alert"]="on"
+        messageToSend["timestep"]=time.time()
         
         if(message_value=="on"):
             self.mqttClient.myPublish(topic_to_publish,json.dumps(messageToSend))

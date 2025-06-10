@@ -165,7 +165,7 @@ while True:
                 topicMotion = c.searchByTopic(greenhouse["greenhouseID"], area["ID"], "motionTopic")
                 binary = generate_binary()
 
-                generalMotion = { "motion": "on" } if binary == 1 else { "motion": "off" }
+                generalMotion = { "motion": "on", "timestep":time.time(),"u":"boolean","n":"motion" } if binary == 1 else { "motion": "off", "timestep":time.time(),"u":"boolean","n":"motion" }
                 print(f"Motion GH{greenhouse['greenhouseID']} Area{area['ID']}: {binary}")
                 connector.mqttClient.myPublish(topicMotion, generalMotion)
 
