@@ -338,6 +338,7 @@ class BotMain:
         self.user_data = {}
         # Alert queue
         self.alert_queue = asyncio.Queue(maxsize=100)
+        self.queue_lock = asyncio.Lock()
         # Dictionary to regulate alert sending moments
         self.user_states = {}
         # Map to store values and link them with the correct users, handled by the AlertNotifier (and the bot)
@@ -385,6 +386,7 @@ class BotMain:
                 catalog_url=self.catalog_url)
             # Assign the enqueue method to the notifier
             self.alert_notifier.enqueue_method = self.enqueue_alert_message
+            print(" The enqueue method has been set in the notifier.. Proof: ", self.alert_notifier.enqueue_method)
             # Set the notifier for the MQTT client
             self.mqtt_client.notifier = self.alert_notifier
             self.mqtt_client.start()
@@ -396,7 +398,13 @@ class BotMain:
     ## Enqueue alert messages to the alert queue    
     def enqueue_alert_message(self, message: dict):
         try:
+            # print("The try with lock")
+            # async with self.queue_lock:
+            print("inside the try awasit put en la cola.")
             self.alert_queue.put_nowait(message)
+            print('Encolada che la alerta:', message)
+            # asyncio.create_task(self.alert_queue.put(message))
+            # self.alert_queue.put_nowait(message)
         except asyncio.QueueFull:
             print("Alert queue is full. Dropping message:", message)
         except Exception as e:
@@ -526,12 +534,12 @@ class BotMain:
         except Exception as e:
             print(f"[delete_last_keyboard] Couldn't remove old keyboard from last_msg: {e}")
 
-        # If an inline button was pressed, also attempt to remove the current keyboard from the callback
-        if update.callback_query:
-            try:
-                await update.callback_query.edit_message_reply_markup(reply_markup=None)
-            except Exception as e:
-                print(f"[delete_last_keyboard] Couldn't remove keyboard from callback_query: {e}")
+        # # If an inline button was pressed, also attempt to remove the current keyboard from the callback
+        # if update.callback_query:
+        #     try:
+        #         await update.callback_query.edit_message_reply_markup(reply_markup=None)
+        #     except Exception as e:
+        #         print(f"[delete_last_keyboard] Couldn't remove keyboard from callback_query: {e}")
 
 
     ## Start of the BOT
@@ -1550,6 +1558,7 @@ class BotMain:
         greenhouse_id = self.user_data[user_id]['gh_to_manage']
         area_processing = self.user_data[user_id]['area_to_do']
         actuator_selection = self.user_data[user_id]['actuator_selection']
+        system = "Pump" if actuator_selection == 'manage_pump' else "Light" if actuator_selection == 'manage_light' else "Fan"
 
         query = update.callback_query
         # await query.edit_message_reply_markup(reply_markup=None)
@@ -1589,7 +1598,7 @@ class BotMain:
             return MAIN_MENU
         elif isinstance(oki, dict) and oki.get("status_ok") == True:
             message = await update.callback_query.message.reply_text(
-                f"✅ Success! The actuator *{actuator_selection}* in Area *{area_processing}* of Greenhouse *{greenhouse_id}* is now set to *{to_set_on_off_show}*. 🎉",
+                f"✅ Success! The actuator *{system}* in Area *{area_processing}* of Greenhouse *{greenhouse_id}* is now set to *{to_set_on_off_show}*. 🎉",
                 reply_markup=end_markup,
                 parse_mode="Markdown"
             )
@@ -1737,7 +1746,12 @@ class BotMain:
                     await asyncio.sleep(0.1)
                     if chat_id:
                         if problem == True:
-                            self.pending_alerts.setdefault(chat_id, []).append(self.alert_data)
+                            if chat_id not in self.pending_alerts:
+                                print("el id habia sido elminado, lo agregamos")
+                                self.pending_alerts[chat_id] = []
+                            self.pending_alerts[chat_id].append(self.alert_data)
+                            print("agregada la alerta al pendiente de 1752::", chat_id)
+                            # self.pending_alerts.setdefault(chat_id, []).append(self.alert_data)
                             print(f"[✓] New alert added to pending for {chat_id}")
                         else:
                             print(f"[✓] No change detected for alert for {chat_id}, not adding to pending alerts.")
@@ -1790,7 +1804,7 @@ class BotMain:
             # In the future updates, the extreme values of temperature, humidity, and luminosity will be added here.
 
         # Case 2: Alert in simple format (ONLY: "motion":"on")
-
+        print("alerttype:", alerttype)
         if alerttype == "motion":
             value_raw = event.get("v")  # 1 or 0
             if value_raw is None:
@@ -1807,7 +1821,7 @@ class BotMain:
                 self.greenhouse_user_map[GH_ID]["areas"][AREA_ID]["LastMotionValue"] = value_int
                 self.greenhouse_user_map[GH_ID]["areas"][AREA_ID]["timestampMotion"] = None  # No timestamp
 
-            print("Motion received and put in the map.")
+            print("Motion received and put in the map antes del pending.")
             return True
         
     ## Update Alert Value: Updates the LastValue in the map after receiving a message from the broker
@@ -1848,18 +1862,23 @@ class BotMain:
                     text=text,
                     parse_mode='Markdown'
                 )
-                self.pending_alerts[chat_id].pop(0)
+                if self.pending_alerts[chat_id]:
+                    self.pending_alerts[chat_id].pop(0)
                 self.retry_flags[chat_id] = False
 
-                # if not self.pending_alerts[chat_id]: #THIS SHOULD BE COMMENTED
-                #     print(f"[✓] All alerts processed for {chat_id}, cleaning up.")
-                #     del self.pending_alerts[chat_id]
+                if chat_id not in self.pending_alerts: ## DEBUG
+                    print(" no hay chat_id ahhhhh")
+
+                if not self.pending_alerts[chat_id]: #THIS SHOULD BE COMMENTED
+                    print(f"[✓] All alerts processed for {chat_id}, cleaning up.")
+                    self.pending_alerts.pop(chat_id, None)
 
             except Exception as e:
                 print(f"Error sending alert to {chat_id}: {e}")
                 if self.retry_flags.get(chat_id, False):
                     print(f"[✗] Second attempt failed for {chat_id}, discarding alert.")
-                    self.pending_alerts[chat_id].pop(0)
+                    if self.pending_alerts[chat_id]:
+                        self.pending_alerts[chat_id].pop(0)
                     self.retry_flags[chat_id] = False
                 else:
                     print(f"[!] Retrying alert for {chat_id} in next cycle...")
@@ -1872,6 +1891,7 @@ class BotMain:
                 for chat_id in list(self.pending_alerts.keys()):
                     if self.pending_alerts[chat_id]:  # Solo si hay alertas
                         state = user_states.get(chat_id)
+                        print("usuario en estado" , state)
                         if state in ["END", MAIN_MENU]:
                             tasks.append(asyncio.create_task(process_single_alert(chat_id)))
                         else:
@@ -1882,11 +1902,17 @@ class BotMain:
                     for result in results:
                         if isinstance(result, Exception):
                             print(f"[ERROR] Error in a task: {result}")
-
-                await asyncio.sleep(1)  # más responsivo al bajar a 1 segundo
-
+                
+                await asyncio.sleep(2.5)
             except Exception as e:
                 print(f"[ERROR] General error in alert_consumer: {e}")
+
+    async def debug_loop(self):
+        while True:
+            print("[DEBUG] Bot sigue vivo")
+            await asyncio.sleep(10)
+
+
 
     ### RUN METHOD FOR THE BOT
     def run(self):
@@ -1900,6 +1926,9 @@ class BotMain:
             )
             application.create_task(
                 self.update_registration_service()
+            )
+            application.create_task(
+                self.debug_loop()
             )
         self.application.post_init = start_alert_task
         self.application.run_polling()

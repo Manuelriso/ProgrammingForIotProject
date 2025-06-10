@@ -81,8 +81,9 @@ class AlertNotifier:
     
     def notify(self, msgtopic, payload):
         try:
-            # Caso 1: Payload tipo SenML (light, temeperature, humidity, etc.)
+            # Caso 1: Payload tipo SenML (light, temeperature, humidity, motionNEW.)
             if "bn" in payload and "e" in payload:
+                print("Processing SenML payload")
                 base_name = payload.get("bn", "")
                 events = payload.get("e", [])
                 gh_id, area_id = get_ids(base_name)
@@ -94,6 +95,7 @@ class AlertNotifier:
                     if situation == "motion":
                         value_received = event.get("v")
                         destinatario = self.get_user_from_id(gh_id)
+                        print('El telegram id es:', destinatario, 'para SenML payload')
                         print("about to access the notify_user method (SenML)")
                         self.notify_user(
                             gh_id=gh_id,
@@ -118,6 +120,8 @@ class AlertNotifier:
                 value_raw = payload.get("motion")
                 value_received = normalize_state_to_int(value_raw)
                 destinatario = self.get_user_from_id(gh_id)
+                timestampp = None  # No timestamp in simple payload
+                print('El telegram id es:', destinatario, 'para simple payload')
                 print("about to access the notify_user method (Simple payload)") ########
                 self.notify_user(
                     gh_id=gh_id,
@@ -135,7 +139,7 @@ class AlertNotifier:
             print(f"[!] Error in notify(): {e}")
 
     def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit, value_received): #Sends the alert to the queue of the bot
-        print("Something happened, notifying user...")
+        print("Something happened, notifying user...: ", user_affected)
         if not self.enqueue_method:
             raise ValueError("Enqueue method must be set before using AlertNotifier") 
         self.enqueue_method({
@@ -148,7 +152,8 @@ class AlertNotifier:
                 "u": unit
             }]
         })
-        print("Enqueued alert")
+        print("Executed to do the enqueued alert!!")
+        print("AlertNotifier enqueue method is set to:", self.enqueue_method)
 
 ############################ AUXILIARY METHODS ######################    
     def get_user_from_id(self, gh_id):
