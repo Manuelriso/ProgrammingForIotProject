@@ -47,7 +47,7 @@ if __name__ == '__main__':
         current_time = time.time()
         if current_time - last_motion_time > cooldown_period:
             print("Motion detected ✅")
-            pub.myPublish("greenhouse1/area1/motion", {"motion": "on", "timestep":time.time(),"u":"boolean","n":"motion"})
+            pub.myPublish("greenhouse1/area1/motion", {"bn":"greenhouse1/area1/motion","e":[{"v": "on", "t":time.time(),"u":"boolean","n":"motion"}]})
             last_motion_time = current_time
 
             time.sleep(2)  # short delay after detection (non-blocking)

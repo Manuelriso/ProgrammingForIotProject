@@ -18,10 +18,10 @@
                     "humidityDataTopic": "greenhouse1/area1/humidity",
                     "luminosityDataTopic": "greenhouse1/area1/luminosity",
                     "motionTopic": "greenhouse1/area1/motion",
-                    "motionDetected": 142,
+                    "motionDetected": 0,
                     "currentTemperature": 24.4,
                     "currentHumidity": 69.3,
-                    "currentLuminosity": 67.0,
+                    "currentLuminosity": 51.8,
                     "pumpActuation": "greenhouse1/area1/actuation/pump",
                     "lightActuation": "greenhouse1/area1/actuation/light",
                     "ventilationActuation": "greenhouse1/area1/actuation/ventilation",
@@ -39,10 +39,10 @@
                     "humidityDataTopic": "greenhouse1/area3/humidity",
                     "luminosityDataTopic": "greenhouse1/area3/luminosity",
                     "motionTopic": "greenhouse1/area3/motion",
-                    "motionDetected": 160,
-                    "currentTemperature": 12.8,
-                    "currentHumidity": 58.9,
-                    "currentLuminosity": 65.5,
+                    "motionDetected": 5,
+                    "currentTemperature": 18.1,
+                    "currentHumidity": 56.2,
+                    "currentLuminosity": 76.2,
                     "pumpActuation": "greenhouse1/area3/actuation/pump",
                     "lightActuation": "greenhouse1/area3/actuation/light",
                     "ventilationActuation": "greenhouse1/area3/actuation/ventilation",
@@ -60,10 +60,10 @@
                     "humidityDataTopic": "greenhouse1/area4/humidity",
                     "luminosityDataTopic": "greenhouse1/area4/luminosity",
                     "motionTopic": "greenhouse1/area4/motion",
-                    "motionDetected": 21,
-                    "currentTemperature": 19.3,
-                    "currentHumidity": 66.0,
-                    "currentLuminosity": 77.9,
+                    "motionDetected": 31,
+                    "currentTemperature": 24.1,
+                    "currentHumidity": 62.0,
+                    "currentLuminosity": 42.4,
                     "pumpActuation": "greenhouse1/area4/actuation/pump",
                     "lightActuation": "greenhouse1/area4/actuation/light",
                     "ventilationActuation": "greenhouse1/area4/actuation/ventilation",
@@ -89,15 +89,15 @@
                     "humidityDataTopic": "greenhouse2/area1/humidity",
                     "luminosityDataTopic": "greenhouse2/area1/luminosity",
                     "motionTopic": "greenhouse2/area1/motion",
-                    "motionDetected": 32,
-                    "currentTemperature": 15.7,
-                    "currentHumidity": 68.0,
-                    "currentLuminosity": 54.4,
+                    "motionDetected": 38,
+                    "currentTemperature": 17.3,
+                    "currentHumidity": 64.3,
+                    "currentLuminosity": 78.0,
                     "pumpActuation": "greenhouse2/area1/actuation/pump",
                     "lightActuation": "greenhouse2/area1/actuation/light",
                     "ventilationActuation": "greenhouse2/area1/actuation/ventilation",
                     "pump": 0,
-                    "light": "on",
+                    "light": "off",
                     "ventilation": 0
                 }
             ]
@@ -118,62 +118,19 @@
                     "humidityDataTopic": "greenhouse5/area1/humidity",
                     "luminosityDataTopic": "greenhouse5/area1/luminosity",
                     "motionTopic": "greenhouse5/area1/motion",
-                    "motionDetected": 5,
-                    "currentTemperature": 24.7,
-                    "currentHumidity": 56.4,
-                    "currentLuminosity": 64.5,
+                    "motionDetected": 14,
+                    "currentTemperature": 24.6,
+                    "currentHumidity": 59.3,
+                    "currentLuminosity": 78.8,
                     "pumpActuation": "greenhouse5/area1/actuation/pump",
                     "lightActuation": "greenhouse5/area1/actuation/light",
                     "ventilationActuation": "greenhouse5/area1/actuation/ventilation",
                     "pump": 1,
-                    "light": "on",
+                    "light": "off",
                     "ventilation": 1
                 }
             ]
         }
     ],
-    "services": [
-        {
-            "ID": 40,
-            "serviceName": "OtherDeviceConnector",
-            "last_updated": "",
-            "last_update": 1749475621.302101
-        },
-        {
-            "ID": 30,
-            "serviceName": "RaspberryPIConnector",
-            "last_updated": "",
-            "last_update": 1749475607.922304
-        },
-        {
-            "ID": 73,
-            "serviceName": "Pump Control",
-            "last_updated": "",
-            "last_update": 1749475606.873254
-        },
-        {
-            "ID": 10,
-            "serviceName": "NodeRED",
-            "last_updated": "",
-            "last_update": 1749475582.2026641
-        },
-        {
-            "ID": 9,
-            "serviceName": "ThreholdManagement",
-            "last_updated": "",
-            "last_update": 1749475570.905574
-        },
-        {
-            "ID": 64,
-            "serviceName": "Temperature Control",
-            "last_updated": "",
-            "last_update": 1749475598.5933921
-        },
-        {
-            "ID": 69,
-            "serviceName": "Telegram Bot",
-            "last_updated": "",
-            "last_update": 1749475610.6768003
-        }
-    ]
+    "services": []
 }

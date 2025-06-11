@@ -36,7 +36,7 @@ class SecurityRESTMQTT:
     def notify(self, topic, payload):
         #{"motion": "on"}
         message_decoded = json.loads(payload)
-        message_value = message_decoded["motion"]
+        message_value = message_decoded["e"][0]["v"]
         
         #Creation of the topic to send the alert "greenhouse1/area1/motion/alert"
         layers=topic.split("/")
@@ -50,8 +50,17 @@ class SecurityRESTMQTT:
         topic_to_publish=f"{greenhouse}/{area}/{value}/alert"
         
         messageToSend={}
-        messageToSend["alert"]="on"
-        messageToSend["timestep"]=time.time()
+        messageToSend={
+                    "bn":topic_to_publish,
+                    "e":[
+                            {"v": "on",
+                            "t":time.time(),
+                            "u":"boolean",
+                            "n":"motion"
+                            }
+                        ] 
+                    }
+        
         
         if(message_value=="on"):
             self.mqttClient.myPublish(topic_to_publish,json.dumps(messageToSend))

@@ -534,7 +534,6 @@ class TelegramBOT:
         self.mqttClient.stop()
     
     def notify(self, topic, payload):
-        #{"motion": "on"}
         
         print(f"Motion detected with MQTT by Telegram BOT on topic {topic}")
         
