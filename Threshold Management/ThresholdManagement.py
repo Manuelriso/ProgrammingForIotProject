@@ -5,6 +5,17 @@ import uuid
 import time
 from MyMQTT import MyMQTT
 
+#This function is used to compute a weighted mean of the vector it recieves as input
+def weighted_mean(values):
+    n = len(values)
+    if n == 0:
+        return 0
+    weights = [i + 1 for i in range(n)] 
+    total_weight = sum(weights)
+    weighted_sum = sum(float(v) * w for v, w in zip(values, weights))
+    return weighted_sum / total_weight
+
+
 class ThresholdManagement:
     exposed = True
     
@@ -34,7 +45,6 @@ class ThresholdManagement:
         else:
             print("Request Error", response.status_code)        
         
-        print("\n\n"+str(data)+"\n\n")
         for greenhouse in data["greenhouses"]:
             greenhouseID=greenhouse["greenhouseID"]
             for area in greenhouse["areas"]:
@@ -57,6 +67,9 @@ class ThresholdManagement:
                 #I calculate the mean of every pattern of data
                 temperatureSum=0
                 humiditySum=0
+                temperatureMean=0
+                humidityMean=0
+                luminosityMean=0
                 luminositySum=0
                 for value in temperatureData["values"]:
                     temperatureSum+=float(value)
@@ -70,32 +83,44 @@ class ThresholdManagement:
                 
                 if(len(temperatureData["values"])!=0 or len(humidityData["values"])!=0 or len(luminosityData["values"])!=0):
                     if(len(temperatureData["values"])!=0):
-                        #if the temperature mean is much bigger then the threshold, then we need to dicrease the threshold, because today is very hot
+                        
+                        #if the temperature weighted mean is much bigger then the threshold, then we need to dicrease the threshold, because today is very hot
+                        #print(f"\n\nLunghezza temperatureValue-->{len(temperatureData['values'])}")
+                        #print(f"\n\nValori -->{temperatureData['values']}")
+                        temperatureMean = weighted_mean(temperatureData["values"])
 
-                        temperatureMean=temperatureSum/len(temperatureData["values"])
                         if(temperatureMean>temperatureThreshold+5):
                             temperatureThreshold-=1
                         #In the opposite way, if outside is really cold, we can also increase the threshold
                         if(temperatureMean<temperatureThreshold-5):
                             temperatureThreshold+=1
                             
+                        #print(f"{temperatureMean}")
+                            
                             
                     if(len(humidityData["values"])!=0):
-                        humidityMean=humiditySum/len(humidityData["values"])
+                        humidityMean = weighted_mean(humidityData["values"])
+
                         #We do the same things for humidity and luminosity
                         if(humidityMean>humidityThreshold+5):
                             humidityThreshold-=1
                         if(humidityMean<humidityThreshold-5):
                             humidityThreshold+=1 
-                    if(len(luminosityData["values"])!=0):  
-                        luminosityMean=luminositySum/len(luminosityData["values"])               
+                            
+                        #print(f"{humidityMean}")
+                        
+                    if(len(luminosityData["values"])!=0):
+                          
+                        luminosityMean = weighted_mean(luminosityData["values"])
+               
                         if(luminosityMean>luminosityThreshold+5):
                             luminosityThreshold-=1
                         if(luminosityMean<luminosityThreshold-5):
                             luminosityThreshold+=1
+                        
+                        #print(f"{luminosityMean}")
                             
                             
-                    print(f"{temperatureMean}")
                                           
                 
                 if(temperatureThreshold<45 and temperatureThreshold>0):   
