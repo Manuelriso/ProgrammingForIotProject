@@ -1,15 +1,57 @@
-# ProgrammingForIotProject
+# 🌿 Greenhouse Catalog REST API
 
-Project about the Programing for IoT course.
+This project implements a **RESTful Catalog Service** for managing greenhouses, areas, IoT devices, and microservices in a smart agriculture environment. The service is built with **CherryPy** and uses a `catalog.json` file to store system data.
 
-Catalog
+---
 
-The Catalog acts as a service and device registry for all actors in the system (excluding thirdparty ones). It provides information about endpoints (e.g., REST Web Services and MQTT
-topics) for all devices, resources, and services within the platform. It also serves as a central
-repository for runtime metadata, such as MQTT topic names, sensor/client identifiers, and
-web service URLs, ensuring seamless interaction among all actors. During startup, each
-actor registers itself in the catalog and then retrieves this metadata from the Catalog using
-its REST Web Services.
+## 🚀 Features
 
-So, in the catalog, we will have a .json file with all informations about everything, 
-It acts like a Rest WEB Service in order to retrieve/get/update data.
+- Add, retrieve, update, and delete greenhouses and their areas
+- Register and manage IoT services
+- Handle motion detection events (security microservice integration)
+- Automatically remove inactive services based on last update
+- File locking with `portalocker` to ensure safe concurrent access
+
+
+## GET
+- /greenhouses – List all greenhouses
+
+- /greenhouses/{id} – Get specific greenhouse
+
+- /greenhouse{id}/numberOfAreas – Number of areas in greenhouse
+
+- /greenhouse{id}/areas – List all areas of a greenhouse
+
+- /greenhouse{id}/areas/{areaId} – Get specific area
+
+- /services – List all registered services
+
+## POST
+
+- /greenhouse – Add a new greenhouse
+
+- /greenhouse{id}/area – Add a new area to a greenhouse
+
+- /device – Register a new device
+
+- /service – Register a new service
+
+
+## PUT
+
+- /greenhouse – Update a greenhouse
+
+- /greenhouse{id}/area – Update a specific area
+
+- /device – Update device info
+
+- /service – Update service info
+
+- /greenhouse{id}/area{areaId}/motion – Increase motion detection counter
+
+
+## DELETE
+
+- /greenhouse/{id} – Delete a greenhouse
+
+- /greenhouse{id}/area/{areaId} – Delete an area from a greenhouse

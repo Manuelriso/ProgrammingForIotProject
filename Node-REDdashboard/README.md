@@ -1,11 +1,10 @@
-# ProgrammingForIotProject
-
-Project about the Programing for IoT course.
-
-Node-REDdashboard
-
-
+# Node-REDdashboard
 
 Node-REDdashboard is programming tool useful to display important informations about our project.
 
-in this little microservice, we start the docker container for the Node-RED
+It's based on Node.js and in our project is used to visualize:
+
+- Real-time temperature values
+- Real-time humidity values
+- Real-time luminosity values
+- Real-time motion detection

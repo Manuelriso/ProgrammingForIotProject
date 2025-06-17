@@ -1,15 +1,12 @@
-# ProgrammingForIotProject
+# 🌡️ Threshold Management
 
-Project about the Programing for IoT course.
+This service dynamically adjusts temperature, humidity, and luminosity thresholds for greenhouse areas based on historical sensor data retrieved from the ThingSpeak adaptor. It registers itself with a system catalog, updates its status periodically, and sends adjusted thresholds back to the catalog.
 
-Threshold Management
+---
 
+## 📋 Features
 
-
-Threshold Management is a microservice in which there will be some post-process
-operations performed that consists in retrieving historical data from the ThingSpeak database
-with REST Web Services, and some computations will be done on this data, in order to
-dynamically change thresholds to activate some actuators to preserve the optimal
-environment.
-
-We modify, if necessary, all the threshold values that we get from the catalog, based on the values uploaded in the ThingSpeak database.
+- 📥 Retrieves real-time sensor data (temperature, humidity, luminosity)
+- 📈 Calculates weighted moving averages
+- ⚖️ Adjusts thresholds intelligently based on environmental trends
+- 🧠 Adaptive logic to account for climatic changes (e.g., hot/cold days)
