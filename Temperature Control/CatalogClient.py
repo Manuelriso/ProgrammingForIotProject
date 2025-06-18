@@ -231,14 +231,14 @@ class CatalogAPI(object):
     
     # Handle POST requests for inserting a new service
     def registerService(self):
-        self.serviceInfo['last_update'] = time.time()  # Use proper timestamp
+        self.serviceInfo['last_updated'] = time.time()  # Use proper timestamp
         try:
             requests.post(f'{self.catalogURL}/service',json=self.serviceInfo )
         except requests.exceptions.RequestException as e:
             return {"message": f"Failed to register service: {e}"}
         
     def updateService(self):
-        self.serviceInfo['last_update'] = time.time()
+        self.serviceInfo['last_updated'] = time.time()
         requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))   
     
     # Handle PUT requests for updating an actuation

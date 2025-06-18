@@ -35,11 +35,11 @@ class ThingspeakAdaptorRESTMQTT:
         self.actualTime = time.time()
     
     def registerService(self):
-        self.serviceInfo['last_update'] = self.actualTime
+        self.serviceInfo['last_updated'] = self.actualTime
         requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def updateService(self):
-        self.serviceInfo['last_update'] = time.time()
+        self.serviceInfo['last_updated'] = time.time()
         requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def stop(self):
@@ -175,8 +175,8 @@ class ThingspeakAdaptorRESTMQTT:
             json_output = json.dumps({"values": field_values})
         else:
             raise cherrypy.HTTPError("Error in the parameters")
-         
-            
+        
+        cherrypy.response.status=200
         return json_output
     
     def POST(self):

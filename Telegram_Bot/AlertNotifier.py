@@ -2,9 +2,9 @@
 from MyMQTTforBOT import MyMQTT
 import requests
 from requests.exceptions import RequestException
+from time import sleep
 from sharedUtils import normalize_state_to_int, get_ids
 import json
-
 
 ############################# ALERT NOTIFIER #######################
 class AlertNotifier:
@@ -75,15 +75,11 @@ class AlertNotifier:
     #                 "u": "boolean"
     #             }]
     # }
-    # OR THIS:
-    # {"motion": "on"}
-    #
     
     def notify(self, msgtopic, payload):
         try:
             # Caso 1: Payload tipo SenML (light, temeperature, humidity, motionNEW.)
             if "bn" in payload and "e" in payload:
-                print("Processing SenML payload")
                 base_name = payload.get("bn", "")
                 events = payload.get("e", [])
                 gh_id, area_id = get_ids(base_name)
@@ -95,8 +91,7 @@ class AlertNotifier:
                     if situation == "motion":
                         value_received = event.get("v")
                         destinatario = self.get_user_from_id(gh_id)
-                        print('El telegram id es:', destinatario, 'para SenML payload')
-                        print("about to access the notify_user method (SenML)")
+                        sleep (0.2)
                         self.notify_user(
                             gh_id=gh_id,
                             area_id=area_id,
@@ -109,37 +104,13 @@ class AlertNotifier:
                     else:
                         print(f"Unexpected event type: {situation} in topic {base_name}")
                 return
-
-            # Caso 2: Payload simple tipo {"motion": "on"}
-            elif "motion" in payload:
-                gh_id, area_id = get_ids(msgtopic)
-                print("Processing simple payload", "gh_id:", gh_id, "area_id:", area_id)
-                if gh_id is None or area_id is None:
-                    print(f"[!] Invalid topic: {msgtopic}")
-                    return
-                value_raw = payload.get("motion")
-                value_received = normalize_state_to_int(value_raw)
-                destinatario = self.get_user_from_id(gh_id)
-                timestampp = None  # No timestamp in simple payload
-                print('El telegram id es:', destinatario, 'para simple payload')
-                print("about to access the notify_user method (Simple payload)") ########
-                self.notify_user(
-                    gh_id=gh_id,
-                    area_id=area_id,
-                    user_affected=destinatario,
-                    alerttype="motion",
-                    timestamp=None,
-                    unit=None,
-                    value_received=value_received
-                )
-                return
             else:
                 print(f"[!] Unsupported payload format: {payload}, {payload.datatype}")
         except Exception as e:
             print(f"[!] Error in notify(): {e}")
 
     def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit, value_received): #Sends the alert to the queue of the bot
-        print("Something happened, notifying user...: ", user_affected)
+        print("Something happened, notifying user: ", user_affected, "value received: ", value_received)
         if not self.enqueue_method:
             raise ValueError("Enqueue method must be set before using AlertNotifier") 
         self.enqueue_method({
@@ -152,8 +123,6 @@ class AlertNotifier:
                 "u": unit
             }]
         })
-        print("Executed to do the enqueued alert!!")
-        print("AlertNotifier enqueue method is set to:", self.enqueue_method)
 
 ############################ AUXILIARY METHODS ######################    
     def get_user_from_id(self, gh_id):
@@ -171,8 +140,8 @@ class AlertNotifier:
     def build_topics_list_from_catalog(self) -> dict:
         try:
             response = requests.get(f"{self.catalog_url}greenhouses", timeout=10)
-            print(f"Status Code: {response.status_code}")
-            print(f"Content-Type: {response.headers.get('Content-Type')}")
+            # print(f"Status Code: {response.status_code}")
+            # print(f"Content-Type: {response.headers.get('Content-Type')}")
             if response.status_code == 200:
                 try:
                     all_greenhouses = response.json().get("greenhouses", [])

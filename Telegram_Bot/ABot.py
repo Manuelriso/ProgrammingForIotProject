@@ -12,10 +12,11 @@ import asyncio
 import MyMQTTforBOT
 from AlertNotifier import AlertNotifier
 from sharedUtils import *
+import pytz #For local time conversion
 
 ######################### CONVERSATION STATES #########################
 # Conversation states
-MAIN_MENU, WAIT_NEW_GH_ID, WAIT_PLANT, CHECK_FIRST_THRESHOLD, SET_THRESHOLDS, INPUT_GH_ID, HANDLING_GH_ID, CONFIRM_X_GH, MANAGE_GH, SHOWING_AVAILABLE_AREAS, CONFIRM_X_A, CONFIRM_X_BOTH, ADD_A, WAIT_AREA_INSTRUCTION, WAIT_ACTUATOR_STATE, FINAL_STAGE = range(16)
+MAIN_MENU, WAIT_NEW_GH_ID, WAIT_PLANT, CHECK_FIRST_THRESHOLD, SET_THRESHOLDS, INPUT_GH_ID, HANDLING_GH_ID, CONFIRM_X_GH, MANAGE_GH, SHOWING_AVAILABLE_AREAS, CONFIRM_X_A, CONFIRM_X_BOTH, WAIT_AREA_INSTRUCTION, WAIT_ACTUATOR_STATE, FINAL_STAGE = range(15)
 ######################### CONFIGURATION #########################
 def load_config():
     with open('configBot.json') as config_file:
@@ -56,6 +57,12 @@ areas_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("📊 Historical Data", callback_data='storical_data_gh'),
      InlineKeyboardButton("🗑️ Delete Area", callback_data='eliminacion_area')],
     [InlineKeyboardButton("🔙 Back to Main Menu", callback_data='back_to_main_menu')]
+])
+
+conf_canc_markup = InlineKeyboardMarkup([
+    [InlineKeyboardButton("✅ CONFIRM", callback_data='confirm_delete_area')],
+    [InlineKeyboardButton("❌ CANCEL", callback_data='cancel_delete_area')],
+    [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]
 ])
 
 ######################### AUXILIARY FUNCTIONS #########################
@@ -233,6 +240,7 @@ async def get_user_id_from_gh_id(catalog_url, greenhouse_id) -> int:
             return greenhouse.get("telegram_ID")
         return None
     except requests.exceptions.RequestException:
+        print("Error while retrieving user ID from greenhouse ID.")
         return None
 
 ### Build a suggestion keyboard with a suggested value for stablishing thresholds
@@ -248,23 +256,6 @@ def escape_md_v2(text: str) -> str:
 
 
 ############################### CONVERSATION FUNCTIONS ###############################    
-async def handle_storical_data_gh(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    show_text = (
-        "📡 Follow the next link to see the data of the greenhouse that *your plan has access* to:\n"
-        "⚠️ _For more functionalities please upgrade your plan\\._ \n\n"
-        "🌡️ Temperatures: [View Data](https://thingspeak.mathworks.com/channels/2907689)\n"
-        "💧 Humidity: [View Data](https://thingspeak.mathworks.com/channels/2907692)\n"
-        "💡 Luminosity: [View Data](https://thingspeak.mathworks.com/channels/2907694)"
-    )
-    await update.callback_query.message.reply_text(
-        show_text,
-        parse_mode="MarkdownV2",
-        disable_web_page_preview=True,
-        reply_markup=end_markup
-    )
-    #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
-    return FINAL_STAGE
-
 ### Retrieve the actuator state for a specific area in a greenhouse
 async def check_actuator_state(catalog_url, greenhouse_id, area_processing, actuator_type):
     try:
@@ -286,32 +277,6 @@ async def check_actuator_state(catalog_url, greenhouse_id, area_processing, actu
         print(f"❌ Error while retrieving the actuator state: {e}")
         return None
 
-############################# ALERTS FUNCTIONS #############################
-### Format the alert message to be sent to the user
-def format_alert_message(alert_dict, already_tried):
-    GH_ID, AREA_ID = get_ids(alert_dict.get('bn', ''))
-    event = alert_dict.get('e', [{}])[0]  
-    alerttype = event.get('n', 'unknown')
-    timestamp = event.get('t', None)
-    
-    # Convert timestamp to readable date if it exists
-    if timestamp:
-        dt = datetime.fromtimestamp(timestamp)
-        timestamp_str = dt.strftime('%d-%m-%Y %H:%M:%S')
-    else:
-        timestamp_str = timestamp
-    
-    msg = (
-        f"🚨 *Alert detected!*\n\n"
-        f"🏡 *Greenhouse:* {GH_ID}\n"
-        f"📍 *Area:* {AREA_ID}\n"
-        f"🔔 *Alert type:* {alerttype.capitalize()}\n"
-        f"🕒 *Date and time:* {timestamp_str}\n"
-    )
-    if already_tried:
-        msg += "\n⚠️ There was a missed alert. Please contact support."
-    return msg
-
 ############################# 🌟 BOT MAIN CLASS WITH METHODS 🌟 #############################
 ############################# 🚀 BOT MAIN CLASS WITH METHODS 🚀 #############################
 ############################# 🌱 BOT MAIN CLASS WITH METHODS 🌱 #############################
@@ -322,26 +287,31 @@ class BotMain:
     def __init__(self, config):
         self.token = config['telegram_token']
         self.catalog_url = config['catalog_url']
+        self.thinkspeak_url = config['thinkspeak_url']
         self.default_thresholds = config['default_thresholds']
         self.mqtt_broker = config['brokerIP']
         self.broker_port = config['port']
         self.serviceInfo = config['serviceInfo']
         self.actualTime = time.time()
+        self.timeZone = pytz.timezone(config['timezone'])  # Set the timezone for the bot
 
         # Telegram application setup
         self.application = Application.builder().token(self.token).build()
         self.application.bot_data['catalog_url'] = self.catalog_url
         self.application.bot_data['default_thresholds'] = self.default_thresholds
+        self.application.bot_data['thinkspeak_url'] = self.thinkspeak_url
 
         ### Initialization of variables and dictionaries
         # Temporary dictionary per user and session to manage chat processes
         self.user_data = {}
-        # Alert queue
-        self.alert_queue = asyncio.Queue(maxsize=100)
+        # Alert queue to store incoming alerts in a trhead-safe manner (from a synchronous MQTT client to the async bot)
+        self.alert_queue = asyncio.Queue(maxsize=250)
         self.queue_lock = asyncio.Lock()
         # Dictionary to regulate alert sending moments
         self.user_states = {}
         # Map to store values and link them with the correct users, handled by the AlertNotifier (and the bot)
+            #This map is used to link greenhouse IDs with user IDs and areas and be available for the AlertNotifier even if
+            # the user is not interacting with the bot
         self.greenhouse_user_map = {}
         self.greenhouse_map_lock = asyncio.Lock()
         # Dictionaries and vairable for pending alerts, to process them
@@ -354,25 +324,38 @@ class BotMain:
 
         # Setup MQTT + Notifier 
         self.mqtt_client, self.alert_notifier = self.setup_mqtt_and_notifier()
+        if self.alert_notifier is None:
+            raise RuntimeError("AlertNotifier failed to initialize.") ########### DEBUG
   
         # Add ConversationHandler
         self.application.add_handler(self._build_conversation_handler())
         # Register the service in the catalog
         self.registerService()
 
-
+    # Start the periodic update of the registration service
     def registerService(self):
-        self.serviceInfo['last_update'] = self.actualTime
+        self.serviceInfo['last_updated'] = self.actualTime
+        now_utc = datetime.fromtimestamp(time.time(), tz=pytz.UTC)
+        now_local = now_utc.astimezone(self.timeZone)
+        self.serviceInfo['last_update'] = now_local.strftime('%d-%m-%Y %H:%M:%S %Z%z')
         requests.post(f'{self.catalog_url}service', data=json.dumps(self.serviceInfo))
     
     async def update_registration_service(self):
-        """Periodically updates the bot's registration in the catalog service."""
+        #Periodically updates the bot's registration in the catalog service.
+        counter = 0
         while True:
             try:
                 await asyncio.sleep(30)
-                self.serviceInfo['last_update'] = time.time()
+                self.serviceInfo['last_updated'] = time.time()
+                now_utc = datetime.fromtimestamp(time.time(), tz=pytz.UTC)
+                now_local = now_utc.astimezone(self.timeZone)
+                self.serviceInfo['last_update'] = now_local.strftime('%d-%m-%Y %H:%M:%S %Z%z')
                 requests.put(f'{self.catalog_url}service', data=json.dumps(self.serviceInfo))
                 await asyncio.sleep(30)  # Update every 60 seconds
+                counter += 1
+                if counter >= 6:
+                    self.alert_notifier.update_subscriptions("refresh")  # MQTT keep-alive
+                    counter = 0
             except Exception as e:
                 print(f"[ERROR] Failed to update registration: {e}")
 
@@ -386,25 +369,18 @@ class BotMain:
                 catalog_url=self.catalog_url)
             # Assign the enqueue method to the notifier
             self.alert_notifier.enqueue_method = self.enqueue_alert_message
-            print(" The enqueue method has been set in the notifier.. Proof: ", self.alert_notifier.enqueue_method)
-            # Set the notifier for the MQTT client
+            # Set the AlertNotifier right initialized as the notifier for the MQTT client and start this client
             self.mqtt_client.notifier = self.alert_notifier
             self.mqtt_client.start()
             return self.mqtt_client, self.alert_notifier
         except Exception as e:
-            print(f"Error setting up MQTT and AlertNotifier: {e}")
-            return None, None
+            print(f"[ERROR] Failed to setup MQTT and Notifier:\n{traceback.format_exc()}")
+            raise #### or retunr None, None
 
     ## Enqueue alert messages to the alert queue    
     def enqueue_alert_message(self, message: dict):
         try:
-            # print("The try with lock")
-            # async with self.queue_lock:
-            print("inside the try awasit put en la cola.")
             self.alert_queue.put_nowait(message)
-            print('Encolada che la alerta:', message)
-            # asyncio.create_task(self.alert_queue.put(message))
-            # self.alert_queue.put_nowait(message)
         except asyncio.QueueFull:
             print("Alert queue is full. Dropping message:", message)
         except Exception as e:
@@ -428,10 +404,16 @@ class BotMain:
             except (RequestException, ValueError) as e:
                 print(f"Error initializing greenhouse_user_map: {e}")
 
+    async def unknown_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        await update.message.reply_text("⚠️ Commands are not allowed. Please try again with text.")
+
     ## Build the conversation handler for the bot with all the states and transitions
     def _build_conversation_handler(self):
         return ConversationHandler(
-            entry_points=[MessageHandler(filters.TEXT & ~filters.COMMAND, self.start)],
+            entry_points=[
+                MessageHandler(filters.TEXT, self.start),
+                CommandHandler("start", self.start)
+            ],
             states={
                 MAIN_MENU: [
                     CallbackQueryHandler(self.handle_bye, pattern='^bye$'),
@@ -479,17 +461,12 @@ class BotMain:
                     CallbackQueryHandler(self.handle_back_to_main_menu, pattern='back_to_main_menu'), #first checks if this happened
                     CallbackQueryHandler(self.checking_what_to_do_showed_areas),
                 ],                 
-                ADD_A : [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_wait_new_a_plant),
-                    CallbackQueryHandler(self.handle_back_to_main_menu, pattern='back_to_main_menu'),
-                ],
                 CONFIRM_X_A: [
                     CallbackQueryHandler(self.handle_delete_area, pattern='confirm_delete_area'),
-                    CallbackQueryHandler(self.handle_delete_area, pattern='cancel_delete_area'),
+                    CallbackQueryHandler(self.confirm_delete_area, pattern='cancel_delete_area'),
                 ],        
                 WAIT_AREA_INSTRUCTION
                 : [
-                    # CallbackQueryHandler(handle_acciones, pattern='acciones_invernadero'),
                     CallbackQueryHandler(self.handle_verify, pattern='check_humidity'),
                     CallbackQueryHandler(self.handle_verify, pattern='check_temperature'),
                     CallbackQueryHandler(self.handle_verify, pattern='check_luminosity'),
@@ -517,38 +494,30 @@ class BotMain:
                     CallbackQueryHandler(self.timeout_callback)
                 ]
             },
-            fallbacks=[CommandHandler('start', self.start)],
-            conversation_timeout=180 # Timeout: 3 minutes
+            fallbacks=[CommandHandler('start', self.start),
+                        MessageHandler(filters.COMMAND & (~filters.Regex(r"^/start$")), self.unknown_command),
+            ],
+            conversation_timeout=150 # Timeout: 2,5 minutes
         )
 
-    ### Delete last keyboard
+    ### Delete last keyboard in chat
     async def delete_last_keyboard(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = update.effective_user.id
-
         # Attempt to retrieve the last bot message with a keyboard
         last_msg = self.user_data.get(user_id, {}).get("last_bot_msg")
-
         try:
-            if last_msg and last_msg.reply_markup:
+            if last_msg: #and last_msg.reply_markup is not None: ###### is not None check....
                 await last_msg.edit_reply_markup(reply_markup=None)
         except Exception as e:
             print(f"[delete_last_keyboard] Couldn't remove old keyboard from last_msg: {e}")
 
-        # # If an inline button was pressed, also attempt to remove the current keyboard from the callback
-        # if update.callback_query:
-        #     try:
-        #         await update.callback_query.edit_message_reply_markup(reply_markup=None)
-        #     except Exception as e:
-        #         print(f"[delete_last_keyboard] Couldn't remove keyboard from callback_query: {e}")
-
-
-    ## Start of the BOT
+    ################### Start of the BOT
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         user_id = update.effective_user.id
         self.user_data[user_id] = {}
         self.alert_notifier.update_subscriptions("refresh") #"motion"
 
-        await update.message.reply_text(f'*GREENHOUSE ALLA TERRONE*', parse_mode="Markdown")
+        await update.message.reply_text(f'*GREENHOUSE-PI*', parse_mode="Markdown")
         message = await update.message.reply_text(
             f"🌟 Welcome to the Greenhouse Management Bot! 🌱\n\n"
             f"Your unique ID is: `{user_id}`.\n"
@@ -564,22 +533,27 @@ class BotMain:
     ############################## Callback Query Handlers ##############################
     async def handle_bye(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         #Resubscribe to the topics # Just to secure well functioning
-        self.alert_notifier.update_subscriptions("refresh") #"motion" 
+        async with self.greenhouse_map_lock:
+            self.alert_notifier.update_subscriptions("refresh") #"motion"
 
         user_id = update.effective_user.id
+
         self.user_data[user_id] = {}
         bye_msg = (
             "👋 Thank you for using our Greenhouse Management Bot! 🌱\n\n"
             "We hope you had a great experience managing your greenhouses and areas. If you have any feedback or need assistance, "
             "feel free to reach out to our support team or upgrade your plan. 💬\n\n"
-            f"Take care of you, we take care of your plants.😊🌿🌞 See you next time! 🚀"
+            f"Take care of you, we take care of your plants.😊🌿🌞 See you next time! 🚀\n\n"
+            f"*Greenhouse-PI* - Version {self.serviceInfo['version']}\n"
         )
-        if update.message:
-            await update.message.reply_text(bye_msg)
-        elif update.callback_query:
+        if update.callback_query:
             await update.callback_query.answer()
-            await update.callback_query.edit_message_text(bye_msg, parse_mode="Markdown")
+            await update.callback_query.edit_message_text("✔️ Menu closed", reply_markup=None)
+            await update.callback_query.message.reply_text(bye_msg, parse_mode="Markdown")
+        elif update.message:
+            await update.message.reply_text(bye_msg)
         self.user_states[user_id] = "END"
+        print("User", user_id, "has ended the conversation.")
         return ConversationHandler.END
 
     async def handle_back_to_main_menu(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -591,8 +565,6 @@ class BotMain:
         query = update.callback_query
         if query:
             await query.answer()
-            # await query.edit_message_reply_markup(reply_markup=None) # Remove the previous buttons from that message
-            # Send a new message with text and new buttons
             message = await query.message.reply_text(
                 " 👋 Welcome to the Main Menu! 🌱\n\n"
                 "What would you like to do next? Please select an option below:",
@@ -615,11 +587,10 @@ class BotMain:
         await self.delete_last_keyboard(update, context) ####
         if user_id in self.user_data:
             del self.user_data[user_id]
-
         if update.message:
-            await update.message.reply_text("⏳ Timeout. The conversation was closed due to inactivity.")
+            await update.message.reply_text("**⏳ Timeout. The conversation was closed due to inactivity.**", parse_mode="Markdown")
         elif update.callback_query:
-            await update.callback_query.message.reply_text("⏳ Timeout. The conversation was closed due to inactivity.")
+            await update.callback_query.message.reply_text("**⏳ Timeout. The conversation was closed due to inactivity.**", parse_mode="Markdown")
         self.user_states[user_id] = "END"
         return ConversationHandler.END
 
@@ -651,7 +622,7 @@ class BotMain:
 
         await self.delete_last_keyboard(update, context)
 
-        if not (gh_id.isdigit() and len(gh_id) < 5):
+        if not (gh_id.isdigit() and len(gh_id) <= 5):
             message = await update.message.reply_text(
                 "🚫 *Invalid ID!*\n\n"
                 "The ID must be numeric and contain a maximum of 5 digits. 🌱\n",
@@ -697,8 +668,10 @@ class BotMain:
         # Verify that the plant type does not exceed 30 characters
         if len(plant_type) > 30 or not re.match(r'^[a-zA-Z0-9 ]+$', plant_type):
             message = await update.message.reply_text(
-                "🚫 Error: Max 30 characters. Use only letters, numbers and spaces.",
-                reply_markup=back_to_MM
+                "🚫 *Error:* The plant type must not exceed 30 characters and should only contain letters and numbers. 🌱\n"
+                "💡 Please try again with a valid input.",
+                reply_markup=back_to_MM,
+                parse_mode="Markdown"
             )
             self.user_states[user_id] = WAIT_PLANT
             self.user_data[user_id]["last_bot_msg"] = message
@@ -769,7 +742,7 @@ class BotMain:
         
         self.user_data[user_id][f"{stage_of_set}_threshold"] = value
   
-        # Move to the next threshold
+        # Move to the next threshold setting stage
         if stage_of_set == 'temperature':
             self.user_data[user_id]['threshold_stage'] = 'humidity'
             return await self.ask_objective_threshold(update, context)
@@ -867,7 +840,7 @@ class BotMain:
                 f"🎉 *Success!* The new area has been added. 🌱\n\n"
                 f"🆔 *Area ID:* `{self.user_data[user_id]['new_area_id']}`\n"
                 f"🌱 *Plant Type:* `{plant_type}`\n\n"
-                "You can now return to the main menu or continue managing your greenhouse. 🚀"
+                "You can now return to the main menu to continue managing your greenhouses. 🚀"
             )
             if update.message:
                 message = await update.message.reply_text(text_shown, reply_markup=back_to_MM, parse_mode="Markdown")
@@ -908,18 +881,19 @@ class BotMain:
                 f"Your greenhouse is now ready. Use the Main Menu to manage it."
             )
             if update.message:
-                await update.message.reply_text(
+                msj = await update.message.reply_text(
                     messagee,
                     reply_markup=back_to_MM,
                     parse_mode="Markdown"
                 )
             elif update.callback_query:
-                await update.callback_query.message.reply_text(
+                msj = await update.callback_query.message.reply_text(
                     messagee,
                     reply_markup=back_to_MM,
                     parse_mode="Markdown"
                 )
             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
+            self.user_data[user_id]["last_bot_msg"] = msj
             return MAIN_MENU
         else:
             errorrr = (
@@ -927,17 +901,18 @@ class BotMain:
                 "If the issue persists, feel free to contact our support team for assistance. 🌱"
             )
             if update.message:
-                await update.message.reply_text(
+                msj= await update.message.reply_text(
                     errorrr,
                     reply_markup=back_to_MM,
                     parse_mode="Markdown"
                 )
             elif update.callback_query:
-                await update.callback_query.message.reply_text(
+                msj = await update.callback_query.message.reply_text(
                     errorrr,
                     reply_markup=back_to_MM,
                     parse_mode="Markdown"
                 )
+            self.user_data[user_id]["last_bot_msg"] = msj
             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
             return MAIN_MENU
 
@@ -955,7 +930,7 @@ class BotMain:
         elif query.data == 'manage_greenhouses':
             cosa_fai = "manage"
 
-        # List the user's greenhouses
+        # List the user's greenhouses (updating the user_data)
         self.user_data[user_id]['their_greenhouses'] = await self.check_gh_ownership(user_id, context.bot_data['catalog_url'])
         # If the user has no greenhouses, send a message and return to the main menu
         if not self.user_data[user_id]['their_greenhouses']:
@@ -982,8 +957,6 @@ class BotMain:
         self.user_data[user_id]["last_bot_msg"] = message
         self.user_states[user_id] = HANDLING_GH_ID
         return HANDLING_GH_ID
-
-        ### Chek if the user owns any greenhouse and return the list with the IDs and creation date
     
     ## Check if the user owns any greenhouse and return the list with the IDs and creation date
     async def check_gh_ownership(self, user_id, catalog_url) -> list:
@@ -1007,12 +980,13 @@ class BotMain:
 
     ### Handle the selection of a greenhouse ID for management or deletion
     async def handle_gh_id_selection(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+            catalog_url = self.catalog_url
             user_id = update.effective_user.id
             await self.delete_last_keyboard(update, context) ####
 
             id_selected = update.message.text.strip()
             # Verify if the ID is valid, numeric, and has a maximum of 5 digits
-            if not (id_selected.isdigit() and len(id_selected) < 5):
+            if not (id_selected.isdigit() and len(id_selected) <= 5):
                 message = await update.message.reply_text(
                     f"❌ Invalid ID entered! Please ensure the ID is numeric and contains a maximum of 5 digits.\n"
                     "_💡 Tip: Check the list of available greenhouses above and try again._",
@@ -1054,11 +1028,15 @@ class BotMain:
                 return CONFIRM_X_GH
 
             elif action == 'manage_greenhouses':
+                areas = await list_areas(catalog_url, id_selected)
+                len_areas = len(areas)
                 self.user_data[user_id]['gh_to_manage'] = id_selected
                 message = await update.message.reply_text(
                     f"✅ You have selected the greenhouse with ID: {id_selected}.\n"
+                    f"This greenhouse has *{len_areas} area(s)* associated with it. 🌱\n\n"
                     "What would you like to do next? 🌱",
-                    reply_markup=areas_keyboard
+                    reply_markup=areas_keyboard,
+                    parse_mode="Markdown"
                 )
                 self.user_data[user_id]["last_bot_msg"] = message
                 self.user_states[user_id] = MANAGE_GH
@@ -1074,7 +1052,6 @@ class BotMain:
         query = update.callback_query
         await query.answer()  # Always respond to the callback, even if empty
         decision = query.data  # YES OR NO
-        # await query.edit_message_reply_markup(reply_markup=None)
         await self.delete_last_keyboard(update, context) ####
 
         # If the user confirms deletion
@@ -1091,7 +1068,7 @@ class BotMain:
                 )
                 self.user_data[user_id]["last_bot_msg"] = message
                 # Update the user's greenhouse list to reflect the deletion
-                self.remove_greenhouses(user_id, greenhouse_to_delete)
+                self.remove_greenhouse(user_id, greenhouse_to_delete)
                 
                 del self.user_data[user_id]['gh_to_delete']
                 #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
@@ -1100,11 +1077,7 @@ class BotMain:
                 message = await update.callback_query.message.reply_text(
                     "🚨 Oops! Something went wrong while trying to delete the greenhouse. 🌱\n"
                     "Please try again or contact support if the issue persists. 💡",
-                    reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("✅ CONFIRM", callback_data='confirm_delete_gh')],
-                        [InlineKeyboardButton("❌ CANCEL", callback_data='cancel_delete_gh')],
-                        [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]
-                    ])
+                    reply_markup=conf_canc_markup
                 )
                 self.user_data[user_id]["last_bot_msg"] = message
                 self.user_states[user_id] =  CONFIRM_X_GH
@@ -1189,10 +1162,11 @@ class BotMain:
 
         # Get the areas
         areas = await list_areas(catalog_url, greenhouse_id)
+        areas = sorted(areas, key=lambda x: int(x[0]))  # Sort by area ID
         text_1 = (
-            f"🌱 *Areas in Greenhouse ID: {greenhouse_id}*:\n\n" +
+            f"🌱 *Greenhouse ID: {greenhouse_id}*:\n\n" +
             "\n".join([f"🔹 *{area[0]} - {area[1]}*" for area in areas]) +
-            "\n\n💡 _*Tip:* Select an area below to proceed._"
+            "\n\n💡 _Tip: Select an area below to proceed._"
         )
         # Build markup for areas (buttons)
         buttons_areas = [
@@ -1200,14 +1174,14 @@ class BotMain:
             for area in areas
         ]
         markup_areas = [buttons_areas[i:i + 2] for i in range(0, len(buttons_areas), 2)]
-        markup_areas.append([InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]) #keep this format
+        markup_areas.append([InlineKeyboardButton("🔙 Back to Main Menu", callback_data='back_to_main_menu')])  # Added emoji for better user experience
 
         # Text based on the action
         if action == 'storical_data_gh':
             message = await update.callback_query.message.reply_text(text_1,
                                                                      parse_mode="Markdown")
             self.user_data[user_id]["last_bot_msg"] = message
-            return await handle_storical_data_gh(update, context)
+            return await self.handle_storical_data_gh(update, context)
         elif action == 'gestion_areas':
             prompt = f"Manage the areas of the greenhouse ID {greenhouse_id}:"
         elif action == 'eliminacion_area':
@@ -1231,7 +1205,6 @@ class BotMain:
             query = update.callback_query
             await query.answer()
             await query.edit_message_reply_markup(reply_markup=None)
-            # await self.delete_last_keyboard(update, context) ####
 
             id_to_do = query.data.split("_")[1]  # Splits decision in ["area", "area_id"] and takes the [1]=id
             self.user_data[user_id]['area_to_do'] = id_to_do
@@ -1278,57 +1251,62 @@ class BotMain:
                 return ConversationHandler.END
     
     ### Add a new area to the new greenhouse
-    async def handle_wait_new_a_plant(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-            user_id = update.effective_user.id
-            catalog_url = context.bot_data['catalog_url']
-            greenhouse_id = self.user_data[user_id]['gh_to_manage']
-            new_id = self.user_data[user_id]['new_area_id']
-            temperature_threshold = self.user_data[user_id]['temperature_threshold']
-            humidity_threshold = self.user_data[user_id]['humidity_threshold']
-            light_threshold = self.user_data[user_id]['light_threshold']
+    # async def handle_wait_new_a_plant(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    #         user_id = update.effective_user.id
+    #         catalog_url = context.bot_data['catalog_url']
+    #         greenhouse_id = self.user_data[user_id]['gh_to_manage']
+    #         new_id = self.user_data[user_id]['new_area_id']
+    #         temperature_threshold = self.user_data[user_id]['temperature_threshold']
+    #         humidity_threshold = self.user_data[user_id]['humidity_threshold']
+    #         light_threshold = self.user_data[user_id]['light_threshold']
 
-            plant_type = update.message.text.strip()
-            await self.delete_last_keyboard(update, context) ####
+    #         plant_type = update.message.text.strip()
+    #         await self.delete_last_keyboard(update, context) ####
 
-            # Verify that the plant type does not exceed 30 characters
-            if len(plant_type) > 30 or not plant_type.isalnum():
-                message = await update.message.reply_text(
-                "🚫 *Error:* The plant type must not exceed 30 characters and should only contain letters and numbers. 🌱\n"
-                "💡 Please try again with a valid input.",
-                reply_markup=back_to_MM,
-                parse_mode="Markdown"
-                )
-                self.user_data[user_id]["last_bot_msg"] = message
-                self.user_states[user_id] = ADD_A
-                return ADD_A
+    #         # Verify that the plant type does not exceed 30 characters
+    #         if len(plant_type) > 30 or not plant_type.isalnum():
+    #             message = await update.message.reply_text(
+    #             "🚫 *Error:* The plant type must not exceed 30 characters and should only contain letters and numbers. 🌱\n"
+    #             "💡 Please try again with a valid input.",
+    #             reply_markup=back_to_MM,
+    #             parse_mode="Markdown"
+    #             )
+    #             self.user_data[user_id]["last_bot_msg"] = message
+    #             self.user_states[user_id] = ADD_A
+    #             return ADD_A
 
-            if await create_area(catalog_url, greenhouse_id, new_id, plant_type, temperature_threshold, humidity_threshold, light_threshold):
-                #Update the greenhouse_user_map and subscribe to the new topics
-                await self.add_area_to_map(greenhouse_id, new_id)
-                self.alert_notifier.update_subscriptions("create", greenhouse_id, new_id) #"motion"
+    #         if await create_area(catalog_url, greenhouse_id, new_id, plant_type, temperature_threshold, humidity_threshold, light_threshold):
+    #             print("Entered the line 1287.")
+    #             #Update the greenhouse_user_map and subscribe to the new topics
+    #             if 'new_gh_id' in self.user_data[user_id]:  # If creating a new greenhouse
+    #                 await self.create_greenhouse_map(greenhouse_id, new_id, user_id)  # new_id is the area id
+    #             elif 'gh_to_manage' in self.user_data[user_id]:  # If adding a new area to an existing greenhouse
+    #                 await self.add_area_to_map(greenhouse_id, new_id)
+    #             # await self.add_area_to_map(greenhouse_id, new_id)
+    #             self.alert_notifier.update_subscriptions("create", greenhouse_id, new_id) #"motion"
 
-                message = await update.message.reply_text(
-                f"✅ *Success!* The area has been created successfully. 🎉\n\n"
-                f"🆔 *Area ID:* `{new_id}`\n"
-                f"🌱 *Plant Type:* `{plant_type}`\n\n"
-                "You can now return to the main menu or manage your greenhouse further.",
-                reply_markup=back_to_MM,
-                parse_mode="Markdown"
-                )
-                self.user_data[user_id]["last_bot_msg"] = message
-                del self.user_data[user_id]['new_area_id']  # Remove the key from user_data
-                #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
-                return MAIN_MENU
-            else:
-                message = await update.message.reply_text(
-                "🚨 *Error:* Something went wrong while creating the area. 🌱\n"
-                "💡 Please try again or contact support if the issue persists.",
-                reply_markup=back_to_MM,
-                parse_mode="Markdown"
-                )
-                self.user_data[user_id]["last_bot_msg"] = message
-                self.user_states[user_id] = ADD_A
-                return ADD_A
+    #             message = await update.message.reply_text(
+    #             f"✅ *Success!* The area has been created successfully. 🎉\n\n"
+    #             f"🆔 *Area ID:* `{new_id}`\n"
+    #             f"🌱 *Plant Type:* `{plant_type}`\n\n"
+    #             "You can now return to the main menu to further manage your greenhouses! ",
+    #             reply_markup=back_to_MM,
+    #             parse_mode="Markdown"
+    #             )
+    #             self.user_data[user_id]["last_bot_msg"] = message
+    #             del self.user_data[user_id]['new_area_id']  # Remove the key from user_data
+    #             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
+    #             return MAIN_MENU
+    #         else:
+    #             message = await update.message.reply_text(
+    #             "🚨 *Error:* Something went wrong while creating the area. 🌱\n"
+    #             "💡 Please try again or contact support if the issue persists.",
+    #             reply_markup=back_to_MM,
+    #             parse_mode="Markdown"
+    #             )
+    #             self.user_data[user_id]["last_bot_msg"] = message
+    #             self.user_states[user_id] = ADD_A
+    #             return ADD_A
 
     ### Delete an Area
     async def handle_delete_area(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -1382,20 +1360,17 @@ class BotMain:
                 return FINAL_STAGE
             else:
                 message = await update.callback_query.message.reply_text("Error deleting the area. Please try again. If the issue persists, contact support.",
-                                                                         reply_markup=InlineKeyboardMarkup([
-                                                                [InlineKeyboardButton("✅ CONFIRM", callback_data='confirm_delete_area')],
-                                                                [InlineKeyboardButton("❌ CANCEL", callback_data='cancel_delete_area')],
-                                                                [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]
-                                                            ]))
+                                                                         reply_markup=conf_canc_markup)
                 self.user_data[user_id]["last_bot_msg"] = message
                 self.user_states[user_id] = CONFIRM_X_A
                 return CONFIRM_X_A
         elif decision == 'cancel_delete_area':
-            await update.callback_query.message.reply_text("Deletion canceled.")
             del self.user_data[user_id]['area_to_delete']
             message = await update.callback_query.message.reply_text(
+                "Deletion canceled." \
                 "Return to the main menu.",
-                reply_markup=end_markup
+                reply_markup=end_markup,
+                parse_mode="Markdown"
             )
             self.user_data[user_id]["last_bot_msg"] = message
             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
@@ -1440,25 +1415,21 @@ class BotMain:
                 return FINAL_STAGE
             else:
                 message = await update.callback_query.message.reply_text("Error deleting the greenhouse. Please try again.",
-                                                                reply_markup=InlineKeyboardMarkup([
-                                                                [InlineKeyboardButton("✅ CONFIRM", callback_data='confirm_delete_both')],
-                                                                [InlineKeyboardButton("❌ CANCEL", callback_data='cancel_delete_both')],
-                                                                [InlineKeyboardButton("BACK TO MAIN MENU", callback_data='back_to_main_menu')]
-                                                            ]))
+                                                                reply_markup=conf_canc_markup)
                 self.user_data[user_id]["last_bot_msg"] = message
                 self.user_states[user_id] = "END"
                 return CONFIRM_X_BOTH
         elif decision == 'cancel_delete_both':
-            await update.callback_query.message.reply_text("Deletion canceled.")
             del self.user_data[user_id]['area_to_delete']
             # Return to the main menu
             message = await update.callback_query.message.reply_text(
+                "✅ Action canceled successfully. " \
                 "Return to the main menu.",
                 reply_markup=end_markup
             )
             self.user_data[user_id]["last_bot_msg"] = message
             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
-            return FINAL_STAGE  # OR MANAGE_GH IN A FUTURE UPDATE
+            return FINAL_STAGE  # OR MANAGE_GH IN A FUTURE UPDATE. Ask users to upgrade their subscription.
         else:
             await update.callback_query.message.reply_text("Critical error. Please try again. Goodbye.")
             self.user_states[user_id] = "END"
@@ -1481,14 +1452,10 @@ class BotMain:
             self.user_data[user_id]["last_bot_msg"] = message
             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
             return FINAL_STAGE
-        
 
         query = update.callback_query
         await query.answer() 
         to_verify = query.data
-
-        # if query.message.reply_markup is not None:
-        #     await self.delete_last_keyboard(update, context) ####
 
         if to_verify == 'check_temperature':
             variable = "temperature"
@@ -1503,10 +1470,38 @@ class BotMain:
         config_key = "light" if variable == "luminosity" else variable
         unit = context.bot_data['default_thresholds'][config_key]['unit']
 
+        try:
+            response = requests.get(f'{self.thinkspeak_url}greenhouse{greenhouse_id}/area{area_processing}/{variable}')   
+            if response.status_code == 200:
+                data = response.json()
+                values = data.get("values", [])
+            else:
+                print("Error fetching data from ThinkSpeak:", response.status_code)
+                values = []
+        except Exception as e:
+            print("Exception fetching data from ThinkSpeak:", e)
+            values = []
+
+        if config_key == "light":
+            unit = "%Lux"
+
+        # Prepare the historical data block
+        if values:
+            historical_block = f"📈 *Last {variable} values available with your free plan (GH1):*\n"
+            for i in range(0, len(values), 5):
+                block = values[i:i+5]
+                line = "   ".join(f"{float(val):.1f}{unit}" for val in block)
+                historical_block += line + "\n"
+            if config_key == "light":
+                historical_block += f"% of 80000 Lux\n"
+        else:
+            historical_block = "📈No current historical data available for this variable. Please upgrade your plan to access more functionalities. 🌱"
+
         await query.edit_message_reply_markup(reply_markup=None)
         message = await update.callback_query.message.reply_text(
             f"📟 *Current Status:*\n"
             f"🌱 *Greenhouse ID:* `{greenhouse_id}` 📍 *Area ID:* `{area_processing}`\n 🔍 *{variable.capitalize()}:* `{current_value} {unit}`\n\n"
+            f"{historical_block}\n"
             f"💡 *What would you like to do next?*",
             parse_mode="Markdown",
             reply_markup=A_Mg_markup
@@ -1594,6 +1589,7 @@ class BotMain:
                 reply_markup=end_markup,
                 parse_mode="Markdown"
             )
+            self.user_data[user_id]["last_bot_msg"] = message
             #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
             return MAIN_MENU
         elif isinstance(oki, dict) and oki.get("status_ok") == True:
@@ -1620,7 +1616,6 @@ class BotMain:
         user_id = update.effective_user.id
         state_previous = self.user_data[user_id]['actuator_state']
         action_wanted = to_set_on_off
-
 
         if normalize_state_to_int(state_previous) == normalize_state_to_int(action_wanted):
                 return {"status_ok": "nochange", "status_code": "alreadySET"}
@@ -1671,8 +1666,10 @@ class BotMain:
                 self.user_data[user_id]["last_bot_msg"] = message
                 return {"status_ok": False, "status_code": "Fatal"}
         
-    ################################## ALERTS MANAGEMENT #####################################
-    ########## Dictionary/Map to store user-specific alerts ###########
+######################################### ALERTS MANAGEMENT #####################################
+    ########## Dictionary/Map to store user-specific alerts #############
+    ## The greenhouse_user_map is a dictionary that maps greenhouse IDs to user-specific data and works even
+    # after the user stops chatting with the bot.
     ## Initializes the greenhouse map section for the current user
     async def create_greenhouse_map(self, gh_id, area_id, current_user):
         async with self.greenhouse_map_lock:
@@ -1695,7 +1692,7 @@ class BotMain:
         async with self.greenhouse_map_lock:
             gh_entry = self.greenhouse_user_map.get(gh_id)
             if not gh_entry:
-                print(f"Greenhouse {gh_id} not found in the map. This should not happen.")
+                print(f"Greenhouse {gh_id} not found in the map.")
                 return False 
             # Add an area if it does not exist
             if area_id not in gh_entry['areas']:
@@ -1714,7 +1711,7 @@ class BotMain:
                 print(f"Greenhouse {gh_id} removed from the map.")
                 return True
             else:
-                print(f"Greenhouse {gh_id} not found in the map. This should now happen. Line 1719")
+                print(f"Greenhouse {gh_id} not found in the map. This should now happen.")
                 return False
 
     ## Deletes an area from the greenhouse map for the current user   
@@ -1722,17 +1719,62 @@ class BotMain:
         async with self.greenhouse_map_lock:
             gh_entry = self.greenhouse_user_map.get(gh_id)
             if not gh_entry:
-                print(f"Greenhouse {gh_id} not found in the map. This should not happen. Line 1726")
+                print(f"Greenhouse {gh_id} not found in the map. This should not happen.")
                 return False
             area_entry = gh_entry['areas'].get(area_id)
             if not area_entry:
                 print(f"Area {area_id} not found in greenhouse {gh_id}. This should not happen.")
                 return False
             del gh_entry['areas'][area_id]
-            print(f"Area {area_id} removed from greenhouse {gh_id}.")
+            print(f"Area {area_id} removed from greenhouse_map with id: {gh_id}.")
             return True
 
-    ########## Alert Producer, Updater and Consumer ###########
+    async def handle_storical_data_gh(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+        user_id = update.effective_user.id
+        show_text = (
+            "📡 Follow the next link to see the data of the greenhouse that *your plan has access* to:\n"
+            "⚠️ _For more functionalities please upgrade your plan\\._ \n\n"
+            "🌡️ Temperatures: [View Data](https://thingspeak.mathworks.com/channels/2907689)\n"
+            "💧 Humidity: [View Data](https://thingspeak.mathworks.com/channels/2907692)\n"
+            "💡 Luminosity: [View Data](https://thingspeak.mathworks.com/channels/2907694)"
+        )
+        await update.callback_query.message.reply_text(
+            show_text,
+            parse_mode="MarkdownV2",
+            disable_web_page_preview=True,
+            reply_markup=end_markup
+        )
+        self.user_data[user_id]["last_bot_msg"] = show_text
+        #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
+        return FINAL_STAGE
+
+    ### Format the alert message to be sent to the user
+    def format_alert_message(self, alert_dict, already_tried): #dict, already_tried => bool:
+        GH_ID, AREA_ID = get_ids(alert_dict.get('bn', ''))
+        event = alert_dict.get('e', [{}])[0]  
+        alerttype = event.get('n', 'unknown')
+        timestamp = event.get('t', None)
+        
+        # Convert timestamp to readable date if it exists
+        if timestamp:
+            utc_dt = datetime.fromtimestamp(timestamp, tz=pytz.UTC)
+            local_dt = utc_dt.astimezone(self.timeZone)
+            timestamp_str = local_dt.strftime('%d-%m-%Y %H:%M:%S')
+        else:
+            timestamp_str = timestamp
+
+        msg = (
+            f"🚨 *Alert detected!*\n\n"
+            f"🏡 *Greenhouse:* {GH_ID}\n"
+            f"📍 *Area:* {AREA_ID}\n"
+            f"🔔 *Alert type:* {alerttype.capitalize()}\n"
+            f"🕒 *Date and time:* {timestamp_str}\n"
+        )
+        if already_tried:
+            msg += "\n⚠️ There was a missed alert. Please contact support."
+        return msg
+
+################### Alert Producer, Updater and Consumer #####################
     ## Alert Producer: Distributes alerts from the general queue to the user-specific dictionary pending alerts
     # if needed.
     async def alert_producer(self, alert_queue):
@@ -1747,16 +1789,14 @@ class BotMain:
                     if chat_id:
                         if problem == True:
                             if chat_id not in self.pending_alerts:
-                                print("el id habia sido elminado, lo agregamos")
+                                # print("The ID was eliminated, adding it again")
                                 self.pending_alerts[chat_id] = []
                             self.pending_alerts[chat_id].append(self.alert_data)
-                            print("agregada la alerta al pendiente de 1752::", chat_id)
-                            # self.pending_alerts.setdefault(chat_id, []).append(self.alert_data)
                             print(f"[✓] New alert added to pending for {chat_id}")
                         else:
-                            print(f"[✓] No change detected for alert for {chat_id}, not adding to pending alerts.")
+                            print(f"[✓] No problematic change detected in notification for {chat_id}, not adding to pending alerts.")
                     else:
-                        print("[!] No chat_id found in alert data.")
+                        print("[!] No chat_id found in alert data. Exit process was going on.")
                 else:
                     print("[!] No alert data received.")
                     continue
@@ -1773,89 +1813,93 @@ class BotMain:
     # so the alert producer puts it in the pending_alerts dictionary.
     async def update_dictionary(self, alert_data): 
         topicbase = alert_data.get("bn", "")
-        event = alert_data.get("e", [{}])[0]  # Consider only the first event in the SenML format.
+        event = alert_data.get("e", [{}])[0]  # Consider only the first event in the SenML format. Version 0.5.1
         GH_ID, AREA_ID = get_ids(topicbase)
         alerttype = event.get("n", "")
         # Case 1: Alert in SenML format (MQTT with 'e') - Humidity, Temperature, Luminosity.
-        # if alertype in ["temperature", "humidity", "luminosity"]:   
-        #     GH_ID, AREA_ID = get_ids(topicbase)
-        #     if not GH_ID or not AREA_ID:
-        #         return False
-
-        #     async with self.greenhouse_map_lock:
-        #         if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
-        #             print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map. This should not happen.") 
-        #             return False
-
-        #     situation = event.get("n")
-        #     timestamp = event.get("t")
-        #     value_received = None
-        #     if situation == "motion":
-        #         value_received = event.get("v")  # 1 o 0
-        #         changed, value = await self.update_alert_value(GH_ID, AREA_ID, value_received, timestamp)
-        #         if changed == True and value == 1:
-        #             return True  # there was a change,  AND it changed from 0 to 1, send data. Not from 1 to 0.
-        #         else:
-        #             print("No update needed for this last alert.")
-        #             return False
-        #     else:
-        #         print("Situation is not motion")
-        #         return False #####
-            # In the future updates, the extreme values of temperature, humidity, and luminosity will be added here.
-
-        # Case 2: Alert in simple format (ONLY: "motion":"on")
-        print("alerttype:", alerttype)
-        if alerttype == "motion":
-            value_raw = event.get("v")  # 1 or 0
-            if value_raw is None:
-                print("[MQTT] Missing value.")
-                return False
-            # Se aceptan todos los cambios sin verificar el último estado
-            try:
-                value_int = normalize_state_to_int(value_raw)
-            except Exception as e:
-                print(f"[MQTT] Error al convertir valor a int: {e}")
+        if alerttype in ["temperature", "humidity", "luminosity","motion"]:   
+            GH_ID, AREA_ID = get_ids(topicbase)
+            if not GH_ID or not AREA_ID:
+                print("[!] Invalid topic format. GH_ID or AREA_ID not found in the topicbase.")
                 return False
 
             async with self.greenhouse_map_lock:
-                self.greenhouse_user_map[GH_ID]["areas"][AREA_ID]["LastMotionValue"] = value_int
-                self.greenhouse_user_map[GH_ID]["areas"][AREA_ID]["timestampMotion"] = None  # No timestamp
+                if GH_ID not in self.greenhouse_user_map or AREA_ID not in self.greenhouse_user_map[GH_ID]["areas"]:
+                    print(f"Greenhouse {GH_ID} or Area {AREA_ID} not found in the map. This should not happen.") 
+                    return False
 
-            print("Motion received and put in the map antes del pending.")
-            return True
+            situation = event.get("n")
+            timestamp = event.get("t")
+            value_received = None
+            if situation == "motion":
+                value_received = event.get("v")  # 1 o 0
+                # print("value received:", value_received," about to update in map")
+                changed, value = await self.update_alert_value(GH_ID, AREA_ID, value_received, timestamp)
+                if changed == True and value == 1:
+                    print("MOTION FROM 0 TO 1!!!")
+                    return True  # there was a change,  AND it changed from 0 to 1, send data. Not from 1 to 0.
+                else:
+                    # print("No update needed for this last information. Either no motion or detections too close.")
+                    return False
+            else:
+                print("Situation is not motion")
+                return False #####
+            # In the future updates, the extreme values of temperature, humidity, and luminosity will be added here.
+            # Please keep trusting our team.
         
-    ## Update Alert Value: Updates the LastValue in the map after receiving a message from the broker
-    # and returns True if the value changed from 0 to 1, False otherwise.
-    # async def update_alert_value(self, gh_id, area_id, value_received,timestamp):
+    # async def update_alert_value(self, GH_ID, AREA_ID, value_received,timestamp):
+    #     try:
+    #         value_received_int = normalize_state_to_int(value_received)
+    #     except Exception as e:
+    #         print(f"Error converting values to int: {e}")
+    #         return False, None
     #     async with self.greenhouse_map_lock:
-    #         last_value = self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"]
-    #         if last_value is None or value_received is None:
-    #             print("[ERROR] One of the values is None.")
-    #             return False, None
-    #         try:
-    #             last_value_int = normalize_state_to_int(last_value)
-    #             value_received_int = normalize_state_to_int(value_received)
-    #         except Exception as e:
-    #             print(f"Error al convertir valores a int: {e}")
-    #             return False, None
-    #         # Update the motion value in the map
-    #         self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"] = value_received_int
-    #         self.greenhouse_user_map[gh_id]["areas"][area_id]["timestampMotion"] = timestamp
+    #         self.greenhouse_user_map[GH_ID]["areas"][AREA_ID]["LastMotionValue"] = value_received_int
+    #         self.greenhouse_user_map[GH_ID]["areas"][AREA_ID]["timestampMotion"] = timestamp
+    #     return True, value_received_int  # Update successful, value to be considered, and the value.
 
-    #         if int(last_value_int) == int(value_received_int):
-    #             #"No change detected in motion value".
-    #             return False, None  # Only updated the dictionary, No need for sending an alert
-    #         return True, value_received_int  # Update successful, value changed, and the value.
+                        
+    ## Update Alert Value V0.5.1: Updates the LastValue in the map after receiving a message from the broker
+    # and returns True if the value changed from 0 to 1, False otherwise.    
+    async def update_alert_value(self, gh_id, area_id, value_received,timestamp):
+        async with self.greenhouse_map_lock:
+            last_value = self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"]
+            last_timestamp = self.greenhouse_user_map[gh_id]["areas"][area_id]["timestampMotion"]
+            if last_value is None or value_received is None:
+                print("[ERROR] One of the values is None.")
+                return False, None
+            try:
+                last_value_int = normalize_state_to_int(last_value)
+                value_received_int = normalize_state_to_int(value_received)
+            except Exception as e:
+                print(f"Error al convertir valores a int: {e}")
+                return False, None
+            # Update the motion value in the map
+            self.greenhouse_user_map[gh_id]["areas"][area_id]["LastMotionValue"] = value_received_int
+            self.greenhouse_user_map[gh_id]["areas"][area_id]["timestampMotion"] = timestamp
 
-    ## Alert Consumer: Processes the pending alerts for each user and sends them via Telegram
-    ## Alert Consumer: Processes the pending alerts for each user and sends them via Telegram
+            if last_timestamp is None:
+                last_timestamp = 0  # If no timestamp was received, set it to 0
+            else:
+                last_timestamp = float(last_timestamp)
+            timestamp = float(timestamp)
+
+            #IF the values are equal and differ only 25 seconds, it's probably the same intruder, so no need to send an alert again.
+            if int(last_value_int) == int(value_received_int) and abs(timestamp - last_timestamp) <= 25:
+                if abs(timestamp - last_timestamp) <= 25: print("[INFO] Timestamp difference is less than 25:", abs(timestamp - last_timestamp))
+                return False, None  # Only updated the dictionary, No need for sending an alert
+            print("Updated map, value received:", value_received_int, "GH:", gh_id, "AREA:", area_id)
+            return True, value_received_int  # Update successful, value changed, and the value.
+
+
+    ########## Alert Consumer: Processes the pending alerts for each user and sends them via Telegram
     async def alert_consumer(self, application, user_states):
         self.retry_flags = {}
 
         async def process_single_alert(chat_id):
             ##Processes only one alert for a specific user
             alert_info = self.pending_alerts[chat_id][0]
-            text = format_alert_message(alert_info, self.retry_flags.get(chat_id, False))
+            text = self.format_alert_message(alert_info, self.retry_flags.get(chat_id, False))
             try:
                 await application.bot.send_message(
                     chat_id=chat_id,
@@ -1867,10 +1911,11 @@ class BotMain:
                 self.retry_flags[chat_id] = False
 
                 if chat_id not in self.pending_alerts: ## DEBUG
-                    print(" no hay chat_id ahhhhh")
+                    print("There's no chat_id. This should not happen.")
 
-                if not self.pending_alerts[chat_id]: #THIS SHOULD BE COMMENTED
+                if not self.pending_alerts[chat_id]:
                     print(f"[✓] All alerts processed for {chat_id}, cleaning up.")
+                    #If there are no more pending alerts for this user, remove the chat_id from the dictionary
                     self.pending_alerts.pop(chat_id, None)
 
             except Exception as e:
@@ -1883,16 +1928,16 @@ class BotMain:
                 else:
                     print(f"[!] Retrying alert for {chat_id} in next cycle...")
                     self.retry_flags[chat_id] = True
-                    # No sleep aquí, se reintentará en la siguiente iteración del loop principal
+                    # No sleep here, it will be handled in the main loop again
 
         while True:
             try:
                 tasks = []
                 for chat_id in list(self.pending_alerts.keys()):
-                    if self.pending_alerts[chat_id]:  # Solo si hay alertas
+                    if self.pending_alerts[chat_id]:  # Only if there are alerts:
                         state = user_states.get(chat_id)
-                        print("usuario en estado" , state)
                         if state in ["END", MAIN_MENU]:
+                            #ALERTS ARE SENT TO USERS ONLY IF THEY ARE IN MAIN_MENU OR END STATE. TO NOT INTERFERE WITH OTHER PROCESSES.
                             tasks.append(asyncio.create_task(process_single_alert(chat_id)))
                         else:
                             print(f"User {chat_id} is in state {state}, alerts will not be displayed yet.")
@@ -1902,17 +1947,9 @@ class BotMain:
                     for result in results:
                         if isinstance(result, Exception):
                             print(f"[ERROR] Error in a task: {result}")
-                
-                await asyncio.sleep(2.5)
+                await asyncio.sleep(1.2)
             except Exception as e:
                 print(f"[ERROR] General error in alert_consumer: {e}")
-
-    async def debug_loop(self):
-        while True:
-            print("[DEBUG] Bot sigue vivo")
-            await asyncio.sleep(10)
-
-
 
     ### RUN METHOD FOR THE BOT
     def run(self):
@@ -1926,9 +1963,6 @@ class BotMain:
             )
             application.create_task(
                 self.update_registration_service()
-            )
-            application.create_task(
-                self.debug_loop()
             )
         self.application.post_init = start_alert_task
         self.application.run_polling()

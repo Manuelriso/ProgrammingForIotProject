@@ -523,11 +523,11 @@ class TelegramBOT:
         
         
     def registerService(self):
-        self.serviceInfo['last_update'] = self.actualTime
+        self.serviceInfo['last_updated'] = self.actualTime
         requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def updateService(self):
-        self.serviceInfo['last_update'] = time.time()
+        self.serviceInfo['last_updated'] = time.time()
         requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def stop(self):

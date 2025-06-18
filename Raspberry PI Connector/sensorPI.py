@@ -54,7 +54,7 @@ if __name__ == '__main__':
     settings = json.load(open('settings.json'))
     catalogURL=settings["catalogURL"]
     serviceInfo=settings["serviceInfo"]
-    serviceInfo['last_update'] = time.time()
+    serviceInfo['last_updated'] = time.time()
     #requests.post(f'{catalogURL}/service', data=json.dumps(serviceInfo))
     pub.start()
     #print(f"Catalog: {catalog}")

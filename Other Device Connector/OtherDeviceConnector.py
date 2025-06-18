@@ -33,11 +33,11 @@ class OtherDeviceConnectorMQTT:
         self.actualTime = time.time()
     
     def registerService(self):
-        self.serviceInfo['last_update'] = self.actualTime
+        self.serviceInfo['last_updated'] = self.actualTime
         requests.post(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def updateService(self):
-        self.serviceInfo['last_update'] = time.time()
+        self.serviceInfo['last_updated'] = time.time()
         requests.put(f'{self.catalogURL}/service', data=json.dumps(self.serviceInfo))
     
     def stop(self):
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     catalogURL = settings['catalogURL']
     serviceInfo=settings["serviceInfo"]
     #save service info into CATALOG (post)
-    serviceInfo['last_update'] = time.time()
+    serviceInfo['last_updated'] = time.time()
     time.sleep(1)
     connector.registerService()
 
@@ -119,6 +119,6 @@ if __name__ == '__main__':
                 else:
                     print("Failed to update catalog")
             #save service info into CATALOG (put)
-            serviceInfo['last_update'] = time.time()
+            serviceInfo['last_updated'] = time.time()
             connector.updateService()                  
             time.sleep(16) #frequency of sensors (due to database update)

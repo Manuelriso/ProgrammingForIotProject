@@ -455,7 +455,7 @@ if __name__=="__main__":
             updatedServices=[]
             
             for service in microservices:
-                lastUpdate=service["last_update"]
+                lastUpdate=service["last_updated"]
                 if current_time-lastUpdate<time_threshold:
                     updatedServices.append(service)
                     
