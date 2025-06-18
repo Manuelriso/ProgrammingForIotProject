@@ -13,6 +13,7 @@ import MyMQTTforBOT
 from AlertNotifier import AlertNotifier
 from sharedUtils import *
 import pytz #For local time conversion
+import traceback
 
 ######################### CONVERSATION STATES #########################
 # Conversation states
@@ -82,13 +83,15 @@ async def check_gh_id_exists(catalog_url, greenhouse_id) -> bool:
         return True
 
 ### Create a new greenhouse in the database with first area
-async def create_greenhouse_and_area(catalog_url, user_id, greenhouse_id, plant_type,temperature_threshold, humidity_threshold, light_threshold) -> bool:
+async def create_greenhouse_and_area(catalog_url, user_id, greenhouse_id, plant_type,temperature_threshold, humidity_threshold, light_threshold,timeZoneC) -> bool:
     try:
+        now_utc = datetime.now(pytz.UTC)  # Get the current time in UTC
+        now_local = now_utc.astimezone(timeZoneC)  # Use the desired timeZone
         new_greenhouse = {
             "greenhouseID": int(greenhouse_id),
             "telegram_ID": user_id,
             "numberOfAreas": 1,
-            "creation_date": datetime.now().strftime("%d-%m-%Y"),
+            "creation_date": now_local.strftime("%d-%m-%Y"),
             "areas": [
             {
                 "ID": 1, 
@@ -375,7 +378,7 @@ class BotMain:
             return self.mqtt_client, self.alert_notifier
         except Exception as e:
             print(f"[ERROR] Failed to setup MQTT and Notifier:\n{traceback.format_exc()}")
-            raise #### or retunr None, None
+            raise #### return None, None
 
     ## Enqueue alert messages to the alert queue    
     def enqueue_alert_message(self, message: dict):
@@ -867,7 +870,7 @@ class BotMain:
         light_threshold = self.user_data[user_id]['light_threshold']
 
         # Call the function to create the greenhouse and the area
-        success = await create_greenhouse_and_area(catalog_url, user_id, gh_id, plant_type, temperature_threshold, humidity_threshold, light_threshold)
+        success = await create_greenhouse_and_area(catalog_url, user_id, gh_id, plant_type, temperature_threshold, humidity_threshold, light_threshold,self.timeZone)
         
         if success:
             #Update the greenhouse_user_map and subscribe to the new topics
@@ -1068,7 +1071,7 @@ class BotMain:
                 )
                 self.user_data[user_id]["last_bot_msg"] = message
                 # Update the user's greenhouse list to reflect the deletion
-                self.remove_greenhouse(user_id, greenhouse_to_delete)
+                await self.remove_greenhouse(user_id, greenhouse_to_delete)
                 
                 del self.user_data[user_id]['gh_to_delete']
                 #NO UPDATE OF USER_STATE, IT'S MADE IN THE handle_back_to_main_menu
@@ -1401,7 +1404,7 @@ class BotMain:
 
                 await update.callback_query.message.reply_text(f"Greenhouse with ID: {greenhouse_id} and area with ID: {area_X} successfully deleted.")
                 if any(gh['greenhouseID'] == greenhouse_id for gh in self.user_data[user_id]['their_greenhouses']):
-                    self.remove_greenhouse(user_id, greenhouse_id)
+                    await self.remove_greenhouse(user_id, greenhouse_id)
                 else:
                     print(f"Warning: Greenhouse {greenhouse_id} was not in the list for user {user_id}")
                 del self.user_data[user_id]['area_to_delete']
@@ -1682,7 +1685,7 @@ class BotMain:
                 # First time we see this greenhouse
                 self.greenhouse_user_map[gh_id] = {'user': current_user, 'areas': {}}
             # Initialize the area
-            self.greenhouse_user_map[gh_id]["areas"][area_id] = {
+            self.greenhouse_user_map[gh_id]['areas'][area_id] = {
                 'LastMotionValue': None,
                 'timestampMotion': None
             }
@@ -1700,7 +1703,7 @@ class BotMain:
                 print(f"Area {area_id} added to greenhouse {gh_id}.")
                 return True
             else:
-                print(f"Area {area_id} already exists in greenhouse {gh_id}. This should not happen.")
+                print(f"Area {area_id} already exists in greenhouse {gh_id}.")
                 return False
 
     ## Deletes a greenhouse from the map      
@@ -1719,11 +1722,11 @@ class BotMain:
         async with self.greenhouse_map_lock:
             gh_entry = self.greenhouse_user_map.get(gh_id)
             if not gh_entry:
-                print(f"Greenhouse {gh_id} not found in the map. This should not happen.")
+                print(f"Greenhouse {gh_id} not found in the map......")
                 return False
             area_entry = gh_entry['areas'].get(area_id)
             if not area_entry:
-                print(f"Area {area_id} not found in greenhouse {gh_id}. This should not happen.")
+                print(f"Area {area_id} not found in greenhouse {gh_id}.")
                 return False
             del gh_entry['areas'][area_id]
             print(f"Area {area_id} removed from greenhouse_map with id: {gh_id}.")
