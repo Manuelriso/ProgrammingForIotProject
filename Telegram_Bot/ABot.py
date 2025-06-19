@@ -1714,7 +1714,7 @@ class BotMain:
                 print(f"Greenhouse {gh_id} removed from the map.")
                 return True
             else:
-                print(f"Greenhouse {gh_id} not found in the map. This should now happen.")
+                print(f"Greenhouse {gh_id} not found in the map.")
                 return False
 
     ## Deletes an area from the greenhouse map for the current user   
@@ -1784,7 +1784,7 @@ class BotMain:
         while True:
             try:
                 self.alert_data = await alert_queue.get()
-                problem  = await self.update_dictionary(self.alert_data) 
+                problem  = await self.check_data_alert(self.alert_data) 
 
                 if self.alert_data:
                     chat_id = self.alert_data.get("chat_id")
@@ -1814,7 +1814,7 @@ class BotMain:
 
     ## Alert Updater: Handles the alert_data and returns True if there's a new emergency/problem
     # so the alert producer puts it in the pending_alerts dictionary.
-    async def update_dictionary(self, alert_data): 
+    async def check_data_alert(self, alert_data): 
         topicbase = alert_data.get("bn", "")
         event = alert_data.get("e", [{}])[0]  # Consider only the first event in the SenML format. Version 0.5.1
         GH_ID, AREA_ID = get_ids(topicbase)
