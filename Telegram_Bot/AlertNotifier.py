@@ -110,7 +110,7 @@ class AlertNotifier:
             print(f"[!] Error in notify(): {e}")
 
     def notify_user(self, gh_id, area_id, user_affected, alerttype, timestamp, unit, value_received): #Sends the alert to the queue of the bot
-        print("Something happened, notifying user: ", user_affected, "value received: ", value_received)
+        print("Something happened, sending data to queue: ", user_affected, "value received: ", value_received)
         if not self.enqueue_method:
             raise ValueError("Enqueue method must be set before using AlertNotifier") 
         self.enqueue_method({

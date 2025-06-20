@@ -1588,7 +1588,7 @@ class BotMain:
         if isinstance(oki, dict) and oki.get("status_ok") == "nochange":
             message = await update.callback_query.message.reply_text(
                 f"ℹ️ The actuator is already set to *{normalize_state_to_str(state_a)}*. No changes were made. ✅\n"
-                "You can return to the Main Menu or perform another action.",
+                "You can return to the Main Menu to perform other actions.",
                 reply_markup=end_markup,
                 parse_mode="Markdown"
             )
@@ -1795,9 +1795,9 @@ class BotMain:
                                 # print("The ID was eliminated, adding it again")
                                 self.pending_alerts[chat_id] = []
                             self.pending_alerts[chat_id].append(self.alert_data)
-                            print(f"[✓] New alert added to pending for {chat_id}")
+                            print(f"[✓3] New alert added to pendings for {chat_id}")
                         else:
-                            print(f"[✓] No problematic change detected in notification for {chat_id}, not adding to pending alerts.")
+                            print(f"[✓2] No 'problems' in notification for {chat_id}, not adding to pending alerts.")
                     else:
                         print("[!] No chat_id found in alert data. Exit process was going on.")
                 else:
@@ -1839,7 +1839,7 @@ class BotMain:
                 # print("value received:", value_received," about to update in map")
                 changed, value = await self.update_alert_value(GH_ID, AREA_ID, value_received, timestamp)
                 if changed == True and value == 1:
-                    print("MOTION FROM 0 TO 1!!!")
+                    print("[INFO 2] MOTION FROM 0 TO 1!!!")
                     return True  # there was a change,  AND it changed from 0 to 1, send data. Not from 1 to 0.
                 else:
                     # print("No update needed for this last information. Either no motion or detections too close.")
@@ -1889,9 +1889,9 @@ class BotMain:
 
             #IF the values are equal and differ only 25 seconds, it's probably the same intruder, so no need to send an alert again.
             if int(last_value_int) == int(value_received_int) and abs(timestamp - last_timestamp) <= 25:
-                if abs(timestamp - last_timestamp) <= 25: print("[INFO] Timestamp difference is less than 25:", abs(timestamp - last_timestamp))
+                if abs(timestamp - last_timestamp) <= 25: print("[INFO 0] Timestamp difference is less than 25:", abs(timestamp - last_timestamp))
                 return False, None  # Only updated the dictionary, No need for sending an alert
-            print("Updated map, value received:", value_received_int, "GH:", gh_id, "AREA:", area_id)
+            print("[INFO 1] Updated map with value received:", value_received_int, ". GH:", gh_id, "AREA:", area_id)
             return True, value_received_int  # Update successful, value changed, and the value.
 
 
