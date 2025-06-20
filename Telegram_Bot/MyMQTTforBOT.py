@@ -79,7 +79,7 @@ class MyMQTT:
         self._isSubscriber = True
         self._topics.add(topic) #####
         self._topic = topic  ####
-        print ("subscribed to %s" % (topic))
+        print ("Bot subscribed to %s" % (topic))
  
     def start(self,timeout=5):
         #manage connection to broker
@@ -110,7 +110,7 @@ class MyMQTT:
             if topic in self._topics:
                 self._paho_mqtt.unsubscribe(topic)
                 self._topics.remove(topic)
-                print(f"Unsubscribed from {topic}")
+                print(f"Bot unsubscribed from {topic}")
                 if topic == self._topic:
                     self._topic = next(iter(self._topics), "")  # update the last topic
             else:

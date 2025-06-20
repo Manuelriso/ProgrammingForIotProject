@@ -41,6 +41,7 @@ class AlertNotifier:
 ############################# SUBSCRIPTION MANAGEMENT ######################
     # Method to be used by the bot to update subscriptions based on user actions
     def update_subscriptions(self, action, greenhouse_id=None, area_id=None, tematic="motion"):
+        print(f"Updating subscriptions: action={action}, greenhouse_id={greenhouse_id}, area_id={area_id}")
         if action == 'create':
             topic = self.build_topic(greenhouse_id, area_id, tematic)
             self.subscribe_to_topic(topic)
@@ -59,7 +60,6 @@ class AlertNotifier:
             # Fetch the complete list from the catalog and subscribe
             topics = self.build_topics_list_from_catalog()
             self.subscribe_to_multiple(topics)
-        print(f"Updating subscriptions: action={action}, greenhouse_id={greenhouse_id}, area_id={area_id}")
     
     def build_topic(self, greenhouse_id, area_id,tematic):
         return f"greenhouse{greenhouse_id}/area{area_id}/{tematic}"
