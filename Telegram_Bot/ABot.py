@@ -1889,7 +1889,7 @@ class BotMain:
 
             #IF the values are equal and differ only 25 seconds, it's probably the same intruder, so no need to send an alert again.
             if int(last_value_int) == int(value_received_int) and abs(timestamp - last_timestamp) <= 25:
-                if abs(timestamp - last_timestamp) <= 25: print("[INFO 0] Timestamp difference is less than 25:", abs(timestamp - last_timestamp))
+                if abs(timestamp - last_timestamp) <= 25: print("[INFO 1] Timestamp difference is less than 25:", abs(timestamp - last_timestamp),'. Map updated.')
                 return False, None  # Only updated the dictionary, No need for sending an alert
             print("[INFO 1] Updated map with value received:", value_received_int, ". GH:", gh_id, "AREA:", area_id)
             return True, value_received_int  # Update successful, value changed, and the value.
