@@ -322,9 +322,6 @@ class BotMain:
         self.already_retried = {}  # To track if an alert has already been retried
         self.alert_data = None 
 
-        # Initialize greenhouse_user_map
-        self.initialize_greenhouse_user_map()
-
         # Setup MQTT + Notifier 
         self.mqtt_client, self.alert_notifier = self.setup_mqtt_and_notifier()
         if self.alert_notifier is None:
@@ -332,6 +329,8 @@ class BotMain:
   
         # Add ConversationHandler
         self.application.add_handler(self._build_conversation_handler())
+        # Initialize greenhouse_user_map
+        self.initialize_greenhouse_user_map()
         # Register the service in the catalog
         self.registerService()
 
@@ -1689,6 +1688,7 @@ class BotMain:
                 'LastMotionValue': None,
                 'timestampMotion': None
             }
+            print(f"Greenhouse {gh_id} initialized in the map for user {current_user} with area {area_id}.")
 
     ## Adds a new area to the greenhouse map for the current user
     async def add_area_to_map(self, gh_id, area_id):
@@ -1700,7 +1700,7 @@ class BotMain:
             # Add an area if it does not exist
             if area_id not in gh_entry['areas']:
                 gh_entry['areas'][area_id] = {'LastMotionValue': None, 'timestampMotion': None}
-                print(f"Area {area_id} added to greenhouse {gh_id}.")
+                print(f"Area {area_id} added to greenhouse {gh_id} in map.")
                 return True
             else:
                 print(f"Area {area_id} already exists in greenhouse {gh_id}.")
